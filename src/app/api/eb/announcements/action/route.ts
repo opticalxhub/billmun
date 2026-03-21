@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getEBContext } from "@/lib/eb-auth";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { context, error, status } = await getEBContext();
+    if (!context) return NextResponse.json({ error }, { status: status || 401 });
+
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+    const { action, id, title, body: content, is_pinned, target_roles, committee_id, scheduled_for } = body;
+    const ebUserId = context.ebUserId;
+
+    if (!action) return NextResponse.json({ error: "Missing action" }, { status: 400 });
+
+    if (action === "create") {
+      if (!title || !content) return NextResponse.json({ error: "Missing title or body" }, { status: 400 });
+      const { error } = await supabaseAdmin.from("announcements").insert({
+        title, body: content, is_pinned: !!is_pinned,
+        target_roles: target_roles || [],
+        committee_id: committee_id === "ALL" ? null : committee_id,
+        scheduled_for: scheduled_for || null,
+        author_id: ebUserId
+      });
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === "update" && id) {
+      const { error } = await supabaseAdmin.from("announcements").update({
+        title, body: content, is_pinned: !!is_pinned,
+        target_roles: target_roles || [],
+        committee_id: committee_id === "ALL" ? null : committee_id,
+        scheduled_for: scheduled_for || null
+      }).eq("id", id);
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === "delete" && id) {
+      const { error } = await supabaseAdmin.from("announcements").delete().eq("id", id);
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

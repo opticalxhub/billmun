@@ -1,0 +1,193 @@
+@import url('https://db.onlinewebfonts.com/c/09fc87e1ac5bbdeb5c42b2c1ec4f780f?family=Jotia+W00+Regular');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@font-face { 
+    font-family: "Jotia W00 Regular"; 
+    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot"); 
+    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot?#iefix")format("embedded-opentype"), 
+    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff2")format("woff2"), 
+    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff")format("woff"), 
+    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.ttf")format("truetype"), 
+    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.svg#Jotia W00 Regular")format("svg"); 
+} 
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: #080808;
+    --bg-card: #111111;
+    --bg-raised: #181818;
+    --bg-hover: #222222;
+    --bg-dropdown: #111111;
+    
+    --border-subtle: #222222;
+    --border-emphasized: #333333;
+    --border-strong: #444444;
+    --border-input: #333333;
+    
+    --text-primary: #F0EDE6;
+    --text-secondary: #A0A09B;
+    --text-tertiary: #7A7A7A;
+    --text-disabled: #555555;
+    --text-dimmed: #A0A09B;
+    
+    --white-pure: #FFFFFF;
+    --white-accent: #F0EDE6;
+    
+    --status-approved-bg: #E8F5E9;
+    --status-approved-text: #1B5E20;
+    --status-approved-border: #C8E6C9;
+    --status-pending-bg: #FFF3E0;
+    --status-pending-text: #E65100;
+    --status-pending-border: #FFE0B2;
+    --status-rejected-bg: #FFEBEE;
+    --status-rejected-text: #B71C1C;
+    --status-rejected-border: #FFCDD2;
+  }
+
+  .dark {
+    --bg-base: #080808;
+    --bg-card: #111111;
+    --bg-raised: #181818;
+    --bg-hover: #222222;
+    --bg-dropdown: #111111;
+    
+    --border-subtle: #222222;
+    --border-emphasized: #333333;
+    --border-strong: #444444;
+    --border-input: #333333;
+    
+    --text-primary: #F0EDE6;
+    --text-secondary: #A0A09B;
+    --text-tertiary: #7A7A7A;
+    --text-disabled: #555555;
+    --text-dimmed: #A0A09B;
+    
+    --white-pure: #FFFFFF;
+    --white-accent: #F0EDE6;
+    
+    --status-approved-bg: #112211;
+    --status-approved-text: #4ade80;
+    --status-approved-border: #166534;
+    --status-pending-bg: #221100;
+    --status-pending-text: #fb923c;
+    --status-pending-border: #9a3412;
+    --status-rejected-bg: #220000;
+    --status-rejected-text: #f87171;
+    --status-rejected-border: #991b1b;
+  }
+}
+
+@layer utilities {
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+}
+
+* {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+}
+
+html {
+  @apply bg-bg-base text-text-primary;
+}
+
+body {
+  @apply bg-bg-base text-text-primary font-inter;
+  min-height: 100vh;
+}
+
+/* Base text styles */
+h1 {
+  @apply font-jotia text-heading-1 text-text-primary;
+}
+
+h2 {
+  @apply font-jotia text-2xl text-text-primary;
+}
+
+h3 {
+  @apply font-jotia text-xl text-text-primary;
+}
+
+p {
+  @apply font-inter text-text-primary leading-relaxed;
+}
+
+/* Buttons base */
+button {
+  @apply transition-all duration-150 ease-out;
+}
+
+button:disabled {
+  @apply opacity-35 cursor-not-allowed;
+}
+
+/* Links */
+a {
+  @apply text-text-primary hover:text-text-secondary transition-colors;
+}
+
+/* Form defaults */
+input, textarea, select, button {
+  @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  @apply text-text-disabled;
+}
+
+select option,
+input,
+textarea,
+button {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+html,
+body {
+  color-scheme: dark;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.bg-white {
+  color: #000;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  @apply w-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-bg-card;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border-subtle hover:bg-border-emphasized rounded-full;
+}
+
+/* Remove default margin from lists */
+ul, ol {
+  @apply list-none;
+}
+
+/* Selection styling */
+::selection {
+  @apply bg-text-dimmed text-white-pure;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
