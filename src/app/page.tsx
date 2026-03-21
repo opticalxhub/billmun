@@ -74,19 +74,19 @@ export default function LandingPage() {
               />
             </div>
             <h1 className="font-jotia text-7xl md:text-8xl leading-none tracking-tight mb-8 uppercase font-light">
-              BILLMUN 2026
+              
             </h1>
             <div className="flex flex-col items-center gap-2 mb-12">
-              <p className="font-jotia text-xl md:text-2xl text-text-primary tracking-wide">
+              <p className="font-jotia text-m md:text-2xl text-text-primary tracking-wide">
                 The official digital portal for the BILLMUN 2026 conference
               </p>
               <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mt-4">
-                <span className="font-jotia text-lg text-text-secondary uppercase tracking-[0.2em]">
+                <span className="font-jotia text-m text-text-secondary uppercase tracking-[0.2em]">
                   27-28th March
                 </span>
                 <span className="hidden md:block w-1 h-1 rounded-full bg-border-strong" />
-                <span className="font-jotia text-lg text-text-secondary uppercase tracking-[0.1em]">
-                  Rowad Al Khaleej International Schools, Khobar
+                <span className="font-jotia text-m text-text-secondary uppercase tracking-[0.1em]">
+                  Rowad Al Khaleej
                 </span>
               </div>
             </div>
@@ -131,6 +131,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      <div className="mt-32"></div>
       <Footer />
     </div>
   );

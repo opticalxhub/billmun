@@ -258,7 +258,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
               <div className="flex-1 min-w-0">
                 <p className="font-jotia text-text-dimmed text-sm line-through">{task.title}</p>
               </div>
-              <button onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending} className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">×</button>
+              <button onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending} className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">×</button>
             </div>
           ))}
           {tasks.length === 0 && !addingTask && (
