@@ -1,0 +1,1 @@
+export const SAFE_USER_COLUMNS = "id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, has_completed_onboarding, session_status, created_at, approved_at, approved_by_id";

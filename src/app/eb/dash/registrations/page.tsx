@@ -1,15 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
 import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
-import { X, Check, Filter, Search, MoreVertical, Shield, Mail, Trash2, Ban, Pause, Play, UserCheck, UserX, Clock, MapPin, Phone, Calendar, Mail as MailIcon } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
-const PAGE_SIZE = 50;
+const EDITABLE_FIELDS_LIST = [
+  "full_name",
+  "email",
+  "phone_number",
+  "grade",
+  "date_of_birth",
+  "emergency_contact_name",
+  "emergency_contact_relation",
+  "emergency_contact_phone",
+  "preferred_committee",
+  "allocated_country",
+  "dietary_restrictions",
+  "role",
+  "status",
+] as const;
 
 export default function RegistrationsPage() {
   const queryClient = useQueryClient();
@@ -17,28 +31,31 @@ export default function RegistrationsPage() {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterCommittee, setFilterCommittee] = useState("ALL");
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
   // useQuery for Committees (needed for filters)
   const { data: committees = [] } = useQuery({
     queryKey: ['committees-list'],
     queryFn: async () => {
-      const { data, error } = await supabase.from("committees").select("id, name");
+      const { data: committeesData, error } = await supabase.from("committees").select("id, name");
       if (error) throw error; 
-      return (data || []).map(c => ({
+      
+      const { data: countsData } = await supabase.from("committee_assignments").select("committee_id");
+      const counts: Record<string, number> = {};
+      countsData?.forEach(ca => {
+        counts[ca.committee_id] = (counts[ca.committee_id] || 0) + 1;
+      });
+
+      return (committeesData || []).map(c => ({
         id: c.id,
-        name: c.name
+        name: c.name,
+        count: counts[c.id] || 0
       }));
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const {
-    data: registrationData = { users: [], totalCount: 0 },
-    isLoading,
-    refetch
-  } = useQuery({
+  const { data: registrationData = { users: [], totalCount: 0 }, isLoading, refetch } = useQuery({
     queryKey: ['eb-registrations', filterStatus, filterRole, filterCommittee, search],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -48,20 +65,17 @@ export default function RegistrationsPage() {
       if (search) params.set('q', search);
 
       const res = await fetch(`/api/eb/registrations?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch registrations');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to fetch registrations');
+      }
       return await res.json();
     },
-    staleTime: 30 * 1000,
+    staleTime: 10 * 1000, // Faster refresh for EB
   });
 
   const allRows = registrationData.users || [];
   const totalCount = registrationData.totalCount || 0;
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.id) setCurrentUser(data.user.id);
-    });
-  }, []);
 
   useEffect(() => {
     const channel = supabase
@@ -91,6 +105,11 @@ export default function RegistrationsPage() {
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [noteContent, setNoteContent] = useState("");
   const [assignForm, setAssignForm] = useState({ committee_id: "", country: "", seat_number: "" });
+  const [profileDraft, setProfileDraft] = useState<Record<string, string>>({});
+  const [fieldHistory, setFieldHistory] = useState<
+    { id: string; field_name: string; old_value: string; new_value: string; changed_at: string; changed_by_id: string }[]
+  >([]);
+  const [saveProfileLoading, setSaveProfileLoading] = useState(false);
 
   const closeDrawer = React.useCallback(() => {
     setDrawerOpen(false);
@@ -113,43 +132,112 @@ export default function RegistrationsPage() {
 
   if (isLoading) return <DashboardLoadingState type="overview" />;
 
-  const openDrawer = async (user: any) => {
+  const openDrawer = async (user: Record<string, unknown> & { id: string }) => {
     setSelectedUser(user);
     setAssignForm({
-      committee_id: user.committee_assignments?.[0]?.committees?.id || "",
-      country: user.committee_assignments?.[0]?.country || "",
-      seat_number: user.committee_assignments?.[0]?.seat_number || "",
+      committee_id: (user.committee_assignments as { committees?: { id?: string } }[] | undefined)?.[0]?.committees?.id || "",
+      country: (user.committee_assignments as { country?: string }[] | undefined)?.[0]?.country || "",
+      seat_number: (user.committee_assignments as { seat_number?: string }[] | undefined)?.[0]?.seat_number || "",
+    });
+    setProfileDraft({
+      full_name: String(user.full_name ?? ""),
+      email: String(user.email ?? ""),
+      phone_number: String(user.phone_number ?? ""),
+      grade: String(user.grade ?? ""),
+      date_of_birth: String(user.date_of_birth ?? ""),
+      emergency_contact_name: String(user.emergency_contact_name ?? ""),
+      emergency_contact_relation: String(user.emergency_contact_relation ?? ""),
+      emergency_contact_phone: String(user.emergency_contact_phone ?? ""),
+      preferred_committee: String(user.preferred_committee ?? ""),
+      allocated_country: String(user.allocated_country ?? ""),
+      dietary_restrictions: String(user.dietary_restrictions ?? ""),
+      role: String(user.role ?? ""),
+      status: String(user.status ?? ""),
     });
     setDrawerOpen(true);
-    
-    // Fetch additional drawer data
-    const [{ data: userNotes }, { data: history }] = await Promise.all([
-      supabase.from("user_notes").select("*, author:author_id(full_name)").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("audit_logs").select("*, actor:actor_id(full_name)").eq("target_id", user.id).order("performed_at", { ascending: false })
+
+    const [{ data: userNotes }, { data: history }, histRes] = await Promise.all([
+      supabase.from("user_notes").select("*, author:author_id(id, full_name)").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("audit_logs").select("*, actor:actor_id(id, full_name)").eq("target_id", user.id).order("performed_at", { ascending: false }),
+      fetch(`/api/eb/registrations/field-history?user_id=${user.id}`).then((r) => r.json()),
     ]);
     setNotes(userNotes || []);
     setAuditHistory(history || []);
+    setFieldHistory(histRes.history || []);
   };
 
-  const runAction = async (action: string, payload: any = {}) => {
+  const runAction = async (action: string, payload: Record<string, unknown> = {}) => {
     setSubmitting(true);
-    const res = await fetch("/api/eb/registrations/action", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, user_id: selectedUser.id, ebUserId: currentUser, ...payload }),
-    });
-    setSubmitting(false);
-    if (res.ok) {
-      setShowRejectModal(false);
-      setShowSuspendModal(false);
-      setNoteContent("");
-      queryClient.invalidateQueries({ queryKey: ['eb-registrations'] });  
-      // Update selectedUser local state from refreshed rows
-      const { data: refreshedUser } = await supabase.from("users").select(`*, committee_assignments(id, country, seat_number, committees(id, name))`).eq("id", selectedUser.id).single();
-      if (refreshedUser) openDrawer(refreshedUser);
-    } else {
-      alert("Action failed. Check console.");
+    try {
+      const res = await fetch("/api/eb/registrations/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, user_id: selectedUser.id, ...payload }),
+      });
+      if (res.ok) {
+        setShowRejectModal(false);
+        setShowSuspendModal(false);
+        setNoteContent("");
+        queryClient.invalidateQueries({ queryKey: ["eb-registrations"] });
+        const { data: refreshedUser } = await supabase
+          .from("users")
+          .select(
+            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments(id, committee_id, country, seat_number, committees(id, name))`,
+          )
+          .eq("id", selectedUser.id)
+          .single();
+        if (refreshedUser) await openDrawer(refreshedUser);
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error || "Action failed.");
+      }
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const saveProfile = async () => {
+    if (
+      !window.confirm(
+        "This will permanently update this user in the database. A full history entry will be stored for each changed field. Continue?",
+      )
+    ) {
+      return;
+    }
+    setSaveProfileLoading(true);
+    try {
+      const res = await fetch("/api/eb/registrations/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_user_data",
+          user_id: selectedUser.id,
+          confirmDatabaseWrite: true,
+          updatedData: profileDraft,
+        }),
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["eb-registrations"] });
+        const { data: refreshedUser } = await supabase
+          .from("users")
+          .select(
+            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments(id, committee_id, country, seat_number, committees(id, name))`,
+          )
+          .eq("id", selectedUser.id)
+          .single();
+        if (refreshedUser) await openDrawer(refreshedUser);
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error || "Save failed.");
+      }
+    } finally {
+      setSaveProfileLoading(false);
+    }
+  };
+
+  const revertField = async (historyId: string) => {
+    if (!window.confirm("Revert this field to the previous value stored in history?")) return;
+    await runAction("revert_user_field", { history_id: historyId });
   };
 
   const exportCSV = () => {
@@ -207,7 +295,7 @@ export default function RegistrationsPage() {
           </select>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={filterCommittee} onChange={e => setFilterCommittee(e.target.value)}>
             <option value="ALL">All Committees</option>
-            {committees.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {committees.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.count})</option>)}
           </select>
         </div>
       </Card>
@@ -229,6 +317,7 @@ export default function RegistrationsPage() {
                 <td colSpan={5} className="p-0 relative">
                   {virtualItems.map((virtualItem) => {
                     const row = allRows[virtualItem.index];
+                    if (!row) return null;
                     return (
                       <div
                         key={row.id}
@@ -279,7 +368,7 @@ export default function RegistrationsPage() {
             <div className="p-6 border-b border-border-subtle bg-bg-card flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-bg-raised border border-border-subtle flex items-center justify-center text-lg font-bold">
-                  {selectedUser.full_name.substring(0, 2).toUpperCase()}
+                  {(String(selectedUser.full_name || "?").slice(0, 2)).toUpperCase()}
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-text-primary">{selectedUser.full_name}</h2>
@@ -301,15 +390,30 @@ export default function RegistrationsPage() {
                 <div className="flex flex-wrap gap-2">
                   {selectedUser.status === "PENDING" && (
                     <>
-                      <Button onClick={() => runAction("approve")} disabled={submitting}>Approve User</Button>
-                      <Button variant="outline" onClick={() => setShowRejectModal(true)}>Reject</Button>
+                      <Button onClick={() => void runAction("approve")} disabled={submitting}>
+                        {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                        Approve User
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowRejectModal(true)} disabled={submitting}>
+                        Reject
+                      </Button>
                     </>
                   )}
                   {selectedUser.status === "APPROVED" && (
-                    <Button variant="outline" className="border-status-rejected-border text-status-rejected-text" onClick={() => setShowSuspendModal(true)}>Suspend User</Button>
+                    <Button
+                      variant="outline"
+                      className="border-status-rejected-border text-status-rejected-text"
+                      onClick={() => setShowSuspendModal(true)}
+                      disabled={submitting}
+                    >
+                      Suspend User
+                    </Button>
                   )}
                   {selectedUser.status === "SUSPENDED" && (
-                    <Button onClick={() => runAction("reinstate")} disabled={submitting}>Reinstate User</Button>
+                    <Button onClick={() => void runAction("reinstate")} disabled={submitting}>
+                      {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                      Reinstate User
+                    </Button>
                   )}
                 </div>
               </div>
@@ -317,54 +421,159 @@ export default function RegistrationsPage() {
               {/* Role & Committee */}
               <div className="space-y-4 bg-bg-card p-4 rounded-card border border-border-subtle">
                 <SectionLabel>Assignment & Role</SectionLabel>
-                <div>
-                  <label className="text-xs text-text-dimmed mb-1 block">Role</label>
-                  <select 
-                    className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" 
-                    value={selectedUser.role} 
-                    onChange={(e) => runAction("change_role", { role: e.target.value })}
-                    disabled={submitting}
-                  >
-                    <option value="DELEGATE">Delegate</option>
-                    <option value="CHAIR">Chair</option>
-                    <option value="CO_CHAIR">Co-Chair</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="MEDIA">Media</option>
-                    <option value="SECURITY">Security</option>
-                    <option value="EXECUTIVE_BOARD">Executive Board</option>
-                    <option value="SECRETARY_GENERAL">Secretary General</option>
-                    <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
-                  </select>
-                </div>
+                <p className="text-xs text-text-dimmed">
+                  Role and status are edited in the registration form below; save profile to apply (updates database with history).
+                </p>
                 
                 <div className="pt-4 border-t border-border-subtle space-y-3">
                   <label className="text-xs text-text-dimmed block">Committee Assignment</label>
                   <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={assignForm.committee_id} onChange={(e) => setAssignForm({...assignForm, committee_id: e.target.value})}>
                     <option value="">No Committee</option>
-                    {committees.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.count} del)</option>)}
+                    {committees.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.count})</option>)}
                   </select>
                   <div className="flex gap-2">
                     <Input placeholder="Country/Character" className="flex-1" value={assignForm.country} onChange={(e) => setAssignForm({...assignForm, country: e.target.value})} />
                     <Input placeholder="Seat" className="w-20" value={assignForm.seat_number} onChange={(e) => setAssignForm({...assignForm, seat_number: e.target.value})} />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" disabled={!assignForm.committee_id || submitting} onClick={() => runAction("assign_committee", assignForm)}>Save Assignment</Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      disabled={!assignForm.committee_id || submitting}
+                      onClick={() => void runAction("assign_committee", assignForm)}
+                    >
+                      {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-1" /> : null}
+                      Save Assignment
+                    </Button>
                     {selectedUser.committee_assignments?.length > 0 && (
-                      <Button size="sm" variant="outline" disabled={submitting} onClick={() => runAction("remove_assignment")}>Remove</Button>
+                      <Button size="sm" variant="outline" disabled={submitting} onClick={() => void runAction("remove_assignment")}>
+                        Remove
+                      </Button>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Registration Details */}
+              {/* Registration Details — full edit */}
+              <div className="space-y-4">
+                <SectionLabel>Edit registration (database)</SectionLabel>
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Full name</label>
+                    <Input value={profileDraft.full_name || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, full_name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Email</label>
+                    <Input type="email" value={profileDraft.email || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, email: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Phone</label>
+                      <Input value={profileDraft.phone_number || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, phone_number: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Grade</label>
+                      <Input value={profileDraft.grade || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, grade: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Date of birth</label>
+                    <Input type="date" value={profileDraft.date_of_birth?.slice(0, 10) || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, date_of_birth: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Emergency contact name</label>
+                    <Input value={profileDraft.emergency_contact_name || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, emergency_contact_name: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Relation</label>
+                      <Input value={profileDraft.emergency_contact_relation || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, emergency_contact_relation: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Emergency phone</label>
+                      <Input value={profileDraft.emergency_contact_phone || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, emergency_contact_phone: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Preferred committee</label>
+                    <Input value={profileDraft.preferred_committee || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, preferred_committee: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Allocated country</label>
+                    <Input value={profileDraft.allocated_country || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, allocated_country: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-dimmed block mb-1">Dietary restrictions</label>
+                    <Textarea rows={2} value={profileDraft.dietary_restrictions || ""} onChange={(e) => setProfileDraft((d) => ({ ...d, dietary_restrictions: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Role</label>
+                      <select
+                        className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
+                        value={profileDraft.role || ""}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, role: e.target.value }))}
+                      >
+                        <option value="DELEGATE">Delegate</option>
+                        <option value="CHAIR">Chair</option>
+                        <option value="CO_CHAIR">Co-Chair</option>
+                        <option value="ADMIN">Admin</option>
+                        <option value="MEDIA">Media</option>
+                        <option value="SECURITY">Security</option>
+                        <option value="EXECUTIVE_BOARD">Executive Board</option>
+                        <option value="SECRETARY_GENERAL">Secretary General</option>
+                        <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
+                        <option value="PRESS">Press</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-text-dimmed block mb-1">Status</label>
+                      <select
+                        className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
+                        value={profileDraft.status || ""}
+                        onChange={(e) => setProfileDraft((d) => ({ ...d, status: e.target.value }))}
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="APPROVED">APPROVED</option>
+                        <option value="REJECTED">REJECTED</option>
+                        <option value="SUSPENDED">SUSPENDED</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-text-dimmed">Registered: {selectedUser.created_at ? new Date(String(selectedUser.created_at)).toLocaleString() : "—"}</p>
+                  <Button disabled={saveProfileLoading || submitting} onClick={() => void saveProfile()} className="w-full">
+                    {saveProfileLoading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                    Save profile changes
+                  </Button>
+                </div>
+              </div>
+
+              {/* Per-field history */}
               <div>
-                <SectionLabel>Registration Details</SectionLabel>
-                <div className="mt-3 grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                  <div><p className="text-text-dimmed text-xs">Date of Birth</p><p>{selectedUser.date_of_birth || 'N/A'}</p></div>
-                  <div><p className="text-text-dimmed text-xs">Grade</p><p>{selectedUser.grade || 'N/A'}</p></div>
-                  <div><p className="text-text-dimmed text-xs">Phone</p><p>{selectedUser.phone_number || 'N/A'}</p></div>
-                  <div><p className="text-text-dimmed text-xs">Registered</p><p>{new Date(selectedUser.created_at).toLocaleString()}</p></div>
-                  <div className="col-span-2 pt-2 border-t border-border-subtle"><p className="text-text-dimmed text-xs mb-1">Emergency Contact</p><p>{selectedUser.emergency_contact_name || 'N/A'} ({selectedUser.emergency_contact_relation || 'N/A'}) - {selectedUser.emergency_contact_phone || 'N/A'}</p></div>
+                <SectionLabel>Field change history</SectionLabel>
+                <p className="text-xs text-text-dimmed mb-2">Revert restores the previous value and records a new history row.</p>
+                <div className="space-y-3 max-h-56 overflow-y-auto">
+                  {EDITABLE_FIELDS_LIST.map((field) => {
+                    const rows = fieldHistory.filter((h) => h.field_name === field);
+                    if (rows.length === 0) return null;
+                    return (
+                      <div key={field} className="border border-border-subtle rounded-card p-2 text-xs">
+                        <p className="font-semibold text-text-primary mb-1">{field}</p>
+                        {rows.slice(0, 8).map((h) => (
+                          <div key={h.id} className="flex justify-between gap-2 py-1 border-t border-border-subtle first:border-0">
+                            <span className="text-text-dimmed shrink-0">{new Date(h.changed_at).toLocaleString()}</span>
+                            <span className="text-text-secondary truncate" title={`${h.old_value} → ${h.new_value}`}>
+                              {h.old_value || "∅"} → {h.new_value || "∅"}
+                            </span>
+                            <button type="button" className="text-status-warning-text shrink-0 underline" disabled={submitting} onClick={() => void revertField(h.id)}>
+                              Revert
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {fieldHistory.length === 0 ? <p className="text-sm text-text-dimmed">No field edits recorded yet.</p> : null}
                 </div>
               </div>
 
@@ -374,7 +583,10 @@ export default function RegistrationsPage() {
                 <div className="mt-3 space-y-3">
                   <div className="flex gap-2">
                     <Textarea rows={2} placeholder="Add a note (visible only to EB/Admin)" className="flex-1" value={noteContent} onChange={e => setNoteContent(e.target.value)} />
-                    <Button disabled={!noteContent.trim() || submitting} onClick={() => runAction("add_note", { content: noteContent })}>Save</Button>
+                    <Button disabled={!noteContent.trim() || submitting} onClick={() => void runAction("add_note", { content: noteContent })}>
+                      {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                      Save
+                    </Button>
                   </div>
                   <div className="space-y-2">
                     {notes.map(n => (
@@ -418,7 +630,14 @@ export default function RegistrationsPage() {
             <Textarea rows={3} placeholder="Optional rejection reason (sent in email)" value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="mb-4" />
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setShowRejectModal(false)}>Cancel</Button>
-              <Button className="flex-1 border-status-rejected-border text-status-rejected-text" onClick={() => runAction("reject", { reason: rejectReason })}>Confirm Rejection</Button>
+              <Button
+                className="flex-1 border-status-rejected-border text-status-rejected-text"
+                disabled={submitting}
+                onClick={() => void runAction("reject", { reason: rejectReason })}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                Confirm Rejection
+              </Button>
             </div>
           </div>
         </div>
@@ -431,7 +650,14 @@ export default function RegistrationsPage() {
             <Textarea rows={3} placeholder="Reason for suspension" value={suspendReason} onChange={e => setSuspendReason(e.target.value)} className="mb-4" />
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setShowSuspendModal(false)}>Cancel</Button>
-              <Button className="flex-1 border-status-rejected-border text-status-rejected-text" disabled={!suspendReason.trim()} onClick={() => runAction("suspend", { reason: suspendReason })}>Confirm Suspension</Button>
+              <Button
+                className="flex-1 border-status-rejected-border text-status-rejected-text"
+                disabled={!suspendReason.trim() || submitting}
+                onClick={() => void runAction("suspend", { reason: suspendReason })}
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                Confirm Suspension
+              </Button>
             </div>
           </div>
         </div>

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { runOnUserApproved } from '@/lib/automation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,13 +21,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email, password and full name are required' }, { status: 400 });
     }
 
-    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(department) && !preferred_committee) {
+    const emailNorm = email.trim().toLowerCase();
+
+    const { data: existingProfile } = await supabaseAdmin.from('users').select('id').eq('email', emailNorm).maybeSingle();
+    if (existingProfile) {
+      return NextResponse.json(
+        { error: 'This email is already registered. Please try logging in instead.' },
+        { status: 400 },
+      );
+    }
+
+    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(department) && (!preferred_committee || preferred_committee === '')) {
+      console.log('Validation failed: department=', department, 'preferred_committee=', preferred_committee);
       return NextResponse.json({ error: 'Committee selection is required for your role' }, { status: 400 });
     }
 
     // 1. Create auth user
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
+      email: emailNorm,
       password,
       email_confirm: false,
     });
@@ -43,11 +56,13 @@ export async function POST(request: NextRequest) {
 
     // 2. Create user profile in 'users' table
     const autoApprove = settings?.auto_approve_registrations;
-    
+    const password_hash = await bcrypt.hash(password, 12);
+
     const { error: profileError } = await supabaseAdmin.from('users').insert({
       id: authData.user.id,
-      email,
+      email: emailNorm,
       full_name,
+      password_hash,
       role: department,
       status: autoApprove ? 'APPROVED' : 'PENDING',
       date_of_birth,
@@ -68,14 +83,31 @@ export async function POST(request: NextRequest) {
     }
 
     if (autoApprove) {
-      try { await supabaseAdmin.auth.admin.updateUserById(authData.user.id, { email_confirm: true }); } catch { /* ignore */ }
+      try {
+        await (supabaseAdmin as { auth: { admin: { updateUserById: (id: string, p: { email_confirm: boolean }) => Promise<unknown> } } }).auth.admin.updateUserById(authData.user.id, {
+          email_confirm: true,
+        });
+      } catch {
+        /* ignore */
+      }
+      void runOnUserApproved(authData.user.id, authData.user.id);
     }
 
     // 3. Auto-assign committee assignment if preferred_committee is provided (for ADMIN/CHAIR)
     if (['ADMIN', 'CHAIR', 'CO_CHAIR'].includes(department) && preferred_committee) {
-      // Allow partial match (e.g. 'ECOSOC' vs 'Economic and Social Council' if user provides shorthand)
-      const { data: committees } = await supabaseAdmin.from('committees').select('id, name');
-      const committee = committees?.find(c => c.name === preferred_committee || preferred_committee.includes(c.name) || c.name.includes(preferred_committee));
+      const pref = preferred_committee.trim();
+      const prefU = pref.toUpperCase();
+      const { data: committees } = await supabaseAdmin.from('committees').select('id, name, abbreviation');
+      const committee = committees?.find((c) => {
+        const abbr = (c.abbreviation as string | null | undefined)?.toUpperCase();
+        return (
+          c.name === pref ||
+          (abbr && abbr === prefU) ||
+          (abbr && prefU.includes(abbr)) ||
+          pref.includes(c.name) ||
+          c.name.includes(pref)
+        );
+      });
       
       if (committee) {
         await supabaseAdmin.from('committee_assignments').insert({
@@ -84,8 +116,19 @@ export async function POST(request: NextRequest) {
         });
       }
     } else if (autoApprove && department === 'DELEGATE' && preferred_committee) {
-      const { data: committees } = await supabaseAdmin.from('committees').select('id, name');
-      const committee = committees?.find(c => c.name === preferred_committee || preferred_committee.includes(c.name) || c.name.includes(preferred_committee));
+      const pref = preferred_committee.trim();
+      const prefU = pref.toUpperCase();
+      const { data: committees } = await supabaseAdmin.from('committees').select('id, name, abbreviation');
+      const committee = committees?.find((c) => {
+        const abbr = (c.abbreviation as string | null | undefined)?.toUpperCase();
+        return (
+          c.name === pref ||
+          (abbr && abbr === prefU) ||
+          (abbr && prefU.includes(abbr)) ||
+          pref.includes(c.name) ||
+          c.name.includes(pref)
+        );
+      });
       if (committee) {
         await supabaseAdmin.from('committee_assignments').insert({
           user_id: authData.user.id,

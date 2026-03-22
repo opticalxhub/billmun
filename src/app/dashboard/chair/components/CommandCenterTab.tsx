@@ -42,7 +42,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
 
   const loadSpeakers = async () => {
     const { data } = await supabase
-      .from('speaker_lists')
+      .from('speakers_list')
       .select('*, delegate:delegate_id(full_name)')
       .eq('committee_id', ctx.committee.id)
       .in('status', ['QUEUED', 'SPEAKING'])
@@ -91,7 +91,19 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
     if (ctx.session?.id) {
       await supabase
         .from('committee_sessions')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ 
+          status: newStatus, 
+          debate_topic: details.topic || ctx.session.debate_topic,
+          speaking_time_limit: details.speakingTime || ctx.session.speaking_time_limit,
+          caucus_type: newStatus.includes('CAUCUS') ? (newStatus.includes('MODERATED') ? 'MODERATED' : 'UNMODERATED') : 'NONE',
+          caucus_duration: details.duration || null,
+          caucus_purpose: details.purpose || null,
+          break_type: details.break_type || null,
+          break_duration: details.duration || null,
+          session_summary: details.summary || null,
+          updated_at: new Date().toISOString(),
+          updated_by_id: ctx.user.id
+        })
         .eq('id', ctx.session.id);
     }
 
@@ -114,8 +126,8 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
       committee_id: ctx.committee.id,
       session_id: ctx.session?.id,
       event_type: 'STATUS_CHANGE',
-      title: `Session status changed to ${newStatus.replace(/_/g, ' ')}`,
-      description: details.topic || details.purpose || details.summary || null,
+      title: `Session status changed to ${STATUS_OPTIONS.find(opt => opt.value === newStatus)?.label || newStatus.replace(/_/g, ' ')}`,
+      description: details.topic || details.purpose || details.summary || (details.break_type ? `${details.break_type} Break` : null),
       metadata: details,
       created_by: ctx.user.id,
     });

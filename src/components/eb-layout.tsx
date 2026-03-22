@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { LogOut } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { Notepad } from './notepad';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview' },
@@ -17,6 +21,20 @@ const NAV_ITEMS = [
 ];
 
 export const EBLayout = ({ children, activeTab, onTabChange }: { children: React.ReactNode, activeTab: string, onTabChange: (id: string) => void }) => {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   return (
     <div className="flex flex-col min-h-screen font-inter bg-bg-base dark pb-14 md:pb-0">
       <nav className="h-20 border-b border-border-subtle bg-bg-card flex items-center px-4 md:px-8 justify-between shrink-0">
@@ -24,8 +42,15 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
           <img src="/billmun.png" alt="BILLMUN Logo" className="w-24 h-auto dark:invert-0 invert" />
           <span className="font-jotia-bold text-lg md:text-xl text-text-primary tracking-[0.15em] uppercase">Executive Board</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Link href="/" className="text-[10px] md:text-xs font-black uppercase tracking-widest text-text-dimmed hover:text-text-primary transition-all">Exit</Link>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Log Out
+          </button>
         </div>
       </nav>
 
@@ -66,8 +91,15 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
           </nav>
         </aside>
 
-        <main className="flex-1 p-8 overflow-y-auto">
-          {children}
+        <main className="flex-1 p-8 overflow-y-auto bg-bg-base">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div className="xl:col-span-8">
+              {children}
+            </div>
+            <div className="xl:col-span-4">
+              {userId && <Notepad dashboardKey="EB" userId={userId} />}
+            </div>
+          </div>
         </main>
       </div>
       <div className="fixed bottom-0 left-0 right-0 h-14 bg-bg-card border-t border-border-subtle md:hidden">

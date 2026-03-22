@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSecurityContext } from "@/lib/security-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { runOnSecurityIncidentHighOrCritical } from "@/lib/automation";
 
 export async function POST(req: NextRequest) {
   const ctx = await getSecurityContext();
@@ -28,21 +29,32 @@ export async function POST(req: NextRequest) {
   try {
     if (action === "create_incident") {
       const { type, location, desc, severity, action: immediateAction, notifyEb } = body;
-      const { data, error } = await supabaseAdmin.from("security_incidents").insert({
-        incident_type: type,
-        location,
-        description: desc,
-        severity,
-        immediate_action: immediateAction,
-        notify_eb: !!notifyEb,
-        reported_by: officerId,
-      }).select("id").single();
+      const requiresEb = !!notifyEb || severity === "HIGH" || severity === "CRITICAL";
+      const { data, error } = await supabaseAdmin
+        .from("security_incidents")
+        .insert({
+          incident_type: type,
+          location,
+          description: desc,
+          severity,
+          immediate_action: immediateAction,
+          requires_eb_notification: requiresEb,
+          status: "OPEN",
+          reported_by: officerId,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
 
       await logAudit(`Created ${severity} incident at ${location}`, "INCIDENT", data.id);
 
-      if (notifyEb || severity === "HIGH" || severity === "CRITICAL") {
-        const { data: ebRows } = await supabaseAdmin.from("users").select("id").in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"]);
+      if (severity === "HIGH" || severity === "CRITICAL") {
+        void runOnSecurityIncidentHighOrCritical(type, location, severity, desc || "");
+      } else if (requiresEb) {
+        const { data: ebRows } = await supabaseAdmin
+          .from("users")
+          .select("id")
+          .in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"]);
         if (ebRows?.length) {
           await supabaseAdmin.from("notifications").insert(
             ebRows.map((row: { id: string }) => ({
@@ -50,7 +62,7 @@ export async function POST(req: NextRequest) {
               title: `Security Incident (${severity})`,
               message: `${type} at ${location}`,
               type: "WARNING",
-            }))
+            })),
           );
         }
       }
@@ -76,11 +88,11 @@ export async function POST(req: NextRequest) {
     if (action === "badge_checkin") {
       const { user_id, location } = body;
       await supabaseAdmin.from("users").update({ badge_status: "ACTIVE" }).eq("id", user_id);
-      await supabaseAdmin.from("security_badge_events").insert({ 
-        user_id, 
-        event_type: "CHECKIN", 
-        location, 
-        officer_id: officerId 
+      await supabaseAdmin.from("security_badge_events").insert({
+        user_id,
+        action: "CHECKIN",
+        location,
+        officer_id: officerId,
       });
       await logAudit(`Checked in delegate`, "BADGE", user_id);
       return NextResponse.json({ ok: true });
@@ -88,10 +100,10 @@ export async function POST(req: NextRequest) {
 
     if (action === "badge_checkout") {
       const { user_id } = body;
-      await supabaseAdmin.from("security_badge_events").insert({ 
-        user_id, 
-        event_type: "CHECKOUT", 
-        officer_id: officerId 
+      await supabaseAdmin.from("security_badge_events").insert({
+        user_id,
+        action: "CHECKOUT",
+        officer_id: officerId,
       });
       await supabaseAdmin.from("users").update({ current_zone_id: null }).eq("id", user_id);
       await logAudit(`Checked out delegate`, "BADGE", user_id);
@@ -101,11 +113,11 @@ export async function POST(req: NextRequest) {
     if (action === "flag_badge") {
       const { user_id, type, reason } = body;
       await supabaseAdmin.from("users").update({ badge_status: type }).eq("id", user_id);
-      await supabaseAdmin.from("security_badge_events").insert({ 
-        user_id: user_id, 
-        event_type: type, 
-        reason, 
-        officer_id: officerId 
+      await supabaseAdmin.from("security_badge_events").insert({
+        user_id,
+        action: type,
+        reason,
+        officer_id: officerId,
       });
       await logAudit(`Flagged badge as ${type}`, "BADGE", user_id);
       if (type === "SUSPENDED") {
@@ -120,7 +132,7 @@ export async function POST(req: NextRequest) {
     if (action === "mark_badge_lost") {
       const { user_id } = body;
       await supabaseAdmin.from("users").update({ badge_status: "LOST" }).eq("id", user_id);
-      await supabaseAdmin.from("security_badge_events").insert({ user_id, event_type: "LOST", officer_id: officerId });
+      await supabaseAdmin.from("security_badge_events").insert({ user_id, action: "LOST", officer_id: officerId });
       await logAudit(`Marked badge lost`, "BADGE", user_id);
       return NextResponse.json({ ok: true });
     }
@@ -128,7 +140,12 @@ export async function POST(req: NextRequest) {
     if (action === "bulk_checkin") {
       const { user_ids } = body;
       for (const uid of user_ids) {
-        await supabaseAdmin.from("security_badge_events").insert({ user_id: uid, event_type: "CHECKIN", location: "Bulk", officer_id: officerId });
+        await supabaseAdmin.from("security_badge_events").insert({
+          user_id: uid,
+          action: "CHECKIN",
+          location: "Bulk",
+          officer_id: officerId,
+        });
       }
       await logAudit(`Bulk checked in ${user_ids.length} delegates`, "BADGE", "BULK");
       return NextResponse.json({ ok: true });
@@ -137,7 +154,12 @@ export async function POST(req: NextRequest) {
     if (action === "move_delegate") {
         const { user_id, zone_id } = body;
       await supabaseAdmin.from("users").update({ current_zone_id: zone_id }).eq("id", user_id);
-      await supabaseAdmin.from("security_zone_logs").insert({ user_id, zone_id, officer_id: officerId });
+      await supabaseAdmin.from("security_zone_logs").insert({
+        user_id,
+        zone_id,
+        action: "ZONE_UPDATE",
+        officer_id: officerId,
+      });
       await logAudit(`Moved delegate to zone`, "ZONE", user_id);
       return NextResponse.json({ ok: true });
     }
@@ -155,7 +177,14 @@ export async function POST(req: NextRequest) {
 
     if (action === "create_zone") {
       const { name, description, capacity, roles, status } = body;
-      await supabaseAdmin.from("security_access_zones").insert({ name, description, capacity, allowed_roles: roles, status });
+      await supabaseAdmin.from("security_access_zones").insert({
+        name,
+        description,
+        capacity,
+        authorized_roles: roles || [],
+        status,
+        is_active: true,
+      });
       await logAudit(`Created access zone ${name}`, "ZONE", name);
       return NextResponse.json({ ok: true });
     }

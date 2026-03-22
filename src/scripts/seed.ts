@@ -38,7 +38,7 @@ async function main() {
 
     // 2. Create Users (Delegate, Chair, Admin, Security, Media, EB)
     const roles = ['DELEGATE', 'CHAIR', 'ADMIN', 'SECURITY', 'MEDIA', 'EXECUTIVE_BOARD'];
-    const users = roles.map((role, i) => ({
+    const users = roles.map((role) => ({
       id: uuidv4(),
       email: `test_${role.toLowerCase()}@billmun.sa`,
       full_name: `Test ${role}`,

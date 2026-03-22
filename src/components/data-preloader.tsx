@@ -18,7 +18,7 @@ export function DataPreloader() {
       queryClient.prefetchQuery({
         queryKey: ['user-profile'],
         queryFn: async () => {
-          const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+          const { data, error } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', userId).single();
           if (error) throw error;
           return data;
         },

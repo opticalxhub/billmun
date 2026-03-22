@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
-import { X, Search, Filter, Shield, Clock, MapPin, User, Activity, AlertCircle } from "lucide-react";
+import { X } from "lucide-react";
 
 export default function LiveMonitorPage() {
   const [rows, setRows] = useState<any[]>([]);

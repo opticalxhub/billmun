@@ -40,7 +40,7 @@ export function PointsAndMotionsLog({ committee, setSessionState }: { committee:
   const fetchLogs = async () => {
     const { data } = await supabase
       .from('points_and_motions')
-      .select('*, users(full_name)')
+      .select('*, users:delegate_id(id, full_name)')
       .eq('committee_id', committee.id)
       .order('created_at', { ascending: false });
     
@@ -50,11 +50,12 @@ export function PointsAndMotionsLog({ committee, setSessionState }: { committee:
   const fetchDelegates = async () => {
     const { data } = await supabase
       .from('committee_assignments')
-      .select('users(id, full_name)')
+      .select('user:user_id(id, full_name)')
       .eq('committee_id', committee.id);
       
     if (data) {
-      setDelegates(data.map((d: any) => d.users).filter(Boolean));
+      const uniqueDelegates = Array.from(new Map(data.map((d: any) => [d.user?.id, d.user])).values()).filter(Boolean);
+      setDelegates(uniqueDelegates);
     }
   };
 
@@ -66,10 +67,10 @@ export function PointsAndMotionsLog({ committee, setSessionState }: { committee:
       .insert([{
         committee_id: committee.id,
         type: newType,
-        raised_by: newDelegate || null,
+        delegate_id: newDelegate || null,
         outcome: newOutcome
       }])
-      .select('*, users(full_name)')
+      .select('*, users:delegate_id(id, full_name)')
       .single();
 
     if (!error && data) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
@@ -46,7 +46,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
         .select('*')
         .eq('committee_id', ctx.committee.id)
         .eq('rated_by', ctx.user.id)
-        .limit(50);
+        .limit(100);
       const r: Record<string, Rating> = {};
       (data || []).forEach((d: any) => {
         r[d.delegate_id] = {
@@ -66,11 +66,11 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
       const { data } = await supabase
-        .from('speaker_lists')
+        .from('speakers_list')
         .select('delegate_id, actual_speaking_time')
         .eq('committee_id', ctx.committee.id)
         .eq('status', 'COMPLETED')
-        .limit(50);
+        .limit(100);
       const s: Record<string, { time: number; count: number }> = {};
       (data || []).forEach((r: any) => {
         if (!s[r.delegate_id]) s[r.delegate_id] = { time: 0, count: 0 };
@@ -168,8 +168,9 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     const r = ratings[delegateId];
     const s = speakingStats[delegateId];
     const ratingAvg = r ? (r.argumentation_quality + r.diplomacy + r.preparation) / 3 : 0;
-    const speechScore = s ? Math.min(s.count * 0.5, 2.5) : 0;
-    return Math.round((ratingAvg + speechScore) * 10) / 10;
+    // Base score from ratings + activity bonus (0.5 per speech, max 2.5)
+    const base = ratingAvg + (s ? Math.min(s.count * 0.5, 2.5) : 0);
+    return Math.round(base * 10) / 10;
   }, [ratings, speakingStats]);
 
   const sortedDelegates = useMemo(() => [...ctx.delegates].sort((a, b) => {
@@ -233,7 +234,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
                     <td className="p-3" onClick={e => e.stopPropagation()}>
                       <StarRating value={r.preparation} onChange={v => saveRating(dId, 'preparation', v)} />
                     </td>
-                    <td className="p-3 text-sm font-bold text-text-primary">{getScore(dId)}</td>
+                    <td className="p-3 text-sm font-bold text-text-primary">{score}</td>
                   </tr>
                 );
               })}
@@ -244,7 +245,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
         {/* Mobile Cards */}
         <div className="md:hidden space-y-2">
           {sortedDelegates.map((d, i) => {
-            const dId = d.user_id || d.user?.id;
+            const dId = d.id;
             const r = ratings[dId] || { argumentation_quality: 0, diplomacy: 0, preparation: 0, private_notes: '' };
             const s = speakingStats[dId] || { time: 0, count: 0 };
             const expanded = expandedDelegate === dId;
@@ -254,7 +255,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-text-tertiary w-6">#{i + 1}</span>
                     <div>
-                      <p className="text-sm font-bold text-text-primary">{d.user?.full_name}</p>
+                      <p className="text-sm font-bold text-text-primary">{d.full_name}</p>
                       <p className="text-xs text-text-dimmed">{d.country} · {s.count} speeches · {fmt(s.time)}</p>
                     </div>
                   </div>
@@ -295,7 +296,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
       {expandedDelegate && (
         <div className="hidden md:block">
           <Card>
-            <SectionLabel>Private Notes — {ctx.delegates.find(d => (d.user_id || d.user?.id) === expandedDelegate)?.user?.full_name}</SectionLabel>
+            <SectionLabel>Private Notes — {ctx.delegates.find(d => d.id === expandedDelegate)?.full_name}</SectionLabel>
             <Textarea
               rows={3}
               value={ratings[expandedDelegate]?.private_notes || ''}
@@ -324,8 +325,8 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
           <div className="space-y-3 p-4 bg-bg-raised rounded-card border border-border-subtle">
             <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={nomineeId} onChange={e => setNomineeId(e.target.value)}>
               <option value="">Select delegate...</option>
-              {ctx.delegates.filter(d => !nominees.some(n => n.delegate_id === (d.user_id || d.user?.id))).map(d => (
-                <option key={d.user_id || d.user?.id} value={d.user_id || d.user?.id}>{d.user?.full_name} — {d.country}</option>
+              {ctx.delegates.filter(d => !nominees.some(n => n.delegate_id === d.id)).map(d => (
+                <option key={d.id} value={d.id}>{d.full_name} — {d.country}</option>
               ))}
             </select>
             <Textarea rows={2} value={justification} onChange={e => setJustification(e.target.value)} placeholder="Written justification..." />

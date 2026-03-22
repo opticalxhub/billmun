@@ -14,6 +14,7 @@ import DelegatesTab from './components/DelegatesTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import AIToolsTab from './components/AIToolsTab';
 import PreparationTab from './components/PreparationTab';
+import { Notepad } from '@/components/notepad';
 import {
   DashboardAnimatedTabPanel,
   DashboardHeader,
@@ -97,27 +98,30 @@ export default function ChairDashboard() {
   });
 
   // useQuery for Delegates
-  const { data: delegates = [], isLoading: delegatesLoading } = useQuery({
+  const { data: delegates = [] } = useQuery({
     queryKey: ['committee-delegates', committee?.id],
     enabled: !!committee?.id,
     queryFn: async () => {
       const { data } = await supabase
-        .from('users')
+        .from('committee_assignments')
         .select(`
-          id,
-          full_name,
-          email,
-          role,
-          status,
-          committee_assignments!inner(id, country, seat_number)
+          user_id,
+          country,
+          seat_number,
+          user:user_id (
+            id,
+            full_name,
+            email,
+            role,
+            status
+          )
         `)
-        .eq('committee_assignments.committee_id', committee!.id);
+        .eq('committee_id', committee!.id);
       
-      // Transform to flatten committee_assignments
-      return (data || []).map((u: any) => ({
-        ...u,
-        country: u.committee_assignments?.[0]?.country || 'Unknown',
-        seat_number: u.committee_assignments?.[0]?.seat_number || '',
+      return (data || []).map((a: any) => ({
+        ...a.user,
+        country: a.country || 'Unknown',
+        seat_number: a.seat_number || '',
       }));
     },
     staleTime: 2 * 60 * 1000,
@@ -200,19 +204,25 @@ export default function ChairDashboard() {
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <DashboardAnimatedTabPanel activeKey={activeTab}>
-          {activeTab === 'Command Center' && <CommandCenterTab ctx={ctx} />}
-          {activeTab === 'Roll Call' && <RollCallTab ctx={ctx} />}
-          {activeTab === 'Timers' && <TimersTab ctx={ctx} />}
-          {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
-          {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
-          {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
-          {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
-          {activeTab === 'Analytics' && <AnalyticsTab ctx={ctx} />}
-          {activeTab === 'AI Tools' && <AIToolsTab ctx={ctx} />}
-          {activeTab === 'Preparation' && <PreparationTab ctx={ctx} />}
-        </DashboardAnimatedTabPanel>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-8">
+          <DashboardAnimatedTabPanel activeKey={activeTab}>
+            {activeTab === 'Command Center' && <CommandCenterTab ctx={ctx} />}
+            {activeTab === 'Roll Call' && <RollCallTab ctx={ctx} />}
+            {activeTab === 'Timers' && <TimersTab ctx={ctx} />}
+            {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
+            {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
+            {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
+            {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
+            {activeTab === 'Analytics' && <AnalyticsTab ctx={ctx} />}
+            {activeTab === 'AI Tools' && <AIToolsTab ctx={ctx} />}
+            {activeTab === 'Preparation' && <PreparationTab ctx={ctx} />}
+          </DashboardAnimatedTabPanel>
+        </div>
+        
+        <div className="xl:col-span-4 space-y-6">
+          <Notepad dashboardKey="CHAIR" userId={user?.id} />
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,6 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function verifyDevTestPassphrase(passphrase: string) {
   if (passphrase !== process.env.DEV_TEST_PASSPHRASE) {

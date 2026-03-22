@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import { GROQ_CHAT_MODEL } from "@/lib/ai";
 
 type ChairTool = "working_paper" | "debate_quality" | "speech_evaluator";
 
@@ -28,7 +29,7 @@ export async function runChairAi(tool: ChairTool, text: string): Promise<ChairAi
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "mixtral-8x7b-32768",
+      model: GROQ_CHAT_MODEL,
       max_tokens: 1200,
       messages: [{ role: "user", content: prompt }],
     });

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
-import { X, Search, Filter, FileText, Download, CheckCircle, AlertCircle, Clock, History, ExternalLink } from "lucide-react";
+import { X } from "lucide-react";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 export default function DocumentsDashPage() {

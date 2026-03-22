@@ -85,7 +85,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
     });
 
     // Log event
-    const delegateName = ctx.delegates.find(d => (d.id || d.user_id || d.user?.id) === delegateId)?.full_name || 'Unknown';
+    const delegateName = ctx.delegates.find(d => d.id === delegateId)?.full_name || 'Unknown';
     const typeLabel = TYPES.find(t => t.value === type)?.label || type;
     await supabase.from('session_events').insert({
       committee_id: ctx.committee.id,
@@ -129,8 +129,8 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
             <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={delegateId} onChange={e => setDelegateId(e.target.value)}>
               <option value="">Select delegate...</option>
               {ctx.delegates.map(d => (
-                <option key={d.user_id || d.user?.id} value={d.user_id || d.user?.id}>
-                  {d.user?.full_name || 'Unknown'} — {d.country}
+                <option key={d.id} value={d.id}>
+                  {d.full_name || 'Unknown'} — {d.country}
                 </option>
               ))}
             </select>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminContext } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { runOnDocumentStatusChanged } from "@/lib/automation";
 
 const VALID_PHYSICAL_STATUSES = [
   "Present In Session",
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
       if (!user_id || !physical_status) {
         return NextResponse.json({ error: "Missing status fields" }, { status: 400 });
       }
+      if (!VALID_PHYSICAL_STATUSES.includes(physical_status)) {
+        return NextResponse.json({ error: "Invalid physical status" }, { status: 400 });
+      }
       const inCommittee = await assertDelegateInCommittee(user_id, committee_id);
       if (!inCommittee) {
         return NextResponse.json({ error: "Forbidden: delegate not in assigned committee" }, { status: 403 });
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
           changed_by: adminUserId,
         });
 
-      if (["LAVATORY_BREAK", "MEDICAL_BREAK", "MISSING"].includes(physical_status)) {
+      if (["Lavatory Break", "Medical Break", "Missing"].includes(physical_status)) {
         const { data: securityUsers } = await supabaseAdmin.from("users").select("id").eq("role", "SECURITY");
         if (securityUsers?.length) {
           await supabaseAdmin.from("notifications").insert(
@@ -146,6 +150,9 @@ export async function POST(request: NextRequest) {
       if (!document_id || !status) {
         return NextResponse.json({ error: "Missing document review fields" }, { status: 400 });
       }
+      if (["NEEDS_REVISION", "REJECTED"].includes(status) && !String(feedback || "").trim()) {
+        return NextResponse.json({ error: "Feedback is required for this outcome" }, { status: 400 });
+      }
       const { data: doc } = await supabaseAdmin
         .from("documents")
         .select("id, committee_id, user_id")
@@ -164,13 +171,7 @@ export async function POST(request: NextRequest) {
         })
         .eq("id", document_id);
 
-      await supabaseAdmin.from("notifications").insert({
-        user_id: doc.user_id,
-        title: "Document status updated",
-        message: `Your document review status is now ${status}.`,
-        type: status === "APPROVED" ? "SUCCESS" : "INFO",
-        link: "/documents",
-      });
+      void runOnDocumentStatusChanged(document_id, doc.user_id, status, feedback, adminUserId);
       return NextResponse.json({ success: true });
     }
 
@@ -193,7 +194,8 @@ export async function POST(request: NextRequest) {
         title: `Document Flagged: ${doc.id}`,
         description: note,
         created_by: adminUserId,
-        status: "PENDING",
+        assigned_admin_id: adminUserId,
+        status: "TODO",
         priority: "MEDIUM",
       });
       return NextResponse.json({ success: true });
@@ -212,7 +214,10 @@ export async function POST(request: NextRequest) {
           committee_id: committee_id,
           title: title.trim(),
           body: messageBody.trim(),
-          sent_by: adminUserId,
+          author_id: adminUserId,
+          is_pinned: false,
+          target_roles: [],
+          is_active: true,
         })
         .select("*")
         .single();

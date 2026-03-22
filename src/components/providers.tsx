@@ -12,7 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Session refresh mechanism
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'TOKEN_REFRESHED') {
         console.log('Token refreshed successfully');
       }

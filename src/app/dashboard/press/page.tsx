@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardAnimatedTabPanel, DashboardHeader, DashboardLoadingState, DashboardTabBar } from '@/components/dashboard-shell';
+import { Notepad } from '@/components/notepad';
 
 type TabName = 'Overview' | 'Coverage Planning' | 'Upload Media' | 'Press Releases' | 'Media Gallery' | 'Press Guidelines' | 'My Stats';
 const TABS: TabName[] = ['Overview', 'Coverage Planning', 'Upload Media', 'Press Releases', 'Media Gallery', 'Press Guidelines', 'My Stats'];
@@ -30,7 +31,7 @@ export default function PressDashboard() {
     queryFn: async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
-      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).single();
       return data;
     },
     staleTime: 5 * 60 * 1000,
@@ -65,7 +66,7 @@ export default function PressDashboard() {
   const uploadMediaMutation = useMutation({
     mutationFn: async ({ file, url }: { file: File, url: string }) => {
       const { error } = await supabase.from('media_gallery').insert({
-        uploader_id: user.id,
+        uploader_id: user?.id || null,
         media_url: url,
         caption: caption,
         title: mediaTitle || null,
@@ -134,7 +135,7 @@ export default function PressDashboard() {
   const submitPrMutation = useMutation({
     mutationFn: async ({ title, body }: { title: string, body: string }) => {
       const { error } = await supabase.from('press_releases').insert({
-        author_id: user.id,
+        author_id: user?.id || null,
         title,
         body,
         status: 'PENDING',
@@ -164,129 +165,154 @@ export default function PressDashboard() {
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader title="Media Dashboard" subtitle="Coverage planning, uploads, publishing, and analytics" />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <DashboardAnimatedTabPanel activeKey={activeTab}>
-          {activeTab === 'Overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card><SectionLabel>Assigned Today</SectionLabel><p className="text-3xl font-bold">{events.length}</p></Card>
-              <Card><SectionLabel>Pending Approval</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'PENDING').length}</p></Card>
-              <Card><SectionLabel>Approved</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'APPROVED').length}</p></Card>
-              <Card><SectionLabel>Latest Approved</SectionLabel><p className="text-xs text-text-dimmed">{media.find((m) => m.status === 'APPROVED')?.caption || 'None yet'}</p></Card>
-            </div>
-          )}
-
-          {activeTab === 'Coverage Planning' && (
-            <Card>
-              <SectionLabel>Conference Schedule</SectionLabel>
-              <div className="space-y-2">
-                {events.map((event) => (
-                  <div key={event.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
-                    <p className="text-sm font-semibold">{event.name}</p>
-                    <p className="text-xs text-text-dimmed">{event.location || 'TBD'} · {event.start_time ? new Date(event.start_time).toLocaleString() : 'No start time'}</p>
-                  </div>
-                ))}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-8">
+          <DashboardAnimatedTabPanel activeKey={activeTab}>
+            {activeTab === 'Overview' && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card><SectionLabel>Assigned Today</SectionLabel><p className="text-3xl font-bold">{events.length}</p></Card>
+                <Card><SectionLabel>Pending Approval</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'PENDING').length}</p></Card>
+                <Card><SectionLabel>Approved</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'APPROVED').length}</p></Card>
+                <Card><SectionLabel>Latest Approved</SectionLabel><p className="text-xs text-text-dimmed">{media.find((m) => m.status === 'APPROVED')?.caption || 'None yet'}</p></Card>
               </div>
-            </Card>
-          )}
+            )}
 
-          {activeTab === 'Upload Media' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {activeTab === 'Coverage Planning' && (
               <Card>
-                <SectionLabel>Upload</SectionLabel>
-                <div className="space-y-3">
-                  <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" onChange={handleFileChange} />
-                  <Input placeholder="Title" value={mediaTitle} onChange={(e) => setMediaTitle(e.target.value)} />
-                  <Input placeholder="Short description" value={caption} onChange={(e) => setCaption(e.target.value)} />
-                  <Input placeholder="Committee tag (optional)" value={mediaCommittee} onChange={(e) => setMediaCommittee(e.target.value)} />
-                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={mediaEvent} onChange={(e) => setMediaEvent(e.target.value)}>
-                    <option value="">Select event tag</option>
-                    {events.map((event) => <option key={event.id} value={event.name}>{event.name}</option>)}
-                  </select>
-                  {uploading ? (
-                    <div className="w-full h-2 rounded-full bg-bg-raised overflow-hidden border border-border-subtle">
-                      <div className="h-full bg-text-primary transition-all duration-150" style={{ width: `${uploadProgress}%` }} />
-                    </div>
-                  ) : null}
-                  <Button onClick={handleUpload} disabled={uploading || !file || !mediaTitle.trim() || !caption.trim()}>{uploading ? `Uploading ${uploadProgress}%` : 'Submit for Approval'}</Button>
-                </div>
-              </Card>
-              <Card>
-                <SectionLabel>My Uploads</SectionLabel>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {media.filter((m) => m.uploader_id === user.id).map((m) => (
-                    <div key={m.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
-                      <p className="text-xs">{m.caption || 'Untitled'}</p>
-                      <Badge variant={(m.status || 'pending').toLowerCase() as any}>{m.status}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'Press Releases' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card>
-                <SectionLabel>Create Press Release</SectionLabel>
-                <div className="space-y-3">
-                  <Input placeholder="Title" value={prTitle} onChange={(e) => setPrTitle(e.target.value)} />
-                  <Textarea rows={8} placeholder="Body" value={prBody} onChange={(e) => setPrBody(e.target.value)} />
-                  <p className="text-xs text-text-dimmed">{prBody.trim().split(/\s+/).filter(Boolean).length} words</p>
-                  <Button onClick={submitPressRelease}>Submit for Approval</Button>
-                </div>
-              </Card>
-              <Card>
-                <SectionLabel>My Press Releases</SectionLabel>
+                <SectionLabel>Conference Schedule</SectionLabel>
                 <div className="space-y-2">
-                  {pressReleases.filter((r) => r.author_id === user.id).map((r) => (
-                    <div key={r.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
-                      <p className="text-sm font-semibold">{r.title}</p>
-                      <Badge variant={(r.status || 'pending').toLowerCase() as any}>{r.status}</Badge>
+                  {events.map((event) => (
+                    <div key={event.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
+                      <p className="text-sm font-semibold">{event.name}</p>
+                      <p className="text-xs text-text-dimmed">{event.location || 'TBD'} · {event.start_time ? new Date(event.start_time).toLocaleString() : 'No start time'}</p>
                     </div>
                   ))}
                 </div>
               </Card>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'Media Gallery' && (
-            <Card>
-              <SectionLabel>Approved Gallery</SectionLabel>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                {media.filter((m) => m.status === 'APPROVED').map((m) => (
-                  <div key={m.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
-                    <p className="text-xs">{m.caption || 'Untitled media'}</p>
+            {activeTab === 'Upload Media' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card>
+                  <SectionLabel>Upload</SectionLabel>
+                  <div className="space-y-3">
+                    <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" onChange={handleFileChange} />
+                    <Input placeholder="Title" value={mediaTitle} onChange={(e) => setMediaTitle(e.target.value)} />
+                    <Input placeholder="Short description" value={caption} onChange={(e) => setCaption(e.target.value)} />
+                    <Input placeholder="Committee tag (optional)" value={mediaCommittee} onChange={(e) => setMediaCommittee(e.target.value)} />
+                    <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={mediaEvent} onChange={(e) => setMediaEvent(e.target.value)}>
+                      <option value="">Select event tag</option>
+                      {events.map((event) => <option key={event.id} value={event.name}>{event.name}</option>)}
+                    </select>
+                    {uploading ? (
+                      <div className="w-full h-2 rounded-full bg-bg-raised overflow-hidden border border-border-subtle">
+                        <div className="h-full bg-text-primary transition-all duration-150" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                    ) : null}
+                    <Button onClick={handleUpload} disabled={uploading || !file || !mediaTitle.trim() || !caption.trim()}>{uploading ? `Uploading ${uploadProgress}%` : 'Submit for Approval'}</Button>
                   </div>
-                ))}
+                </Card>
+                <Card>
+                  <SectionLabel>My Uploads</SectionLabel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {media.filter((m) => m.uploader_id === user.id).map((m) => (
+                      <div key={m.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
+                        <p className="text-xs">{m.caption || 'Untitled'}</p>
+                        <Badge variant={(m.status || 'pending').toLowerCase() as any}>{m.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
               </div>
-            </Card>
-          )}
+            )}
 
-          {activeTab === 'Press Guidelines' && (
-            <Card>
-              <SectionLabel>EB Media Resources</SectionLabel>
-              <div className="space-y-2">
-                {resources.map((resource) => (
-                  <div key={resource.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold">{resource.title}</p>
-                      <p className="text-xs text-text-dimmed">{resource.description || 'No description'}</p>
+            {activeTab === 'Press Releases' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card>
+                  <SectionLabel>Create Press Release</SectionLabel>
+                  <div className="space-y-3">
+                    <Input placeholder="Title" value={prTitle} onChange={(e) => setPrTitle(e.target.value)} />
+                    <Textarea rows={8} placeholder="Body" value={prBody} onChange={(e) => setPrBody(e.target.value)} />
+                    <p className="text-xs text-text-dimmed">{prBody.trim().split(/\s+/).filter(Boolean).length} words</p>
+                    <Button onClick={submitPressRelease}>Submit for Approval</Button>
+                  </div>
+                </Card>
+                <Card>
+                  <SectionLabel>My Press Releases</SectionLabel>
+                  <div className="space-y-2">
+                    {pressReleases.filter((r) => r.author_id === user.id).map((r) => (
+                      <div key={r.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
+                        <p className="text-sm font-semibold">{r.title}</p>
+                        <Badge variant={(r.status || 'pending').toLowerCase() as any}>{r.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'Media Gallery' && (
+              <Card>
+                <SectionLabel>Approved Gallery</SectionLabel>
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {media.filter((m) => m.status === 'APPROVED').map((m) => (
+                    <div key={m.id} className="group relative rounded-card border border-border-subtle bg-bg-raised overflow-hidden aspect-video transition-all hover:border-text-primary/30">
+                      {m.mime_type?.startsWith('video/') ? (
+                        <video src={m.media_url} className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={m.media_url} alt={m.caption || ''} className="w-full h-full object-cover" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+                        <p className="text-white text-xs font-bold truncate">{m.title || m.caption || 'Untitled'}</p>
+                        <p className="text-white/70 text-[10px] truncate">{m.event_tag || m.committee_tag || 'General'}</p>
+                        <a href={m.media_url} target="_blank" rel="noreferrer" className="mt-2 text-[10px] text-white underline font-bold uppercase tracking-widest">View Full</a>
+                      </div>
                     </div>
-                    <a href={resource.file_url || '#'} target="_blank" rel="noreferrer"><Button size="sm" variant="outline">Download</Button></a>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
+                  ))}
+                  {media.filter(m => m.status === 'APPROVED').length === 0 && (
+                    <div className="col-span-full py-20 text-center text-text-dimmed italic">No approved media in gallery yet.</div>
+                  )}
+                </div>
+              </Card>
+            )}
 
-          {activeTab === 'My Stats' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card><SectionLabel>Photos</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id && (m.mime_type || '').startsWith('image/')).length}</p></Card>
-              <Card><SectionLabel>Videos</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id && (m.mime_type || '').startsWith('video/')).length}</p></Card>
-              <Card><SectionLabel>Published Releases</SectionLabel><p className="text-3xl font-bold">{pressReleases.filter((r) => r.author_id === user.id && r.status === 'APPROVED').length}</p></Card>
-            </div>
-          )}
-        </DashboardAnimatedTabPanel>
+            {activeTab === 'Press Guidelines' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <SectionLabel>Journalism Standards</SectionLabel>
+                  <div className="prose prose-invert max-w-none text-sm text-text-secondary space-y-4">
+                    <p>1. <strong>Accuracy</strong>: Always verify names, committees, and quotes before publishing.</p>
+                    <p>2. <strong>Impartiality</strong>: Report the facts of the debate without taking sides between delegations.</p>
+                    <p>3. <strong>Sensitivity</strong>: Be mindful of cultural sensitivities and MUN diplomacy standards.</p>
+                  </div>
+                </Card>
+                <Card>
+                  <SectionLabel>Branding Assets</SectionLabel>
+                  <div className="space-y-2">
+                    {resources.map((r) => (
+                      <a key={r.id} href={r.file_url} target="_blank" rel="noreferrer" className="block p-3 rounded-card border border-border-subtle bg-bg-raised hover:border-text-primary/30 transition-all">
+                        <p className="text-sm font-semibold">{r.title}</p>
+                        <p className="text-[10px] text-text-tertiary uppercase tracking-widest">Download Asset</p>
+                      </a>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {activeTab === 'My Stats' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card><SectionLabel>Total Uploads</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id).length}</p></Card>
+                <Card><SectionLabel>Approved Media</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id && m.status === 'APPROVED').length}</p></Card>
+                <Card><SectionLabel>Published PRs</SectionLabel><p className="text-3xl font-bold">{pressReleases.filter((r) => r.author_id === user.id && r.status === 'PUBLISHED').length}</p></Card>
+              </div>
+            )}
+          </DashboardAnimatedTabPanel>
+        </div>
+
+        <div className="xl:col-span-4 space-y-6">
+          <Notepad dashboardKey="PRESS" userId={user.id} />
+        </div>
       </div>
     </div>
   );

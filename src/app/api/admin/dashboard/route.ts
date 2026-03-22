@@ -19,8 +19,23 @@ export async function GET() {
     });
   }
 
-  const [{ data: chairAssignments }, { data: sessionRow }, { data: delegates }, { data: statuses }, { data: documentsQueue }, { data: reviewedDocs }, { data: announcements }, { data: resources }, { data: attendance }, { data: voteRecords }, { data: chairNotes }, { data: committeeChannel }, { data: adminTasks }] =
-    await Promise.all([
+  const [
+    { data: chairAssignments },
+    { data: sessionRow },
+    { data: delegates },
+    { data: statuses },
+    { data: documentsQueue },
+    { data: reviewedDocs },
+    { data: announcements },
+    { data: resources },
+    { data: attendance },
+    { data: voteRecords },
+    { data: chairNotes },
+    { data: committeeChannel },
+    { data: adminTasks },
+    { count: openIncidents },
+    { count: pendingAdminTasks },
+  ] = await Promise.all([
       supabaseAdmin
         .from("committee_assignments")
         .select("user_id, users(id, full_name, role)")
@@ -29,7 +44,7 @@ export async function GET() {
         .from("committee_sessions")
         .select("*")
         .eq("committee_id", committee_id)
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabaseAdmin
@@ -95,6 +110,15 @@ export async function GET() {
         .eq("committee_id", committee_id)
         .order("created_at", { ascending: false })
         .limit(50),
+      supabaseAdmin
+        .from("security_incidents")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "OPEN"),
+      supabaseAdmin
+        .from("committee_admin_tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("committee_id", committee_id)
+        .eq("status", "TODO"),
     ]);
 
   const chairUserRaw = (chairAssignments || []).find(
@@ -172,12 +196,15 @@ export async function GET() {
     },
     overview: {
       session_status: sessionRow?.status || "Adjourned",
-      current_topic: sessionRow?.current_topic || null,
+      current_topic: sessionRow?.debate_topic || null,
       present_count: presentCount,
       total_delegates: delegateRows.length,
       pending_document_reviews: (documentsQueue || []).length,
       delegate_status_alerts: alerts.length,
       unread_committee_messages: unreadCommitteeMessages,
+      open_incidents: openIncidents ?? 0,
+      pending_admin_tasks: pendingAdminTasks ?? 0,
+      committee_resources_count: (resources || []).length,
     },
     delegates: delegateRows,
     status_summary: statusSummary,

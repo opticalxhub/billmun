@@ -24,7 +24,7 @@ export function SkeletonCard() {
   );
 }
 
-export const SkeletonRow = React.memo(() => {
+function SkeletonRowInner() {
   return (
     <div className="flex items-center gap-4 py-4 border-b border-border-subtle last:border-0">
       <div className="h-10 w-10 flex items-center justify-center">
@@ -36,7 +36,10 @@ export const SkeletonRow = React.memo(() => {
       </div>
     </div>
   );
-});
+}
+SkeletonRowInner.displayName = "SkeletonRow";
+
+export const SkeletonRow = React.memo(SkeletonRowInner);
 
 export function SkeletonList({ count = 5 }: { count?: number }) {
   return (

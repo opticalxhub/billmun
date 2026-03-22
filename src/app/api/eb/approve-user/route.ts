@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getEBContext } from '@/lib/eb-auth';
+import { runOnUserApproved, runOnUserRejected } from '@/lib/automation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const { data: targetUser } = await supabaseAdmin
       .from('users')
-      .select('email, full_name')
+      .select('id, email, full_name, role, preferred_committee, allocated_country')
       .eq('id', userId)
       .single();
 
@@ -32,26 +33,37 @@ export async function POST(request: NextRequest) {
 
     const { error: updateError } = await supabaseAdmin
       .from('users')
-      .update({
-        status: approve ? 'APPROVED' : 'REJECTED',
-        approved_at: approve ? new Date().toISOString() : null,
-        approved_by_id: approverId,
-      })
+      .update(
+        approve
+          ? {
+              status: 'APPROVED' as const,
+              approved_at: new Date().toISOString(),
+              approved_by_id: approverId,
+              updated_at: new Date().toISOString(),
+            }
+          : {
+              status: 'REJECTED' as const,
+              approved_at: null,
+              approved_by_id: null,
+              updated_at: new Date().toISOString(),
+            },
+      )
       .eq('id', userId);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    // Create notification
-    await supabaseAdmin.from('notifications').insert({
-      user_id: userId,
-      title: approve ? 'Application Approved' : 'Application Rejected',
-      message: approve 
-        ? 'Your BILLMUN registration has been approved. You can now access your dashboard.' 
-        : 'Your BILLMUN registration was unfortunately rejected.',
-      type: approve ? 'SUCCESS' : 'ERROR',
-    });
+    if (approve) {
+      void runOnUserApproved(userId, approverId);
+    } else {
+      void runOnUserRejected(
+        userId,
+        targetUser.email,
+        targetUser.full_name,
+        undefined,
+      );
+    }
 
     // Audit log
     try {

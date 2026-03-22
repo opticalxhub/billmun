@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
 import { Card, SectionLabel, Badge } from "@/components/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
+import { Notepad } from "@/components/notepad";
 
 export default function EBDashOverview() {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: user, isLoading: userLoading } = useQuery({
@@ -17,7 +16,7 @@ export default function EBDashOverview() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser && !document.cookie.includes('emergency_expires=')) throw new Error('No session');
       if (!authUser) return { id: 'emergency', role: 'EXECUTIVE_BOARD' };
-      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).single();
       return data;
     },
   });
@@ -162,41 +161,49 @@ export default function EBDashOverview() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-          <SectionLabel>Live Committee Grid</SectionLabel>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            {committees.map((c) => (
-              <div key={c.id} className="p-3 rounded border border-border-subtle bg-bg-raised">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm font-bold">{c.name}</span>
-                  <Badge variant={c.session_status === 'ACTIVE' ? 'approved' : 'default'}>{c.session_status}</Badge>
-                </div>
-                <div className="text-xs text-text-secondary flex justify-between">
-                  <span>Chair: {c.chair_name}</span>
-                  <span>Present: {c.present_count}</span>
-                </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <SectionLabel>Live Committee Grid</SectionLabel>
+              <div className="grid grid-cols-1 gap-3 mt-4">
+                {committees.map((c) => (
+                  <div key={c.id} className="p-3 rounded border border-border-subtle bg-bg-raised">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-sm font-bold">{c.name}</span>
+                      <Badge variant={c.session_status === 'ACTIVE' ? 'approved' : 'default'}>{c.session_status}</Badge>
+                    </div>
+                    <div className="text-xs text-text-secondary flex justify-between">
+                      <span>Chair: {c.chair_name}</span>
+                      <span>Present: {c.present_count}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
-        
-        <Card>
-          <SectionLabel>Live Activity Feed</SectionLabel>
-          <div className="space-y-3 mt-4 max-h-[400px] overflow-auto pr-2">
-            {activityFeed.length === 0 && <p className="text-xs text-text-dimmed">No recent activity</p>}
-            {activityFeed.map((log) => (
-              <div key={log.id} className="text-sm pb-3 border-b border-border-subtle last:border-0">
-                <div className="flex items-start justify-between">
-                  <span className="font-medium">{log.actor?.full_name || 'System'}</span>
-                  <span className="text-[10px] text-text-dimmed">{new Date(log.performed_at).toLocaleTimeString()}</span>
-                </div>
-                <p className="text-text-secondary mt-1">{log.action}</p>
-                {log.target_type && <p className="text-[10px] text-text-dimmed mt-1 uppercase">{log.target_type} : {log.target_id?.slice(0,8)}</p>}
+            </Card>
+            
+            <Card>
+              <SectionLabel>Live Activity Feed</SectionLabel>
+              <div className="space-y-3 mt-4 max-h-[400px] overflow-auto pr-2">
+                {activityFeed.length === 0 && <p className="text-xs text-text-dimmed">No recent activity</p>}
+                {activityFeed.map((log) => (
+                  <div key={log.id} className="text-sm pb-3 border-b border-border-subtle last:border-0">
+                    <div className="flex items-start justify-between">
+                      <span className="font-medium">{log.actor?.full_name || 'System'}</span>
+                      <span className="text-[10px] text-text-dimmed">{new Date(log.performed_at).toLocaleTimeString()}</span>
+                    </div>
+                    <p className="text-text-secondary mt-1">{log.action}</p>
+                    {log.target_type && <p className="text-[10px] text-text-dimmed mt-1 uppercase">{log.target_type} : {log.target_id?.slice(0,8)}</p>}
+                  </div>
+                ))}
               </div>
-            ))}
+            </Card>
           </div>
-        </Card>
+        </div>
+
+        <div className="xl:col-span-4">
+          {user?.id && <Notepad dashboardKey="EB_OVERVIEW" userId={user.id} />}
+        </div>
       </div>
     </div>
   );

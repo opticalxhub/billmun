@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getEBContext } from "@/lib/eb-auth";
+import { runOnAnnouncementCreated } from "@/lib/automation";
 
 export async function POST(req: NextRequest) {
   try {
-    const { context, error, status } = await getEBContext();
-    if (!context) return NextResponse.json({ error }, { status: status || 401 });
+    const { context, error: authError, status: authStatus } = await getEBContext();
+    if (!context) return NextResponse.json({ error: authError }, { status: authStatus || 401 });
 
     let body;
     try {
@@ -20,14 +21,27 @@ export async function POST(req: NextRequest) {
 
     if (action === "create") {
       if (!title || !content) return NextResponse.json({ error: "Missing title or body" }, { status: 400 });
-      const { error } = await supabaseAdmin.from("announcements").insert({
-        title, body: content, is_pinned: !!is_pinned,
-        target_roles: target_roles || [],
-        committee_id: committee_id === "ALL" ? null : committee_id,
-        scheduled_for: scheduled_for || null,
-        author_id: ebUserId
-      });
+      const { data: created, error } = await supabaseAdmin
+        .from("announcements")
+        .insert({
+          title,
+          body: content,
+          is_pinned: !!is_pinned,
+          target_roles: target_roles || [],
+          committee_id: committee_id === "ALL" ? null : committee_id,
+          scheduled_for: scheduled_for || null,
+          author_id: ebUserId,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
+      void runOnAnnouncementCreated(
+        created.id as string,
+        title,
+        content,
+        (target_roles || []) as string[],
+        committee_id === "ALL" ? null : committee_id,
+      );
       return NextResponse.json({ ok: true });
     }
 

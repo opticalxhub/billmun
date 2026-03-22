@@ -67,7 +67,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
       setActiveRollCall(data);
       // Initialize all delegates as ABSENT
       const initial: Record<string, string> = {};
-      ctx.delegates.forEach(d => { initial[d.user_id || d.user?.id] = 'ABSENT'; });
+      ctx.delegates.forEach(d => { initial[d.id] = 'ABSENT'; });
       setEntries(initial);
       setElapsedTime(0);
       setTimerRunning(true);
@@ -174,11 +174,11 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {ctx.delegates.map(d => {
-                  const dId = d.user_id || d.user?.id;
+                  const dId = d.id;
                   const state = entries[dId] || 'ABSENT';
                   return (
                     <tr key={dId} className="hover:bg-bg-raised/30 cursor-pointer" onClick={() => cycleState(dId)}>
-                      <td className="p-3 text-sm font-medium text-text-primary">{d.user?.full_name || 'Unknown'}</td>
+                      <td className="p-3 text-sm font-medium text-text-primary">{d.full_name || 'Unknown'}</td>
                       <td className="p-3 text-sm text-text-secondary">{d.country}</td>
                       <td className="p-3">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold border ${STATE_STYLES[state]}`}>
@@ -194,13 +194,13 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-2">
             {ctx.delegates.map(d => {
-              const dId = d.user_id || d.user?.id;
+              const dId = d.id;
               const state = entries[dId] || 'ABSENT';
               return (
                 <div key={dId} className="bg-bg-raised rounded-card border border-border-subtle p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="font-bold text-text-primary text-sm">{d.user?.full_name || 'Unknown'}</p>
+                      <p className="font-bold text-text-primary text-sm">{d.full_name || 'Unknown'}</p>
                       <p className="text-xs text-text-dimmed">{d.country}</p>
                     </div>
                   </div>

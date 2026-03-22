@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/button';
 import { Input, FormLabel, FormGroup, ErrorMessage, Select } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
-import { Check, ChevronRight, ChevronLeft, User, Mail, Lock, Calendar, GraduationCap, Phone, Heart, Users, MapPin, AlertCircle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -317,6 +317,8 @@ export default function RegisterPage() {
                       <option value="11th">11th Grade</option>
                       <option value="12th">12th Grade</option>
                       <option value="University">University</option>
+                      <option value="Graduate">Graduate</option>
+                      <option value="Staff/Faculty">Staff/Faculty</option>
                       <option value="Other">Other</option>
                     </Select>
                     {errors.grade && <ErrorMessage>{errors.grade}</ErrorMessage>}   

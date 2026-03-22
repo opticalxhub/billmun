@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner } from '@/components/loading-spinner';
-import { cn } from '@/lib/utils';
 
 const PREAMBULATORY_PHRASES = [
   'Affirming', 'Alarmed by', 'Approving', 'Aware of', 'Believing', 'Cognizant of', 'Confident',
@@ -51,7 +50,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const [exporting, setExporting] = useState<"" | "pdf" | "docx">("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedBlocId, setSelectedBlocId] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
 
   // useQuery for Resolutions
@@ -85,7 +84,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   });
 
   // useQuery for Clauses
-  const { data: clauses = [], isLoading: clausesLoading, refetch: refetchClauses } = useQuery({
+  const { data: clauses = [], refetch: refetchClauses } = useQuery({
     queryKey: ['resolution-clauses', selectedId],
     enabled: !!selectedId,
     queryFn: async () => {

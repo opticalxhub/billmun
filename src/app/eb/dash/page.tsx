@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { EBLayout } from "@/components/eb-layout";
 import { useSearchParams, useRouter } from "next/navigation";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 // Import all sub-pages as components
 import EBDashOverview from "./overview/page";
@@ -16,7 +17,7 @@ import SettingsPage from "./settings/page";
 import EBAuditLogPage from "./audit/page";
 import EBInternalWorkspacePage from "./internal-workspace/page";
 
-export default function EBDashMain() {
+function EBDashInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabParam = searchParams.get('tab') || 'overview';
@@ -52,5 +53,13 @@ export default function EBDashMain() {
     <EBLayout activeTab={activeTab} onTabChange={handleTabChange}>
       {renderContent()}
     </EBLayout>
+  );
+}
+
+export default function EBDashMain() {
+  return (
+    <Suspense fallback={<DashboardLoadingState type="overview" />}>
+      <EBDashInner />
+    </Suspense>
   );
 }

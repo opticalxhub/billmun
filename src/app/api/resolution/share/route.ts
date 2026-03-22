@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getRequestUserContext } from '@/lib/auth-context';
 
 export async function POST(req: NextRequest) {
   try {
+    const { context, error: authError, status } = await getRequestUserContext();
+    if (authError || !context) {
+      return NextResponse.json({ error: authError || 'Unauthorized' }, { status: status || 401 });
+    }
+
     const { resolutionId, blocId } = await req.json();
 
     if (!resolutionId || !blocId) {
@@ -15,20 +16,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Get resolution details
-    const { data: res, error: resErr } = await supabase
+    const { data: res, error: resErr } = await supabaseAdmin
       .from('resolutions')
-      .select('*, users(full_name)')
+      .select('id, user_id, title')
       .eq('id', resolutionId)
       .single();
 
-    if (resErr || !res) throw new Error('Resolution not found');
+    if (resErr || !res) return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
+
+    // Verify ownership
+    if (res.user_id !== context.userId && context.role !== 'EXECUTIVE_BOARD' && context.role !== 'SECRETARY_GENERAL' && context.role !== 'DEPUTY_SECRETARY_GENERAL') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Send a message to the bloc
-    const { error: msgErr } = await supabase
+    const { error: msgErr } = await supabaseAdmin
       .from('bloc_messages')
       .insert({
         bloc_id: blocId,
-        user_id: res.user_id,
+        user_id: context.userId,
         content: `Shared a resolution draft: "${res.title}"`,
       });
 

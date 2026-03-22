@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/button";
 import { displayRole } from "@/lib/roles";
-import { X, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { X } from "lucide-react";
 
 interface OnboardingModalProps {
   role: string;

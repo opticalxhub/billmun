@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner } from '@/components/loading-spinner';
-import { X, Users, MessageSquare, FileText, Calendar, Clock, AlertCircle, ChevronRight, Activity, MapPin } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
   IN_SESSION: { label: 'In Session', color: 'bg-text-primary/70', pulse: true },
@@ -69,7 +69,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   // useQuery for Roster
-  const { data: roster = [], isLoading: rosterLoading } = useQuery({
+  const { data: roster = [] } = useQuery({
     queryKey: ['committee-roster', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -94,7 +94,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
     queryFn: async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, email, role, status')
         .eq('id', ctx.committee.chair_id)
         .single();
       if (error) throw error;

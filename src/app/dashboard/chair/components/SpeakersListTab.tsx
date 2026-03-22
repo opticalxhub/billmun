@@ -178,8 +178,8 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
           >
             <option value="">Select delegate...</option>
             {ctx.delegates.map(d => (
-              <option key={d.user_id || d.user?.id} value={d.user_id || d.user?.id}>
-                {d.user?.full_name || 'Unknown'} — {d.country}
+              <option key={d.id} value={d.id}>
+                {d.full_name || 'Unknown'} — {d.country}
               </option>
             ))}
           </select>
@@ -263,11 +263,11 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {ctx.delegates.map(d => {
-              const dId = d.user_id || d.user?.id;
+              const dId = d.id;
               const s = stats[dId] || { time: 0, count: 0 };
               return (
                 <tr key={dId}>
-                  <td className="p-3 text-sm text-text-primary">{d.user?.full_name || 'Unknown'}</td>
+                  <td className="p-3 text-sm text-text-primary">{d.full_name || 'Unknown'}</td>
                   <td className="p-3 text-sm text-text-secondary">{s.count}</td>
                   <td className="p-3 text-sm font-mono text-text-secondary">{fmt(s.time)}</td>
                 </tr>

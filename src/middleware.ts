@@ -99,6 +99,7 @@ export async function middleware(request: NextRequest) {
       !path.startsWith('/register') &&
       !path.startsWith('/api') &&
       !path.startsWith('/911') &&
+      !path.startsWith('/dev/test') &&
       path !== '/'
     ) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -109,10 +110,10 @@ export async function middleware(request: NextRequest) {
   // 2. Authenticated users (Role/Status Protection)
   if (userProfile) {
     // Redirect based on status
-    if (userProfile.status === 'PENDING' && !path.startsWith('/pending') && !path.startsWith('/api') && !path.startsWith('/911') && path !== '/') {
+    if (userProfile.status === 'PENDING' && !path.startsWith('/pending') && !path.startsWith('/api') && !path.startsWith('/911') && !path.startsWith('/dev/test') && path !== '/') {
       return NextResponse.redirect(new URL('/pending', request.url));
     }
-    if (userProfile.status === 'REJECTED' && !path.startsWith('/rejected') && !path.startsWith('/api') && !path.startsWith('/911') && path !== '/') {
+    if (userProfile.status === 'REJECTED' && !path.startsWith('/rejected') && !path.startsWith('/api') && !path.startsWith('/911') && !path.startsWith('/dev/test') && path !== '/') {
       return NextResponse.redirect(new URL('/rejected', request.url));
     }
 
@@ -123,7 +124,7 @@ export async function middleware(request: NextRequest) {
     const isSecurity = userProfile.role === 'SECURITY';
     const isMedia = ['MEDIA', 'PRESS'].includes(userProfile.role);
 
-    if (path.startsWith('/eb/dash') && !isEB && !isAdmin && !hasValidEmergencyAccess) {
+    if (path.startsWith('/eb/dash') && !isEB && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

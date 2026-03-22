@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getEBContext } from "@/lib/eb-auth";
+import { runOnDocumentStatusChanged } from "@/lib/automation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
     const ebUserId = context.ebUserId;
 
     if (!action || !doc_id) {
+      console.log('Missing action or doc_id in eb documents action: action=', action, 'doc_id=', doc_id);
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -36,31 +38,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Feedback is required for this action." }, { status: 400 });
     }
 
-    await supabaseAdmin.from("documents").update({
-      status: newStatus,
-      feedback: feedback || doc.feedback,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by_id: ebUserId
-    }).eq("id", doc_id);
-
-    // Timeline entry
-    try {
-      await supabaseAdmin.from("document_status_history").insert({
-        document_id: doc_id,
+    await supabaseAdmin
+      .from("documents")
+      .update({
         status: newStatus,
-        changed_by: ebUserId,
-        feedback: feedback || null
-      });
-    } catch { /* ignore */ }
+        feedback: feedback || doc.feedback,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by_id: ebUserId,
+      })
+      .eq("id", doc_id);
 
-    // Notification
-    await supabaseAdmin.from("notifications").insert({
-      user_id: doc.user_id,
-      title: `Document ${newStatus}`,
-      message: `Your document "${doc.title}" was marked as ${newStatus}. ${feedback ? `Feedback: ${feedback}` : ""}`,
-      type: newStatus === "APPROVED" ? "SUCCESS" : "WARNING",
-      link: "/dashboard/delegate"
-    });
+    void runOnDocumentStatusChanged(
+      doc_id,
+      doc.user_id as string,
+      newStatus,
+      (feedback || doc.feedback || null) as string | null,
+      ebUserId,
+    );
 
     try {
       await supabaseAdmin.from("audit_logs").insert({

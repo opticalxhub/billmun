@@ -1,20 +1,40 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { Button } from '@/components/button';
+import { Input, Textarea } from '@/components/ui';
 import { LoadingSpinner } from '@/components/loading-spinner';
-import { X, FileText, Upload, Download, History, Edit2, Check, AlertCircle, FilePlus, ChevronRight } from 'lucide-react';
+import { X, FilePlus } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, string> = {
-  SUBMITTED: 'bg-bg-raised text-text-secondary border border-border-subtle',
-  UNDER_REVIEW: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
+  PENDING: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
   APPROVED: 'bg-status-approved-bg text-status-approved-text border border-status-approved-border',
   REJECTED: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
-  REVISION_REQUESTED: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
+  NEEDS_REVISION: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
 };
+
+function isAllowedMime(mime: string): boolean {
+  if (!mime) return true;
+  if (mime === 'application/pdf') return true;
+  if (mime === 'application/msword') return true;
+  if (mime.includes('wordprocessingml')) return true;
+  if (mime.includes('spreadsheetml')) return true;
+  if (mime.startsWith('image/')) return true;
+  if (mime.startsWith('video/')) return true;
+  return false;
+}
+
+async function notifyDocumentUploaded(documentId: string) {
+  await fetch('/api/documents/post-upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ document_id: documentId }),
+  });
+}
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -32,6 +52,44 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadSource, setUploadSource] = useState<'file' | 'url'>('file');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [urlValue, setUrlValue] = useState('');
+  const [urlDescription, setUrlDescription] = useState('');
+
+  const { data: conferenceSettings } = useQuery({
+    queryKey: ['conference-settings-upload'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('conference_settings').select('max_file_upload_mb').eq('id', '1').maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const maxBytes = Math.max(1, conferenceSettings?.max_file_upload_mb ?? 25) * 1024 * 1024;
+
+  useEffect(() => {
+    if (!ctx.user?.id) return;
+    const channel = supabase
+      .channel(`delegate-documents-${ctx.user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'documents',
+          filter: `user_id=eq.${ctx.user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['delegate-documents', ctx.user.id] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ctx.user?.id, queryClient]);
 
   // useQuery for Documents
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
@@ -82,44 +140,110 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      const fileName = `${ctx.user.id}/${Date.now()}_${file.name}`;
+      const fileName = `${ctx.user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
       const { error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(fileName, file, { contentType: file.type });
+        .upload(fileName, file, { contentType: file.type || 'application/octet-stream' });
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName);
 
-      const { error: docError } = await supabase.from('documents').insert({
-        user_id: ctx.user.id,
-        committee_id: ctx.assignment?.committee_id || null,
-        type: 'POSITION_PAPER',
-        title: file.name.replace('.pdf', ''),
-        file_url: urlData.publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
-        status: 'SUBMITTED',
-      });
+      const { data: inserted, error: docError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: ctx.user.id,
+          committee_id: ctx.assignment?.committee_id || null,
+          type: 'POSITION_PAPER',
+          title: file.name.replace(/\.[^/.]+$/, '') || file.name,
+          file_url: urlData.publicUrl,
+          file_size: file.size,
+          mime_type: file.type || 'application/octet-stream',
+          status: 'PENDING',
+        })
+        .select('id')
+        .single();
 
       if (docError) throw docError;
-  
-      try {
-        await supabase.from('audit_logs').insert({
-          actor_id: ctx.user.id,
-          action: `Uploaded document: ${file.name}`,
-          target_type: 'Document',
-        });
-      } catch { /* ignore */ }
+
+      if (inserted?.id) {
+        await notifyDocumentUploaded(inserted.id as string);
+      }
+
+      if (inserted?.id) {
+        try {
+          await supabase.from('audit_logs').insert({
+            actor_id: ctx.user.id,
+            action: `Uploaded document: ${file.name}`,
+            target_type: 'DOCUMENT',
+            target_id: inserted.id as string,
+          });
+        } catch {
+          /* ignore */
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegate-documents'] });
-    }
+    },
+  });
+
+  const urlUploadMutation = useMutation({
+    mutationFn: async () => {
+      const title = urlTitle.trim();
+      const file_url = urlValue.trim();
+      if (!title || !file_url) throw new Error('Title and URL are required');
+
+      const { data: inserted, error: docError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: ctx.user.id,
+          committee_id: ctx.assignment?.committee_id || null,
+          type: 'POSITION_PAPER',
+          title,
+          file_url,
+          file_size: 0,
+          mime_type: 'application/octet-stream',
+          status: 'PENDING',
+        })
+        .select('id')
+        .single();
+
+      if (docError) throw docError;
+      if (inserted?.id) {
+        await notifyDocumentUploaded(inserted.id as string);
+      }
+
+      if (inserted?.id) {
+        try {
+          await supabase.from('audit_logs').insert({
+            actor_id: ctx.user.id,
+            action: `Linked document URL: ${title}${urlDescription.trim() ? ` — ${urlDescription.trim()}` : ''}`,
+            target_type: 'DOCUMENT',
+            target_id: inserted.id as string,
+          });
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delegate-documents'] });
+      setUrlTitle('');
+      setUrlValue('');
+      setUrlDescription('');
+    },
   });
 
   const handleUpload = async (file: File) => {
-    if (!file.type.includes('pdf')) { alert('Only PDF files are accepted.'); return; }
-    if (file.size > 10 * 1024 * 1024) { alert('File must be under 10MB.'); return; }
+    if (!isAllowedMime(file.type)) {
+      alert('This file type is not allowed. Use PDF, Word, Excel, images, or video.');
+      return;
+    }
+    if (file.size > maxBytes) {
+      alert(`File must be under ${Math.round(maxBytes / (1024 * 1024))}MB (conference setting).`);
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(0);
@@ -179,17 +303,23 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
       const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName);
 
-      await supabase.from('documents').insert({
-        user_id: ctx.user.id,
-        committee_id: parentDoc.committee_id,
-        type: parentDoc.type,
-        title: `${parentDoc.title} (Revised)`,
-        file_url: urlData.publicUrl,
-        file_size: file.size,
-        mime_type: file.type,
-        status: 'SUBMITTED',
-        parent_document_id: parentDoc.id,
-      });
+      const { data: rev, error: insErr } = await supabase
+        .from('documents')
+        .insert({
+          user_id: ctx.user.id,
+          committee_id: parentDoc.committee_id,
+          type: parentDoc.type,
+          title: `${parentDoc.title} (Revised)`,
+          file_url: urlData.publicUrl,
+          file_size: file.size,
+          mime_type: file.type || 'application/octet-stream',
+          status: 'PENDING',
+          parent_document_id: parentDoc.id,
+        })
+        .select('id')
+        .single();
+      if (insErr) throw insErr;
+      if (rev?.id) await notifyDocumentUploaded(rev.id as string);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegate-documents'] });
@@ -197,7 +327,10 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   const handleRevisionUpload = async (parentDoc: any, file: File) => {
-    if (!file.type.includes('pdf') || file.size > 10 * 1024 * 1024) return;
+    if (!isAllowedMime(file.type) || file.size > maxBytes) {
+      alert('Invalid file type or file too large.');
+      return;
+    }
     try {
       await revisionMutation.mutateAsync({ parentDoc, file });
     } catch (err) {
@@ -212,33 +345,81 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Upload Zone */}
-      <div
-        className={`border-2 border-dashed rounded-card p-8 text-center transition-colors ${
-          dragOver ? 'border-text-primary bg-bg-raised' : 'border-border-emphasized'
-        }`}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          const file = e.dataTransfer.files[0];
-          if (file) handleUpload(file);
-        }}
-      >
-        <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }} />
-        <div className="hidden md:block">
-          <p className="text-text-dimmed font-jotia text-sm mb-2">Drag and drop a PDF file here, or</p>
-          <Button onClick={() => fileRef.current?.click()} loading={uploading}>
-            Choose File
-          </Button>
-          <p className="text-text-tertiary font-jotia text-xs mt-2">PDF only, max 10MB</p>
+      <div className="border border-border-subtle rounded-card overflow-hidden bg-bg-card">
+        <div className="flex border-b border-border-subtle">
+          <button
+            type="button"
+            className={`flex-1 py-3 text-xs font-jotia uppercase tracking-wider ${uploadSource === 'file' ? 'bg-bg-raised text-text-primary' : 'text-text-dimmed'}`}
+            onClick={() => setUploadSource('file')}
+          >
+            Upload file
+          </button>
+          <button
+            type="button"
+            className={`flex-1 py-3 text-xs font-jotia uppercase tracking-wider ${uploadSource === 'url' ? 'bg-bg-raised text-text-primary' : 'text-text-dimmed'}`}
+            onClick={() => setUploadSource('url')}
+          >
+            Add URL
+          </button>
         </div>
-        <div className="md:hidden">
-          <Button onClick={() => fileRef.current?.click()} className="w-full h-14" loading={uploading}>
-            Choose File to Upload
-          </Button>
-          <p className="text-text-tertiary font-jotia text-xs mt-2">PDF only, max 10MB</p>
-        </div>
+
+        {uploadSource === 'file' ? (
+          <div
+            className={`p-8 text-center transition-colors ${
+              dragOver ? 'border-text-primary bg-bg-raised' : ''
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const file = e.dataTransfer.files[0];
+              if (file) handleUpload(file);
+            }}
+          >
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.xlsx,.xls,image/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) handleUpload(e.target.files[0]);
+              }}
+            />
+            <p className="text-text-dimmed font-jotia text-sm mb-2">
+              Drag and drop a file, or choose one. Max {Math.round(maxBytes / (1024 * 1024))}MB (from conference settings).
+            </p>
+            <Button onClick={() => fileRef.current?.click()} loading={uploading}>
+              Choose file
+            </Button>
+            <p className="text-text-tertiary font-jotia text-xs mt-2">PDF, Word, Excel, images, or video.</p>
+          </div>
+        ) : (
+          <div className="p-6 space-y-3 text-left">
+            <div>
+              <label className="text-xs text-text-dimmed font-jotia block mb-1">Title</label>
+              <Input value={urlTitle} onChange={(e) => setUrlTitle(e.target.value)} placeholder="Document title" />
+            </div>
+            <div>
+              <label className="text-xs text-text-dimmed font-jotia block mb-1">File URL</label>
+              <Input value={urlValue} onChange={(e) => setUrlValue(e.target.value)} placeholder="https://..." />
+            </div>
+            <div>
+              <label className="text-xs text-text-dimmed font-jotia block mb-1">Description (optional)</label>
+              <Textarea rows={2} value={urlDescription} onChange={(e) => setUrlDescription(e.target.value)} />
+            </div>
+            <Button
+              loading={urlUploadMutation.isPending}
+              disabled={!urlTitle.trim() || !urlValue.trim()}
+              onClick={() => urlUploadMutation.mutate()}
+            >
+              Save link as document
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Upload Progress */}
@@ -253,8 +434,15 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
       {/* Documents Table / Cards */}
       {documents.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-text-dimmed font-jotia text-sm">No documents uploaded yet.</p>
+        <div className="text-center py-12 border border-dashed border-border-subtle rounded-card bg-bg-raised/30">
+          <FilePlus className="w-10 h-10 mx-auto text-text-dimmed mb-3" />
+          <p className="text-text-primary font-jotia text-sm mb-1">No documents yet</p>
+          <p className="text-text-dimmed font-jotia text-xs max-w-md mx-auto mb-4">
+            Upload a position paper or other committee material. Chairs and admins are notified automatically when you submit.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => (uploadSource === 'file' ? fileRef.current?.click() : setUploadSource('url'))}>
+            {uploadSource === 'file' ? 'Choose file' : 'Use Add URL tab above'}
+          </Button>
         </div>
       ) : (
         <>
@@ -327,7 +515,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
             </div>
 
             {/* Revision Banner */}
-            {drawerDoc.status === 'REVISION_REQUESTED' && drawerDoc.feedback && (
+            {drawerDoc.status === 'NEEDS_REVISION' && drawerDoc.feedback && (
               <div className="bg-status-rejected-bg border-b border-status-rejected-border p-4">
                 <p className="text-status-rejected-text font-jotia text-sm font-medium mb-2">Revision Requested</p>
                 <p className="text-status-rejected-text/80 font-jotia text-xs mb-3">{drawerDoc.feedback}</p>
@@ -417,7 +605,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t border-border-subtle">
-                {drawerDoc.status === 'SUBMITTED' && (
+                {drawerDoc.status === 'PENDING' && (
                   <Button
                     variant="outline"
                     onClick={() => { setRenaming(drawerDoc.id); setRenameValue(drawerDoc.title); setDrawerDoc(null); }}
@@ -425,7 +613,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                     Rename
                   </Button>
                 )}
-                {drawerDoc.status === 'SUBMITTED' && !drawerDoc.feedback && (
+                {drawerDoc.status === 'PENDING' && !drawerDoc.feedback && (
                   <Button
                     variant="destructive"
                     loading={deleteMutation.isPending}

@@ -12,10 +12,10 @@ import {
   DashboardLoadingState,
   DashboardTabBar,
 } from "@/components/dashboard-shell";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { Notepad } from "@/components/notepad";
 
 type TabName = "Overview" | "Badge Control" | "Incident Reports" | "Delegate Tracker" | "Access Zones" | "Communication";
-
+ 
 const TABS: TabName[] = ["Overview", "Badge Control", "Incident Reports", "Delegate Tracker", "Access Zones", "Communication"];
 
 export default function SecurityDashboard() {
@@ -136,17 +136,18 @@ export default function SecurityDashboard() {
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader title="Security Dashboard" subtitle="Physical security operations and incident control" />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 relative">
-        {actionError && (
-          <div className="mb-4 p-3 rounded-card border border-status-rejected-border bg-status-rejected-bg text-status-rejected-text text-sm">
-            {actionError}
-          </div>
-        )}
-        {actionSuccess && (
-          <div className="mb-4 p-3 rounded-card border border-status-approved-border bg-status-approved-bg text-status-approved-text text-sm">
-            {actionSuccess}
-          </div>
-        )}
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6 relative">
+        <div className="xl:col-span-8">
+          {actionError && (
+            <div className="mb-4 p-3 rounded-card border border-status-rejected-border bg-status-rejected-bg text-status-rejected-text text-sm">
+              {actionError}
+            </div>
+          )}
+          {actionSuccess && (
+            <div className="mb-4 p-3 rounded-card border border-status-approved-border bg-status-approved-bg text-status-approved-text text-sm">
+              {actionSuccess}
+            </div>
+          )}
 
         <DashboardAnimatedTabPanel activeKey={activeTab as string}>
           {activeTab === "Overview" && (
@@ -535,7 +536,12 @@ export default function SecurityDashboard() {
               </Card>
             </div>
           )}
-        </DashboardAnimatedTabPanel>
+          </DashboardAnimatedTabPanel>
+        </div>
+
+        <div className="xl:col-span-4 space-y-6">
+          <Notepad dashboardKey="SECURITY" userId={data?.user?.id} />
+        </div>
 
         {/* Modals */}
         {activeModal === "incident" && (

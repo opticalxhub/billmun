@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
-import { X, CheckCircle, AlertCircle, Clock, FileText, ExternalLink, Download, MessageSquare } from 'lucide-react';
+import { X, ExternalLink } from "lucide-react";
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -45,25 +45,38 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
   const submitReview = async () => {
     if (!selected) return;
     setSaving(true);
-    await supabase.from('documents').update({
-      status: reviewStatus,
-      feedback,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by_id: ctx.user.id,
-    }).eq('id', selected.id);
+    try {
+      const res = await fetch("/api/documents/apply-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          document_id: selected.id,
+          status: reviewStatus,
+          feedback: feedback || null,
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Review failed");
+      }
 
-    await supabase.from('session_events').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      event_type: 'DOCUMENT_REVIEW',
-      title: `Document "${selected.title}" reviewed — ${reviewStatus}`,
-      description: feedback || null,
-      created_by: ctx.user.id,
-    });
+      await supabase.from("session_events").insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        event_type: "DOCUMENT_REVIEW",
+        title: `Document "${selected.title}" reviewed — ${reviewStatus}`,
+        description: feedback || null,
+        created_by: ctx.user.id,
+      });
 
-    setSaving(false);
-    setSelected(null);
-    loadDocuments();
+      setSelected(null);
+      await loadDocuments();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Review failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -143,15 +156,15 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName);
 
-      const { error: insertError } = await supabase.from('documents').insert({
+      const { error: insertError } = await supabase.from("documents").insert({
         user_id: ctx.user.id,
         committee_id: ctx.committee.id,
-        type: 'OTHER', // General committee document
+        type: "SPEECH",
         title: file.name,
         file_url: urlData.publicUrl,
         file_size: file.size,
         mime_type: file.type,
-        status: 'APPROVED', // Chair docs are pre-approved
+        status: "APPROVED",
       });
       if (insertError) throw insertError;
       alert("Document uploaded successfully.");
@@ -277,8 +290,19 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                   <p className="text-sm text-text-primary">{selected.user?.full_name}</p>
                 </div>
                 {selected.file_url && (
-                  <div className="bg-bg-raised rounded-card border border-border-subtle overflow-hidden" style={{ height: '300px' }}>
-                    <iframe src={selected.file_url} className="w-full h-full bg-bg-base" title="Document preview" />
+                  <div className="space-y-2">
+                    <div className="bg-bg-raised rounded-card border border-border-subtle overflow-hidden" style={{ height: '300px' }}>
+                      <iframe src={selected.file_url} className="w-full h-full bg-bg-base" title="Document preview" />
+                    </div>
+                    <a 
+                      href={selected.file_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full p-2 text-xs font-bold text-text-primary border border-border-subtle rounded-md hover:bg-bg-raised transition-all"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Open in New Tab
+                    </a>
                   </div>
                 )}
                 <div>
@@ -294,8 +318,8 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Feedback</label>
                   <Textarea rows={4} value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Write feedback for the delegate..." />
                 </div>
-                <Button onClick={submitReview} disabled={saving} className="w-full min-h-[48px]">
-                  {saving ? 'Saving...' : 'Submit Review'}
+                <Button onClick={() => void submitReview()} loading={saving} className="w-full min-h-[48px]">
+                  Submit Review
                 </Button>
               </div>
             </Card>

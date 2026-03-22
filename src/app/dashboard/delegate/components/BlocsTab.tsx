@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -34,7 +34,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   const messagesParentRef = useRef<HTMLDivElement>(null);
 
   // useQuery for Blocs
-  const { data: blocs = [], refetch: refetchBlocs } = useQuery({
+  const { data: blocs = [] } = useQuery({
     queryKey: ['delegate-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {

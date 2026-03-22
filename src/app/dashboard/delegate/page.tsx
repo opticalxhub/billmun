@@ -13,6 +13,7 @@ import BlocsTab from './components/BlocsTab';
 import ResolutionBuilderTab from './components/ResolutionBuilderTab';
 import ScheduleTab from './components/ScheduleTab';
 import ResearchTab from './components/ResearchTab';
+import { Notepad } from '@/components/notepad';
 import {
   DashboardAnimatedTabPanel,
   DashboardHeader,
@@ -81,7 +82,7 @@ export default function DelegateDashboard() {
   });
 
   // useQuery for Committee Details
-  const { data: committee, isLoading: committeeLoading } = useQuery({
+  const { data: committee } = useQuery({
     queryKey: ['committee', assignment?.committee_id],
     enabled: !!assignment?.committee_id,
     queryFn: async () => {
@@ -169,18 +170,24 @@ export default function DelegateDashboard() {
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <DashboardAnimatedTabPanel activeKey={activeTab}>
-          {activeTab === 'Overview' && <OverviewTab ctx={ctx} onTabChange={(tab) => setActiveTab(tab as TabName)} />}
-          {activeTab === 'My Committee' && <MyCommitteeTab ctx={ctx} />}
-          {activeTab === 'Documents' && <DocumentsTab ctx={ctx} />}
-          {activeTab === 'AI Feedback' && <AIFeedbackTab ctx={ctx} />}
-          {activeTab === 'Speeches' && <SpeechesTab ctx={ctx} />}
-          {activeTab === 'Blocs' && <BlocsTab ctx={ctx} />}
-          {activeTab === 'Resolution Builder' && <ResolutionBuilderTab ctx={ctx} />}
-          {activeTab === 'Schedule' && <ScheduleTab ctx={ctx} />}
-          {activeTab === 'Research' && <ResearchTab ctx={ctx} />}
-        </DashboardAnimatedTabPanel>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className="xl:col-span-8">
+          <DashboardAnimatedTabPanel activeKey={activeTab}>
+            {activeTab === 'Overview' && <OverviewTab ctx={ctx} onTabChange={(tab) => setActiveTab(tab as TabName)} />}
+            {activeTab === 'My Committee' && <MyCommitteeTab ctx={ctx} />}
+            {activeTab === 'Documents' && <DocumentsTab ctx={ctx} />}
+            {activeTab === 'AI Feedback' && <AIFeedbackTab ctx={ctx} />}
+            {activeTab === 'Speeches' && <SpeechesTab ctx={ctx} />}
+            {activeTab === 'Blocs' && <BlocsTab ctx={ctx} />}
+            {activeTab === 'Resolution Builder' && <ResolutionBuilderTab ctx={ctx} />}
+            {activeTab === 'Schedule' && <ScheduleTab ctx={ctx} />}
+            {activeTab === 'Research' && <ResearchTab ctx={ctx} />}
+          </DashboardAnimatedTabPanel>
+        </div>
+
+        <div className="xl:col-span-4 space-y-6">
+          <Notepad dashboardKey="DELEGATE" userId={user?.id} />
+        </div>
       </div>
     </div>
   );

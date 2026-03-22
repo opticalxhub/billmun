@@ -44,7 +44,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
         { data: users },
         { data: sessionsData }
       ] = await Promise.all([
-        supabase.from("committee_assignments").select("id, user_id, country, seat_number, users(id, full_name, email, role, status)").eq("committee_id", id),
+        supabase.from("committee_assignments").select("id, user_id, country, seat_number, users:user_id(id, full_name, email, role, status)").eq("committee_id", id),
         supabase.from("documents").select("id, status, user_id").eq("committee_id", id),
         supabase.from("users").select("id, full_name, email, role, status").eq("status", "APPROVED"),
         supabase.from("committee_sessions").select("*").eq("committee_id", id).order("started_at", { ascending: false })

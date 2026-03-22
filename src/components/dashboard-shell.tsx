@@ -1,6 +1,9 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingSpinner } from "./loading-spinner";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export function DashboardLoadingState({ type = "default" }: { type?: "default" | "overview" | "list" | "table" }) {
   if (type === "overview" || type === "list" || type === "table") {
@@ -31,14 +34,34 @@ export function DashboardErrorState({ message }: { message: string }) {
 export function DashboardHeader({
   title,
   subtitle,
+  rightContent,
 }: {
   title: string;
   subtitle?: string;
+  rightContent?: React.ReactNode;
 }) {
+  const router = useRouter();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6">
-      <h1 className="font-jotia text-4xl uppercase tracking-tight text-text-primary">{title}</h1>
-      {subtitle ? <p className="mt-2 text-sm text-text-dimmed">{subtitle}</p> : null}
+    <div className="max-w-7xl mx-auto px-4 md:px-6 pt-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <h1 className="font-jotia text-4xl uppercase tracking-tight text-text-primary">{title}</h1>
+        {subtitle ? <p className="mt-2 text-sm text-text-dimmed">{subtitle}</p> : null}
+      </div>
+      <div className="flex items-center gap-3">
+        {rightContent}
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-4 h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          Log Out
+        </button>
+      </div>
     </div>
   );
 }

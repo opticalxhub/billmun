@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getRequestUserContext } from '@/lib/auth-context';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET(req: NextRequest) {
+  const { context, error: authError, status: authStatus } = await getRequestUserContext();
+  if (authError || !context) {
+    return NextResponse.json({ error: authError || 'Unauthorized' }, { status: authStatus || 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const resolutionId = searchParams.get('resolutionId');
   const format = searchParams.get('format');
 
   if (!resolutionId || !format) {
+    console.log('Missing params in resolution export: resolutionId=', resolutionId, 'format=', format, 'url=', req.url);
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
@@ -23,16 +24,21 @@ export async function GET(req: NextRequest) {
 
   try {
     // Fetch resolution
-    const { data: res, error } = await supabase
+    const { data: res, error: resErr } = await supabaseAdmin
       .from('resolutions')
       .select('*, committees(name)')
       .eq('id', resolutionId)
       .single();
 
-    if (error || !res) throw new Error('Resolution not found');
+    if (resErr || !res) throw new Error('Resolution not found');
+
+    // Verify ownership or access
+    if (res.user_id !== context.userId && context.role !== 'EXECUTIVE_BOARD' && context.role !== 'SECRETARY_GENERAL' && context.role !== 'DEPUTY_SECRETARY_GENERAL' && context.role !== 'CHAIR' && context.role !== 'CO_CHAIR') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Fetch clauses
-    const { data: clauses } = await supabase
+    const { data: clauses } = await supabaseAdmin
       .from('resolution_clauses')
       .select('*')
       .eq('resolution_id', resolutionId)

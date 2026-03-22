@@ -83,13 +83,14 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   const runAnalysis = async () => {
     if (usedToday >= 10) { alert('You have reached your daily limit of 10 analyses.'); return; }
 
-    let textToAnalyze = pasteText;
+    if (selectedDocId === 'paste' && !pasteText.trim()) {
+      alert('Please paste text to analyze.');
+      return;
+    }
     if (selectedDocId !== 'paste') {
       const doc = documents.find(d => d.id === selectedDocId);
       if (!doc) return;
-      textToAnalyze = `[Document: ${doc.title}] (Analysis based on uploaded document)`;
     }
-    if (!textToAnalyze.trim()) { alert('Please provide text to analyze.'); return; }
 
     setAnalyzing(true);
     setLoadingMsgIdx(0);
@@ -110,11 +111,11 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
       const response = await fetch('/api/delegate/ai-analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: ctx.user.id,
-          document_id: selectedDocId !== 'paste' ? selectedDocId : null,
-          text: textToAnalyze,
-        }),
+        body: JSON.stringify(
+          selectedDocId === 'paste'
+            ? { document_id: null, text: pasteText }
+            : { document_id: selectedDocId, text: '' },
+        ),
       });
 
       if (!response.ok) {

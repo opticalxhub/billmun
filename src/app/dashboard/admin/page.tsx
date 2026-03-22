@@ -6,7 +6,6 @@ import { Button } from '@/components/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DashboardLoadingState } from '@/components/dashboard-shell';
-import { LoadingSpinner } from '@/components/loading-spinner';
 import { supabase } from '@/lib/supabase';
 
 type AdminTab =
@@ -57,6 +56,9 @@ export default function AdminDashboard() {
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceDescription, setResourceDescription] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceMode, setResourceMode] = useState<'url' | 'file'>('url');
+  const [resourceBusy, setResourceBusy] = useState(false);
+  const resourceFileInputRef = useRef<HTMLInputElement>(null);
 
   const [reviewDoc, setReviewDoc] = useState<any>(null);
   const [reviewStatus, setReviewStatus] = useState('APPROVED');
@@ -228,19 +230,53 @@ export default function AdminDashboard() {
 
   const handleCreateResource = async () => {
     if (!resourceTitle.trim() || !resourceUrl.trim()) return;
-    await postAction({
-      action: 'create_resource',
-      title: resourceTitle.trim(),
-      description: resourceDescription.trim(),
-      file_url: resourceUrl.trim(),
-    });
-    setResourceTitle('');
-    setResourceDescription('');
-    setResourceUrl('');
+    setResourceBusy(true);
+    try {
+      await postAction({
+        action: 'create_resource',
+        title: resourceTitle.trim(),
+        description: resourceDescription.trim(),
+        file_url: resourceUrl.trim(),
+      });
+      setResourceTitle('');
+      setResourceDescription('');
+      setResourceUrl('');
+    } finally {
+      setResourceBusy(false);
+    }
   };
 
-  const handleSaveSharedNote = async () => {
-    await postAction({ action: 'save_shared_note', note_text: sharedNote });
+  const handleResourceFileSelected = async (file: File | undefined) => {
+    if (!file || !data?.committee?.id) return;
+    const maxMb = 25;
+    if (file.size > maxMb * 1024 * 1024) {
+      alert(`File must be under ${maxMb}MB.`);
+      return;
+    }
+    setResourceBusy(true);
+    try {
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `committee-resources/${data.committee.id}/${Date.now()}_${safe}`;
+      const { error: upErr } = await supabase.storage.from('documents').upload(path, file, {
+        contentType: file.type || 'application/octet-stream',
+      });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
+      const title = resourceTitle.trim() || file.name;
+      await postAction({
+        action: 'create_resource',
+        title,
+        description: resourceDescription.trim(),
+        file_url: pub.publicUrl,
+      });
+      setResourceTitle('');
+      setResourceDescription('');
+      setResourceUrl('');
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setResourceBusy(false);
+    }
   };
 
   const handleSaveVote = async () => {
@@ -301,37 +337,23 @@ export default function AdminDashboard() {
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
-            <SectionLabel className="mb-2">Live Session Status</SectionLabel>
-            <p className="text-text-primary text-lg">{data?.overview?.session_status || 'Adjourned'}</p>
-            <p className="text-sm text-text-dimmed mt-2">Topic: {data?.overview?.current_topic || 'No active topic'}</p>
-            <p className="text-sm text-text-dimmed mt-1">
-              Present: {data?.overview?.present_count || 0}/{data?.overview?.total_delegates || 0}
+            <SectionLabel className="mb-2">Active security incidents</SectionLabel>
+            <p
+              className={`text-3xl font-jotia-bold ${(data?.overview?.open_incidents ?? 0) > 0 ? 'text-status-rejected-text' : 'text-text-primary'}`}
+            >
+              {data?.overview?.open_incidents ?? 0}
             </p>
+            <p className="text-sm text-text-dimmed mt-2">Open incidents across the conference (status OPEN).</p>
           </Card>
           <Card>
-            <SectionLabel className="mb-2">Pending Tasks</SectionLabel>
-            <div className="space-y-2 text-sm">
-              <p>Documents awaiting review: {data?.overview?.pending_document_reviews || 0}</p>
-              <p>Delegate status alerts: {data?.overview?.delegate_status_alerts || 0}</p>
-              <p>Unread committee messages: {data?.overview?.unread_committee_messages || 0}</p>
-            </div>
+            <SectionLabel className="mb-2">Your pending committee tasks</SectionLabel>
+            <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_admin_tasks ?? 0}</p>
+            <p className="text-sm text-text-dimmed mt-2">Committee admin tasks with status TODO for your committee.</p>
           </Card>
           <Card>
-            <SectionLabel className="mb-2">Communication</SectionLabel>
-            <div className="space-y-3">
-              <a
-                href={data?.communication?.chair_user_id ? `/dashboard/chair` : '/dashboard'}
-                className="inline-block text-sm text-text-primary underline-offset-4 hover:underline"
-              >
-                Open Chair Dashboard
-              </a>
-              <a
-                href="/dashboard/security"
-                className="inline-block text-sm text-text-primary underline-offset-4 hover:underline"
-              >
-                Open Security Dashboard
-              </a>
-            </div>
+            <SectionLabel className="mb-2">Committee resources</SectionLabel>
+            <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.committee_resources_count ?? 0}</p>
+            <p className="text-sm text-text-dimmed mt-2">Resources published for this committee (including archived in list).</p>
           </Card>
         </div>
       )}
@@ -590,13 +612,59 @@ export default function AdminDashboard() {
       {activeTab === 'resources' && (
         <Card className="space-y-6">
           <SectionLabel>Committee Resources</SectionLabel>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input placeholder="Title" value={resourceTitle} onChange={(e) => setResourceTitle(e.target.value)} />
-            <Input placeholder="Description" value={resourceDescription} onChange={(e) => setResourceDescription(e.target.value)} />
-            <Input placeholder="File URL" value={resourceUrl} onChange={(e) => setResourceUrl(e.target.value)} />
+          <div className="flex gap-2 border border-border-subtle rounded-card p-1 w-fit">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${resourceMode === 'url' ? 'bg-bg-raised text-text-primary' : 'text-text-dimmed'}`}
+              onClick={() => setResourceMode('url')}
+            >
+              Add URL
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${resourceMode === 'file' ? 'bg-bg-raised text-text-primary' : 'text-text-dimmed'}`}
+              onClick={() => setResourceMode('file')}
+            >
+              Upload file
+            </button>
           </div>
-          <Button onClick={handleCreateResource}>Publish Resource</Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input placeholder="Title" value={resourceTitle} onChange={(e) => setResourceTitle(e.target.value)} />
+            <Input placeholder="Description (optional)" value={resourceDescription} onChange={(e) => setResourceDescription(e.target.value)} />
+          </div>
+          {resourceMode === 'url' ? (
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+              <Input
+                className="flex-1"
+                placeholder="File or resource URL"
+                value={resourceUrl}
+                onChange={(e) => setResourceUrl(e.target.value)}
+              />
+              <Button loading={resourceBusy} onClick={() => void handleCreateResource()}>
+                Publish resource
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <input
+                ref={resourceFileInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.xlsx,.xls,image/*,video/*"
+                onChange={(e) => void handleResourceFileSelected(e.target.files?.[0])}
+              />
+              <Button loading={resourceBusy} variant="outline" onClick={() => resourceFileInputRef.current?.click()}>
+                Choose file and publish
+              </Button>
+              <p className="text-xs text-text-dimmed">Uses the title above or the file name. Stored in the same file_url field as URLs.</p>
+            </div>
+          )}
           <div className="space-y-2">
+            {resources.length === 0 && (
+              <div className="text-center py-10 border border-dashed border-border-subtle rounded-card text-sm text-text-dimmed">
+                No resources yet. Publish a link or upload a file for your delegates.
+              </div>
+            )}
             {resources.map((resource: any) => (
               <div key={resource.id} className="p-3 border border-border-subtle rounded-card flex items-center justify-between gap-4">
                 <div className="min-w-0">
@@ -738,18 +806,6 @@ export default function AdminDashboard() {
 
       {activeTab === 'communication' && (
         <div className="space-y-6">
-          <Card className="space-y-6">
-            <SectionLabel>Cross-Department Links</SectionLabel>
-            <div className="flex flex-wrap gap-3">
-              <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center hover:bg-bg-raised transition-colors" href="/dashboard/chair">
-                Open Chair Dashboard
-              </a>
-              <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center hover:bg-bg-raised transition-colors" href="/dashboard/security">
-                Open Security Dashboard
-              </a>
-            </div>
-          </Card>
-
           <Card className="space-y-6">
             <SectionLabel>Shared Notes with Chair</SectionLabel>
             <p className="text-sm text-text-dimmed">
