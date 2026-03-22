@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Footer } from '@/components/footer';
 
@@ -11,6 +11,26 @@ export default function LandingPage() {
   const [conferenceDate, setConferenceDate] = useState<Date | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [isLoadingCountdown, setIsLoadingCountdown] = useState(true);
+
+  // Instant fallback date for immediate display
+  const fallbackDate = useMemo(() => new Date('2026-03-27T09:00:00+03:00'), []);
+  const displayDate = conferenceDate || fallbackDate;
+
+  // Calculate countdown instantly with fallback date
+  const calculateTimeLeft = useMemo(() => {
+    const now = new Date().getTime();
+    const distance = displayDate.getTime() - now;
+
+    if (distance < 0) return null;
+    
+    return {
+      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+      seconds: Math.floor((distance % (1000 * 60)) / 1000),
+    };
+  }, [displayDate]);
 
   useEffect(() => {
     async function fetchData() {
@@ -23,9 +43,16 @@ export default function LandingPage() {
       if (sData?.conference_date) {
         setConferenceDate(new Date(sData.conference_date));
       }
+      // Stop loading countdown once data is fetched
+      setIsLoadingCountdown(false);
     }
     fetchData();
   }, []);
+
+  // Initialize countdown instantly with fallback
+  useEffect(() => {
+    setTimeLeft(calculateTimeLeft);
+  }, [calculateTimeLeft]);
 
   useEffect(() => {
     if (!conferenceDate) return;
@@ -69,13 +96,13 @@ export default function LandingPage() {
               <Image 
                 src="/billmun.png" 
                 alt="BILLMUN Logo" 
-                width={180} 
-                height={180} 
+                width={360} 
+                height={360}
+                priority={true}
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
               />
             </div>
-            <h1 className="font-jotia text-7xl md:text-8xl leading-none tracking-tight mb-8 uppercase font-light">
-              
-            </h1>
             <div className="flex flex-col items-center gap-2 mb-12">
               <p className="font-jotia text-m md:text-2xl text-text-primary tracking-wide">
                 The official digital portal for the BILLMUN 2026 conference
@@ -89,28 +116,35 @@ export default function LandingPage() {
                   Rowad Al Khaleej
                 </span>
               </div>
+              <p className="font-jotia text-m text-text-tertiary uppercase tracking-[0.1em] mt-2">
+                Made by Kenan Nezar & Alaa Abbadi
+              </p>
             </div>
 
-            {timeLeft && (
+            {(timeLeft || isLoadingCountdown) && (
               <div className="flex items-center justify-center gap-6 mb-16">
-                {[
-                  { label: 'Days', value: timeLeft.days },
-                  { label: 'Hours', value: timeLeft.hours },
-                  { label: 'Min', value: timeLeft.minutes },
-                  { label: 'Sec', value: timeLeft.seconds },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                    <span className="font-jotia text-4xl md:text-5xl font-light text-text-primary mb-1">
-                      {item.value.toString().padStart(2, '0')}
-                    </span>
-                    <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                      {item.label}
-                    </span>
+                {isLoadingCountdown ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-text-primary" />
                   </div>
-                ))}
+                ) : (
+                  [
+                    { label: 'Days', value: timeLeft!.days },
+                    { label: 'Hours', value: timeLeft!.hours },
+                    { label: 'Min', value: timeLeft!.minutes },
+                    { label: 'Sec', value: timeLeft!.seconds },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex flex-col items-center">
+                      <span className="font-jotia text-4xl md:text-5xl font-light text-text-primary mb-1">
+                        {item.value.toString().padStart(2, '0')}
+                      </span>
+                      <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+                        {item.label}
+                      </span>
+                    </div>  ))
+                )}
               </div>
             )}
-
             <div className="flex items-center justify-center gap-8">
               <Link 
                 href={isLoggedIn ? '/dashboard' : '/login'} 

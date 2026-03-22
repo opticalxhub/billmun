@@ -4,7 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendRegistrationConfirmation(email: string, name: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.sa>",
+    from: "BILLMUN <billmun@gomarai.com>",
     to: email,
     subject: "Registration Received - BILLMUN 2026",
     html: `
@@ -41,7 +41,7 @@ export async function sendRegistrationConfirmation(email: string, name: string) 
 
 export async function sendApprovalEmail(email: string, name: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.sa>",
+    from: "BILLMUN <billmun@gomarai.com>",
     to: email,
     subject: "Application Approved - BILLMUN 2026",
     html: `
@@ -78,7 +78,7 @@ export async function sendApprovalEmail(email: string, name: string) {
 
 export async function sendRejectionEmail(email: string, name: string, reason?: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.sa>",
+    from: "BILLMUN <billmun@gomarai.com>",
     to: email,
     subject: "Registration Update - BILLMUN 2026",
     html: `
@@ -100,7 +100,7 @@ export async function sendRejectionEmail(email: string, name: string, reason?: s
               <p>Hello <strong>${name}</strong>,</p>
               <p>Thank you for your interest in BILLMUN 2026. Unfortunately, your registration was not approved for this conference cycle.</p>
               ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-              <p>For inquiries, please contact us at <a href="mailto:support@billmun.sa">support@billmun.sa</a></p>
+              <p>For inquiries, please contact us at <a href="mailto:support@billmun.com">support@billmun.com</a></p>
             </div>
             <div class="footer">
               <p>BILLMUN Conference 2026 • Bilkent University, Ankara, Turkey</p>

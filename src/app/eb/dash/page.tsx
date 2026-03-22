@@ -20,7 +20,7 @@ import EBInternalWorkspacePage from "./internal-workspace/page";
 function EBDashInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tabParam = searchParams.get('tab') || 'overview';
+  const tabParam = searchParams?.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(tabParam);
 
   // Sync state with URL

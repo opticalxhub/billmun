@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < emails.length; i += 50) {
         const batch = emails.slice(i, i + 50);
         await resend.emails.send({
-          from: "BILLMUN <noreply@billmun.sa>",
+          from: "BILLMUN <billmun@gomarai.com>",
           to: batch,
           subject: subject,
           html: html,
