@@ -5,8 +5,8 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 export type RequestUserContext = {
   userId: string;
   role: string;
-  committeeId: string | null;
-  emergency: boolean;
+  committee_id: string | null;
+  emergency:boolean;
 };
 
 export async function getRequestUserContext(): Promise<{ context?: RequestUserContext; error?: string; status?: number }> {
@@ -31,7 +31,7 @@ export async function getRequestUserContext(): Promise<{ context?: RequestUserCo
           context: {
             userId: actor.id,
             role: actor.role,
-            committeeId: null,
+            committee_id: null,
             emergency: true,
           },
         };
@@ -61,14 +61,14 @@ export async function getRequestUserContext(): Promise<{ context?: RequestUserCo
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user?.id) return { error: "Unauthorized", status: 401 };
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) return { error: "Unauthorized", status: 401 };
 
   const { data: profile } = await supabaseAdmin
     .from("users")
     .select("id, role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle();
   if (!profile?.id) return { error: "Unauthorized", status: 401 };
 
@@ -82,11 +82,11 @@ export async function getRequestUserContext(): Promise<{ context?: RequestUserCo
     .maybeSingle();
   committeeId = assignment?.committee_id || null;
 
-  if (!committeeId && profile.role === "CHAIR") {
+  if (!committeeId && (profile.role === "CHAIR" || profile.role === "CO_CHAIR")) {
     const { data: chaired } = await supabaseAdmin
       .from("committees")
       .select("id")
-      .eq("chair_id", profile.id)
+      .or(`chair_id.eq.${profile.id},co_chair_id.eq.${profile.id}`)
       .limit(1)
       .maybeSingle();
     committeeId = chaired?.id || null;
@@ -96,7 +96,7 @@ export async function getRequestUserContext(): Promise<{ context?: RequestUserCo
     context: {
       userId: profile.id,
       role: profile.role,
-      committeeId,
+      committee_id: committeeId,
       emergency: false,
     },
   };

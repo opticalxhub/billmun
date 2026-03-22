@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const q = req.nextUrl.searchParams.get('q') || '';
     if (q.length < 2) return NextResponse.json({ users: [] });

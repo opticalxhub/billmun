@@ -2,18 +2,18 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingSpinner } from "./loading-spinner";
 
-export function DashboardLoadingState({ label, type = "default" }: { label: string; type?: "default" | "overview" | "list" }) {
-  if (type === "overview" || type === "list") {
+export function DashboardLoadingState({ type = "default" }: { type?: "default" | "overview" | "list" | "table" }) {
+  if (type === "overview" || type === "list" || type === "table") {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
-        <LoadingSpinner size="lg" label={label} />
+      <div className={`flex-1 flex flex-col items-center justify-center ${type === 'table' ? 'py-20 h-full' : 'min-h-[400px]'} animate-in fade-in duration-500`}>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-bg-base flex items-center justify-center px-6">
-      <LoadingSpinner size="xl" label={label} />
+      <LoadingSpinner size="xl" />
     </div>
   );
 }

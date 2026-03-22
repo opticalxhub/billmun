@@ -3,7 +3,7 @@ import { LoadingSpinner } from "./loading-spinner";
 export function OverviewTabSkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
-      <LoadingSpinner size="lg" label="Loading overview..." />
+      <LoadingSpinner size="lg" />
     </div>
   );
 }
@@ -11,7 +11,7 @@ export function OverviewTabSkeleton() {
 export function ListTabSkeleton() {
   return (  
     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
-      <LoadingSpinner size="lg" label="Loading list..." />
+      <LoadingSpinner size="lg" />
     </div>
   );
 }
@@ -19,7 +19,7 @@ export function ListTabSkeleton() {
 export function GridTabSkeleton() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
-      <LoadingSpinner size="lg" label="Loading content..." />
+      <LoadingSpinner size="lg" />
     </div>
   );
 }

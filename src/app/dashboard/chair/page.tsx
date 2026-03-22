@@ -53,9 +53,13 @@ export default function ChairDashboard() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-      const { data, error } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('No session');
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status')
+        .eq('id', authUser.id)
+        .single();
       if (error) throw error;
       return data;
     },
@@ -67,11 +71,11 @@ export default function ChairDashboard() {
     queryKey: ['chair-committee', user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      // Find committee where this user is chair
+      // Find committee where this user is chair or co-chair
       const { data: committeeData } = await supabase
         .from('committees')
         .select('*')
-        .eq('chair_id', user!.id)
+        .or(`chair_id.eq.${user!.id},co_chair_id.eq.${user!.id}`)
         .maybeSingle();
 
       if (committeeData) return committeeData;
@@ -98,13 +102,25 @@ export default function ChairDashboard() {
     enabled: !!committee?.id,
     queryFn: async () => {
       const { data } = await supabase
-        .from('committee_assignments')
-        .select('*, user:user_id(id, full_name, email)')
-        .eq('committee_id', committee!.id)
-        .limit(100);
-      return data || [];
+        .from('users')
+        .select(`
+          id,
+          full_name,
+          email,
+          role,
+          status,
+          committee_assignments!inner(id, country, seat_number)
+        `)
+        .eq('committee_assignments.committee_id', committee!.id);
+      
+      // Transform to flatten committee_assignments
+      return (data || []).map((u: any) => ({
+        ...u,
+        country: u.committee_assignments?.[0]?.country || 'Unknown',
+        seat_number: u.committee_assignments?.[0]?.seat_number || '',
+      }));
     },
-    staleTime: 60 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 
   // useQuery for Committee Session
@@ -159,7 +175,7 @@ export default function ChairDashboard() {
   }, [queryClient, user?.id, committee?.id, refetchSession]);
 
   if (loading) {
-    return <DashboardLoadingState label="Loading chair dashboard..." type="overview" />;
+    return <DashboardLoadingState type="overview" />;
   }
 
   if (!user && !userLoading) {

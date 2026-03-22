@@ -124,7 +124,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   };
 
   if (resolutionsLoading || blocsLoading) {
-    return <LoadingSpinner label="Loading resolutions..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   const createResolution = async () => {

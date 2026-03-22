@@ -1,6 +1,7 @@
 export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   DELEGATE: 'Delegate',
   CHAIR: 'Chair',
+  CO_CHAIR: 'Co-Chair',
   MEDIA: 'Press / Media',
   EXECUTIVE_BOARD: 'Executive Member',
   ADMIN: 'Administrator',

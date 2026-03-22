@@ -1,5 +1,56 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-export default function EBDashPage() {
-  redirect('/eb/dash/overview');
+import React, { useState, useEffect } from "react";
+import { EBLayout } from "@/components/eb-layout";
+import { useSearchParams, useRouter } from "next/navigation";
+
+// Import all sub-pages as components
+import EBDashOverview from "./overview/page";
+import RegistrationsDashPage from "./registrations/page";
+import LiveMonitorPage from "./live-monitor/page";
+import CommitteesDashPage from "./committees/page";
+import EBDocumentsPage from "./documents/page";
+import EBSecurityPage from "./security/page";
+import CommunicationsPage from "./communications/page";
+import SettingsPage from "./settings/page";
+import EBAuditLogPage from "./audit/page";
+import EBInternalWorkspacePage from "./internal-workspace/page";
+
+export default function EBDashMain() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const tabParam = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(tabParam);
+
+  // Sync state with URL
+  useEffect(() => {
+    setActiveTab(tabParam);
+  }, [tabParam]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    router.push(`/eb/dash?tab=${tabId}`);
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview': return <EBDashOverview />;
+      case 'registrations': return <RegistrationsDashPage />;
+      case 'live-monitor': return <LiveMonitorPage />;
+      case 'committees': return <CommitteesDashPage />;
+      case 'documents': return <EBDocumentsPage />;
+      case 'security': return <EBSecurityPage />;
+      case 'communications': return <CommunicationsPage />;
+      case 'settings': return <SettingsPage />;
+      case 'audit': return <EBAuditLogPage />;
+      case 'internal-workspace': return <EBInternalWorkspacePage />;
+      default: return <EBDashOverview />;
+    }
+  };
+
+  return (
+    <EBLayout activeTab={activeTab} onTabChange={handleTabChange}>
+      {renderContent()}
+    </EBLayout>
+  );
 }

@@ -66,7 +66,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-members', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_members').select('*, User:user_id(id, full_name, email, role)').eq('bloc_id', selectedBloc.id);
+      const { data } = await supabase.from('bloc_members').select('*, users:user_id(id, full_name, email, role)').eq('bloc_id', selectedBloc.id);
       return data || [];
     },
   });
@@ -76,7 +76,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-docs', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_documents').select('*, uploader:uploader_id(full_name)').eq('bloc_id', selectedBloc.id).order('uploaded_at', { ascending: false });
+      const { data } = await supabase.from('bloc_documents').select('*, users:uploader_id(full_name)').eq('bloc_id', selectedBloc.id).order('uploaded_at', { ascending: false });
       return data || [];
     },
   });
@@ -86,7 +86,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-messages', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_messages').select('*, User:user_id(full_name)').eq('bloc_id', selectedBloc.id).order('created_at', { ascending: true }).limit(100);
+      const { data } = await supabase.from('bloc_messages').select('*, users:user_id(full_name)').eq('bloc_id', selectedBloc.id).order('created_at', { ascending: true }).limit(100);
       return data || [];
     },
   });
@@ -135,7 +135,14 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     onSuccess: ({ data, code }) => {
       setCreatedCode(code);
       queryClient.invalidateQueries({ queryKey: ['delegate-blocs'] });
-      supabase.from('audit_logs').insert({ actor_id: ctx.user.id, action: `Created bloc: ${data.name}`, target_type: 'Bloc', target_id: data.id });
+      try {
+        supabase.from('audit_logs').insert({ 
+          actor_id: ctx.user.id, 
+          action: `Created bloc: ${data.name}`, 
+          target_type: 'Bloc', 
+          target_id: data.id 
+        });
+      } catch { /* ignore */ }
     }
   });
 
@@ -182,7 +189,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
           user_id: ctx.user.id,
           content,
           created_at: new Date().toISOString(),
-          User: { full_name: ctx.user.full_name }
+          users: { full_name: ctx.user.full_name }
         }
       ]);
       return { previous };
@@ -457,7 +464,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                   <tr key={m.id} className="border-b border-border-subtle/50">
                     <td className="px-4 py-3 font-jotia text-text-primary flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_5px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
-                      {m.User?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
+                      {m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
                     </td>
                     <td className="px-4 py-3 font-jotia text-text-dimmed text-xs">{new Date(m.joined_at).toLocaleDateString()}</td>
                     {isCreator && (
@@ -480,7 +487,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
               <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-jotia text-text-primary text-sm">{m.User?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
+                    <p className="font-jotia text-text-primary text-sm">{m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
                     <p className="font-jotia text-text-tertiary text-xs">{new Date(m.joined_at).toLocaleDateString()}</p>
                   </div>
                   {isCreator && m.user_id !== ctx.user.id && (
@@ -517,7 +524,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                 <div key={d.id} className="bg-bg-card border border-border-subtle rounded-card p-4 flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="font-jotia text-text-primary text-sm truncate">{d.title}</p>
-                    <p className="font-jotia text-text-tertiary text-xs">{d.uploader?.full_name} &middot; {new Date(d.uploaded_at).toLocaleDateString()}</p>
+                    <p className="font-jotia text-text-tertiary text-xs">{d.users?.full_name} &middot; {new Date(d.uploaded_at).toLocaleDateString()}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <a href={d.file_url} download className="text-xs text-text-primary hover:underline min-h-[44px] flex items-center px-2">Download</a>
@@ -585,7 +592,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                       className={`flex flex-col mb-4 ${isMe ? "items-end" : "items-start"}`}
                     >
                       <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-raised border border-border-subtle"}`}>
-                        {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.User?.full_name}</p>}
+                        {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.users?.full_name}</p>}
                         <p className="font-jotia">{m.content}</p>
                       </div>
                       <span className="text-[9px] text-text-dimmed mt-1">{new Date(m.created_at).toLocaleTimeString()}</span>

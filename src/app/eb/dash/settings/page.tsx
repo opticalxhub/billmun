@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Input, Textarea, ErrorMessage } from '@/components/ui';
+import { DashboardLoadingState } from '@/components/dashboard-shell';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({
@@ -11,7 +12,11 @@ export default function SettingsPage() {
     conference_location: 'Khobar, Saudi Arabia',
     registration_open: true,
     auto_approve_registrations: false,
-    portal_message: 'Welcome to the official BILLMUN 2026 Attendees Portal.'
+    portal_message: 'Welcome to the official BILLMUN 2026 Attendees Portal.',
+    maintenance_mode: false,
+    ai_analysis_enabled: true,
+    max_file_upload_mb: 10,
+    emergency_contact_phone: '+966 5X XXX XXXX'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,15 +28,17 @@ export default function SettingsPage() {
         const { data, error } = await supabase
           .from('conference_settings')
           .select('*')
-          .single();
+          .eq('id', '1')
+          .maybeSingle();
         
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error) throw error;
         if (data) {
           // Format date for the input
-          if (data.conference_date) {
-            data.conference_date = new Date(data.conference_date).toISOString().split('T')[0];
+          const formattedData = { ...data };
+          if (formattedData.conference_date) {
+            formattedData.conference_date = new Date(formattedData.conference_date).toISOString().split('T')[0];
           }
-          setSettings(data);
+          setSettings(prev => ({ ...prev, ...formattedData }));
         }
       } catch (err) {
         console.error('Error fetching settings:', err);
@@ -50,10 +57,12 @@ export default function SettingsPage() {
 
     try {
       const payload = { ...settings };
+      // Ensure date is ISO
       if (payload.conference_date && !payload.conference_date.includes('T')) {
         payload.conference_date = new Date(payload.conference_date).toISOString();
       }
 
+      // We use upsert with ID '1'
       const { error: saveError } = await supabase
         .from('conference_settings')
         .upsert({ 
@@ -64,19 +73,16 @@ export default function SettingsPage() {
 
       if (saveError) throw saveError;
       alert('Settings saved successfully');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save settings');
+    } catch (err: any) {
+      console.error("Save error:", err);
+      setError(err.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <div className="w-8 h-8 border-2 border-text-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <DashboardLoadingState type="overview" />;
   }
 
   return (
@@ -146,6 +152,57 @@ export default function SettingsPage() {
               >
                 <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${settings.auto_approve_registrations ? 'left-7 bg-status-approved-text' : 'left-1 bg-text-disabled'}`} />
               </button>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-bg-card border-border-subtle">
+          <SectionLabel>Portal Behavior & Security</SectionLabel>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-bg-raised rounded-card border border-border-subtle">
+              <div>
+                <div className="font-bold text-text-primary text-sm uppercase tracking-wide">AI Position Paper Analysis</div>
+                <p className="text-xs text-text-dimmed mt-1">Allow delegates to use AI for document feedback.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettings({...settings, ai_analysis_enabled: !settings.ai_analysis_enabled})}
+                className={`w-12 h-6 rounded-full transition-colors relative ${settings.ai_analysis_enabled ? 'bg-status-approved-bg' : 'bg-bg-hover'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${settings.ai_analysis_enabled ? 'left-7 bg-status-approved-text' : 'left-1 bg-text-disabled'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-bg-raised rounded-card border border-border-subtle">
+              <div>
+                <div className="font-bold text-text-primary text-sm uppercase tracking-wide">Maintenance Mode</div>
+                <p className="text-xs text-text-dimmed mt-1">Lock the portal for all non-EB users.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettings({...settings, maintenance_mode: !settings.maintenance_mode})}
+                className={`w-12 h-6 rounded-full transition-colors relative ${settings.maintenance_mode ? 'bg-status-rejected-bg' : 'bg-bg-hover'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 rounded-full transition-all ${settings.maintenance_mode ? 'left-7 bg-status-rejected-text' : 'left-1 bg-text-disabled'}`} />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border-t border-border-subtle">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Max File Size (MB)</label>
+                <Input 
+                  type="number"
+                  value={settings.max_file_upload_mb || 10}
+                  onChange={(e) => setSettings({...settings, max_file_upload_mb: parseInt(e.target.value)})}
+                  className="bg-bg-raised"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Emergency Contact Number</label>
+                <Input 
+                  value={settings.emergency_contact_phone || ''}
+                  onChange={(e) => setSettings({...settings, emergency_contact_phone: e.target.value})}
+                  className="bg-bg-raised"
+                />
+              </div>
             </div>
           </div>
         </Card>

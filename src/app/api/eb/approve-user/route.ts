@@ -54,13 +54,17 @@ export async function POST(request: NextRequest) {
     });
 
     // Audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      actor_id: approverId,
-      action: approve ? 'APPROVED_USER' : 'REJECTED_USER',
-      target_type: 'USER',
-      target_id: userId,
-      metadata: { email: targetUser.email }
-    });
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: approverId,
+        action: approve ? 'APPROVED_USER' : 'REJECTED_USER',
+        target_type: 'USER',
+        target_id: userId,
+        metadata: { email: targetUser.email }
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed:', auditErr);
+    }
 
     // If the user is approved, ensure their Supabase auth user is email-confirmed.
     if (approve) {

@@ -5,18 +5,18 @@ const groq = new Groq({
 });
 
 export interface DocumentAnalysisResult {
-  overallScore: number;
-  argumentStrength: number;
-  researchDepth: number;
-  policyAlignment: number;
-  writingClarity: number;
-  formatAdherence: number;
+  overall_score: number;
+  argument_strength: number;
+  research_depth: number;
+  policy_alignment: number;
+  writing_clarity: number;
+  format_adherence: number;
   summary: string;
   strengths: string[];
   weaknesses: string[];
   suggestions: string[];
-  annotatedSegments: Array<{
-    textSnippet: string;
+  annotated_segments: Array<{
+    text_snippet: string;
     type: 'STRENGTH' | 'WEAKNESS' | 'SUGGESTION';
     comment: string;
   }>;
@@ -31,19 +31,19 @@ ${documentText}
 
 Provide your response as a valid JSON object with exactly this structure (no markdown, just raw JSON):
 {
-  "overallScore": <number 0-100>,
-  "argumentStrength": <number 0-100>,
-  "researchDepth": <number 0-100>,
-  "policyAlignment": <number 0-100>,
-  "writingClarity": <number 0-100>,
-  "formatAdherence": <number 0-100>,
+  "overall_score": <number 0-100>,
+  "argument_strength": <number 0-100>,
+  "research_depth": <number 0-100>,
+  "policy_alignment": <number 0-100>,
+  "writing_clarity": <number 0-100>,
+  "format_adherence": <number 0-100>,
   "summary": "<string: 2-3 sentence overall assessment>",
   "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
   "weaknesses": ["<weakness 1>", "<weakness 2>", "<weakness 3>"],
   "suggestions": ["<suggestion 1>", "<suggestion 2>", "<suggestion 3>"],
-  "annotatedSegments": [
-    {"textSnippet": "<quoted text>", "type": "STRENGTH", "comment": "<comment>"},
-    {"textSnippet": "<quoted text>", "type": "WEAKNESS", "comment": "<comment>"}
+  "annotated_segments": [
+    {"text_snippet": "<quoted text>", "type": "STRENGTH", "comment": "<comment>"},
+    {"text_snippet": "<quoted text>", "type": "WEAKNESS", "comment": "<comment>"}
   ]
 }`;
 
@@ -70,7 +70,7 @@ Provide your response as a valid JSON object with exactly this structure (no mar
 
     // Validate structure
     if (
-      typeof result.overallScore !== 'number' ||
+      typeof result.overall_score !== 'number' ||
       typeof result.summary !== 'string' ||
       !Array.isArray(result.strengths) ||
       !Array.isArray(result.weaknesses)

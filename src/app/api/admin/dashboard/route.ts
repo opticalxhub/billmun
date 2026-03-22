@@ -8,81 +8,97 @@ export async function GET() {
     return NextResponse.json({ error }, { status: status || 500 });
   }
 
-  const { adminUserId, committeeId, committeeName } = context;
+  const { adminUserId, committee_id, committeeName } = context;
+
+  if (!committee_id) {
+    return NextResponse.json({
+      admin: { id: adminUserId, name: null },
+      committee: { id: null, name: null },
+      error: "No committee assignment found. Please contact the Executive Board to be assigned to a committee.",
+      noAssignment: true
+    });
+  }
 
   const [{ data: chairAssignments }, { data: sessionRow }, { data: delegates }, { data: statuses }, { data: documentsQueue }, { data: reviewedDocs }, { data: announcements }, { data: resources }, { data: attendance }, { data: voteRecords }, { data: chairNotes }, { data: committeeChannel }, { data: adminTasks }] =
     await Promise.all([
       supabaseAdmin
         .from("committee_assignments")
         .select("user_id, users(id, full_name, role)")
-        .eq("committee_id", committeeId),
+        .eq("committee_id", committee_id),
       supabaseAdmin
         .from("committee_sessions")
         .select("*")
-        .eq("committee_id", committeeId)
+        .eq("committee_id", committee_id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
       supabaseAdmin
         .from("committee_assignments")
         .select("user_id, country, users(id, full_name, email, phone_number, role, status)")
-        .eq("committee_id", committeeId),
+        .eq("committee_id", committee_id),
       supabaseAdmin
         .from("delegate_presence_statuses")
         .select("*")
-        .eq("committee_id", committeeId),
+        .eq("committee_id", committee_id),
       supabaseAdmin
         .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, users!documents_user_id_fkey(full_name)")
-        .eq("committee_id", committeeId)
+        .select("id, user_id, title, type, status, uploaded_at, users(full_name)")
+        .eq("committee_id", committee_id)
         .in("status", ["PENDING", "NEEDS_REVISION"])
-        .order("uploaded_at", { ascending: true }),
+        .order("uploaded_at", { ascending: true })
+        .limit(50),
       supabaseAdmin
         .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, reviewed_at, users!documents_user_id_fkey(full_name)")
-        .eq("committee_id", committeeId)
+        .select("id, user_id, title, type, status, uploaded_at, reviewed_at, users(full_name)")
+        .eq("committee_id", committee_id)
         .in("status", ["APPROVED", "REJECTED"])
-        .order("reviewed_at", { ascending: false }),
+        .order("reviewed_at", { ascending: false })
+        .limit(50),
       supabaseAdmin
-        .from("committee_announcements")
+        .from("announcements")
         .select("*")
-        .eq("committee_id", committeeId)
-        .order("created_at", { ascending: false }),
+        .eq("committee_id", committee_id)
+        .order("created_at", { ascending: false })
+        .limit(50),
       supabaseAdmin
         .from("committee_resources")
         .select("*")
-        .eq("committee_id", committeeId)
-        .order("updated_at", { ascending: false }),
+        .eq("committee_id", committee_id)
+        .order("updated_at", { ascending: false })
+        .limit(50),
       supabaseAdmin
         .from("attendance_records")
         .select("*")
-        .eq("committee_id", committeeId)
-        .order("session_start", { ascending: false }),
+        .eq("committee_id", committee_id)
+        .order("session_start", { ascending: false })
+        .limit(50),
       supabaseAdmin
         .from("committee_vote_records")
         .select("*")
-        .eq("committee_id", committeeId)
-        .order("created_at", { ascending: false }),
+        .eq("committee_id", committee_id)
+        .order("created_at", { ascending: false })
+        .limit(50),
       supabaseAdmin
         .from("admin_chair_notes")
         .select("*")
-        .eq("committee_id", committeeId)
+        .eq("committee_id", committee_id)
         .maybeSingle(),
       supabaseAdmin
         .from("channels")
         .select("id")
         .eq("type", "COMMITTEE")
-        .eq("committee_id", committeeId)
+        .eq("committee_id", committee_id)
         .maybeSingle(),
       supabaseAdmin
         .from("committee_admin_tasks")
         .select("*, creator:created_by(full_name), admin:assigned_admin_id(full_name)")
-        .eq("committee_id", committeeId)
-        .order("created_at", { ascending: false }),
+        .eq("committee_id", committee_id)
+        .order("created_at", { ascending: false })
+        .limit(50),
     ]);
 
   const chairUserRaw = (chairAssignments || []).find(
-    (r: any) => r?.users?.role === "CHAIR" || r?.users?.role === "SECRETARY_GENERAL" || r?.users?.role === "DEPUTY_SECRETARY_GENERAL",
+    (r: any) => ["CHAIR", "CO_CHAIR", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(r?.users?.role),
   )?.users;
   const chairUser = Array.isArray(chairUserRaw) ? chairUserRaw[0] : chairUserRaw;
 
@@ -138,7 +154,7 @@ export async function GET() {
 
   return NextResponse.json({
     committee: {
-      id: committeeId,
+      id: committee_id,
       name: committeeName,
     },
     chair: chairUser

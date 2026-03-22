@@ -74,7 +74,7 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
       research_notes: rn,
       country_positions: cp,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'committee_id,chair_id' });
+    });
 
     setSaving(false);
   };
@@ -198,29 +198,24 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {countryPositions.map((cp, i) => (
-                <tr key={i}>
-                  <td className="p-3 text-sm font-medium text-text-primary">{cp.country}</td>
-                  <td className="p-3">
-                    <select
-                      className="h-8 rounded-input border border-border-input bg-transparent px-2 text-xs"
+                <tr key={i} className="hover:bg-bg-raised/30 transition-colors">
+                  <td className="p-3 text-sm font-bold text-text-primary w-48">{cp.country}</td>
+                  <td className="p-2">
+                    <input 
+                      type="text"
+                      className="w-full h-9 rounded-input border border-border-input bg-transparent px-3 text-sm focus:border-border-emphasized transition-all"
                       value={cp.stance}
                       onChange={e => updatePosition(i, 'stance', e.target.value)}
-                    >
-                      <option value="">Not set</option>
-                      <option value="STRONGLY_FOR">Strongly For</option>
-                      <option value="FOR">For</option>
-                      <option value="NEUTRAL">Neutral</option>
-                      <option value="AGAINST">Against</option>
-                      <option value="STRONGLY_AGAINST">Strongly Against</option>
-                    </select>
+                      placeholder="Expected stance..."
+                    />
                   </td>
-                  <td className="p-3">
-                    <input
+                  <td className="p-2">
+                    <input 
                       type="text"
-                      className="w-full h-8 rounded-input border border-border-input bg-transparent px-2 text-xs"
+                      className="w-full h-9 rounded-input border border-border-input bg-transparent px-3 text-sm focus:border-border-emphasized transition-all"
                       value={cp.notes}
                       onChange={e => updatePosition(i, 'notes', e.target.value)}
-                      placeholder="Notes..."
+                      placeholder="Chair notes on this country..."
                     />
                   </td>
                 </tr>
@@ -229,30 +224,31 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
           </table>
         </div>
 
-        {/* Mobile Cards */}
-        <div className="md:hidden space-y-3">
+        {/* Mobile List */}
+        <div className="md:hidden space-y-4">
           {countryPositions.map((cp, i) => (
-            <div key={i} className="p-4 bg-bg-raised rounded-card border border-border-subtle space-y-2">
-              <p className="text-sm font-bold text-text-primary">{cp.country}</p>
-              <select
-                className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
-                value={cp.stance}
-                onChange={e => updatePosition(i, 'stance', e.target.value)}
-              >
-                <option value="">Stance not set</option>
-                <option value="STRONGLY_FOR">Strongly For</option>
-                <option value="FOR">For</option>
-                <option value="NEUTRAL">Neutral</option>
-                <option value="AGAINST">Against</option>
-                <option value="STRONGLY_AGAINST">Strongly Against</option>
-              </select>
-              <input
-                type="text"
-                className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
-                value={cp.notes}
-                onChange={e => updatePosition(i, 'notes', e.target.value)}
-                placeholder="Chair notes on this country..."
-              />
+            <div key={i} className="p-4 bg-bg-raised rounded-card border border-border-subtle space-y-3">
+              <div className="text-sm font-bold text-text-primary border-b border-border-subtle pb-2 uppercase tracking-wide">{cp.country}</div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Expected Stance</label>
+                <input 
+                  type="text"
+                  className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
+                  value={cp.stance}
+                  onChange={e => updatePosition(i, 'stance', e.target.value)}
+                  placeholder="Expected stance..."
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Chair Notes</label>
+                <input 
+                  type="text"
+                  className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
+                  value={cp.notes}
+                  onChange={e => updatePosition(i, 'notes', e.target.value)}
+                  placeholder="Chair notes on this country..."
+                />
+              </div>
             </div>
           ))}
         </div>

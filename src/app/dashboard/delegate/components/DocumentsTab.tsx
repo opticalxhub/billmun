@@ -4,7 +4,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
+import { Button } from '@/components/button';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { X, FileText, Upload, Download, History, Edit2, Check, AlertCircle, FilePlus, ChevronRight } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, string> = {
   SUBMITTED: 'bg-bg-raised text-text-secondary border border-border-subtle',
@@ -101,12 +103,14 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
       });
 
       if (docError) throw docError;
-
-      await supabase.from('audit_logs').insert({
-        actor_id: ctx.user.id,
-        action: `Uploaded document: ${file.name}`,
-        target_type: 'Document',
-      });
+  
+      try {
+        await supabase.from('audit_logs').insert({
+          actor_id: ctx.user.id,
+          action: `Uploaded document: ${file.name}`,
+          target_type: 'Document',
+        });
+      } catch { /* ignore */ }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegate-documents'] });
@@ -202,7 +206,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   };
 
   if (documentsLoading) {
-    return <LoadingSpinner label="Loading documents..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   return (
@@ -224,15 +228,15 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
         <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }} />
         <div className="hidden md:block">
           <p className="text-text-dimmed font-jotia text-sm mb-2">Drag and drop a PDF file here, or</p>
-          <button onClick={() => fileRef.current?.click()} className="px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 transition-opacity min-h-[44px]">
+          <Button onClick={() => fileRef.current?.click()} loading={uploading}>
             Choose File
-          </button>
+          </Button>
           <p className="text-text-tertiary font-jotia text-xs mt-2">PDF only, max 10MB</p>
         </div>
         <div className="md:hidden">
-          <button onClick={() => fileRef.current?.click()} className="w-full px-4 py-4 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 transition-opacity min-h-[44px]">
+          <Button onClick={() => fileRef.current?.click()} className="w-full h-14" loading={uploading}>
             Choose File to Upload
-          </button>
+          </Button>
           <p className="text-text-tertiary font-jotia text-xs mt-2">PDF only, max 10MB</p>
         </div>
       </div>
@@ -319,7 +323,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
             {/* Header */}
             <div className="sticky top-0 bg-bg-card border-b border-border-subtle p-4 flex items-center justify-between z-10">
               <h3 className="font-jotia-bold text-lg text-text-primary truncate">{drawerDoc.title}</h3>
-              <button onClick={() => setDrawerDoc(null)} className="text-text-dimmed hover:text-text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center">✕</button>
+              <button onClick={() => setDrawerDoc(null)} className="text-text-dimmed hover:text-text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Revision Banner */}
@@ -414,20 +418,21 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t border-border-subtle">
                 {drawerDoc.status === 'SUBMITTED' && (
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={() => { setRenaming(drawerDoc.id); setRenameValue(drawerDoc.title); setDrawerDoc(null); }}
-                    className="px-3 py-2 text-sm font-jotia bg-bg-raised border border-border-subtle rounded-button text-text-primary hover:bg-bg-hover min-h-[44px]"
                   >
                     Rename
-                  </button>
+                  </Button>
                 )}
                 {drawerDoc.status === 'SUBMITTED' && !drawerDoc.feedback && (
-                  <button
+                  <Button
+                    variant="destructive"
+                    loading={deleteMutation.isPending}
                     onClick={() => handleDelete(drawerDoc)}
-                    className="px-3 py-2 text-sm font-jotia bg-status-rejected-bg border border-status-rejected-border rounded-button text-status-rejected-text hover:opacity-90 min-h-[44px]"
                   >
                     Delete
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

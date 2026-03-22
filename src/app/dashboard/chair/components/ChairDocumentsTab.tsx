@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
+import { X, CheckCircle, AlertCircle, Clock, FileText, ExternalLink, Download, MessageSquare } from 'lucide-react';
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -30,7 +31,8 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
       .from('documents')
       .select('*, user:user_id(full_name, email)')
       .eq('committee_id', ctx.committee.id)
-      .order('uploaded_at', { ascending: false });
+      .order('uploaded_at', { ascending: false })
+      .limit(50);
     setDocuments(data || []);
   };
 
@@ -129,6 +131,38 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
 
   const approvedPapers = documents.filter(d => d.status === 'APPROVED' && d.type !== 'RESOLUTION');
 
+  const uploadChairDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !ctx.committee?.id || !ctx.user?.id) return;
+    setSaving(true);
+    try {
+      const fileName = `chair/${ctx.committee.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, file, {
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fileName);
+
+      const { error: insertError } = await supabase.from('documents').insert({
+        user_id: ctx.user.id,
+        committee_id: ctx.committee.id,
+        type: 'OTHER', // General committee document
+        title: file.name,
+        file_url: urlData.publicUrl,
+        file_size: file.size,
+        mime_type: file.type,
+        status: 'APPROVED', // Chair docs are pre-approved
+      });
+      if (insertError) throw insertError;
+      alert("Document uploaded successfully.");
+      await loadDocuments();
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -136,9 +170,15 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
           <h2 className="font-jotia-bold text-2xl text-text-primary">Documents</h2>
           <p className="text-text-dimmed text-sm">{documents.length} submissions for {ctx.committee?.name || 'committee'}</p>
         </div>
-        {selectedIds.size >= 2 && (
-          <Button onClick={consolidate} disabled={consolidating}>{consolidating ? 'Consolidating...' : `Consolidate Selected (${selectedIds.size})`}</Button>
-        )}
+        <div className="flex gap-3">
+          <label className="inline-flex h-10 items-center justify-center rounded-button px-4 text-sm font-bold uppercase tracking-widest text-text-primary border border-border-subtle hover:bg-bg-raised transition-colors cursor-pointer relative overflow-hidden">
+            {saving ? 'Uploading...' : 'Upload Resource'}
+            <input type="file" className="hidden" onChange={uploadChairDocument} disabled={saving} />
+          </label>
+          {selectedIds.size >= 2 && (
+            <Button onClick={consolidate} disabled={consolidating}>{consolidating ? 'Consolidating...' : `Consolidate Selected (${selectedIds.size})`}</Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -225,7 +265,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
             <Card className="lg:sticky lg:top-20">
               <div className="flex items-center justify-between mb-4">
                 <SectionLabel className="mb-0">Review Document</SectionLabel>
-                <button onClick={() => setSelected(null)} className="text-text-dimmed hover:text-text-primary text-lg font-bold">✕</button>
+                <button onClick={() => setSelected(null)} className="text-text-dimmed hover:text-text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><X className="w-5 h-5" /></button>
               </div>
               <div className="space-y-4">
                 <div>

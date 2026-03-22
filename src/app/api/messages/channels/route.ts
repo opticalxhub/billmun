@@ -27,7 +27,8 @@ export async function GET() {
     .select("id, channel_id, content, created_at, sender_id")
     .in("channel_id", channelIds)
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(50);
   if (latestError) return NextResponse.json({ error: latestError.message }, { status: 500 });
 
   const groupedLatest = new Map<string, any>();

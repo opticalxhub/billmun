@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import OnboardingManager from "@/components/onboarding/OnboardingManager";
 import { Providers } from "@/components/providers";
-import { DataPreloader } from "@/components/data-preloader";
 
 export const metadata: Metadata = {
   title: "BILLMUN",
@@ -18,7 +17,6 @@ export default function RootLayout({
     <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <body className="min-h-screen bg-bg-base text-text-primary font-inter text-rendering-optimizeLegibility">
         <Providers>
-          <DataPreloader />
           {children}
           <OnboardingManager />
         </Providers>

@@ -3,12 +3,16 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { Resend } from "resend";
 import { getEBContext } from "@/lib/eb-auth";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: NextRequest) {
   try {
     const { context, error, status } = await getEBContext();
     if (!context) return NextResponse.json({ error }, { status: status || 401 });
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      return NextResponse.json({ error: "Email service not configured" }, { status: 500 });
+    }
+    const resend = new Resend(resendApiKey);
 
     let body;
     try {
@@ -34,7 +38,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: users, error: uErr } = await query;
-    if (uErr) throw uErr;
+    if (uErr) {
+      console.error("User query error:", uErr);
+      return NextResponse.json({ error: "Failed to fetch recipients" }, { status: 400 });
+    }
 
     // Further filter by committee if needed
     let matchedUsers = users || [];
@@ -76,12 +83,15 @@ export async function POST(req: NextRequest) {
       });
     } catch { /* ignore */ }
 
-    await supabaseAdmin.from("audit_logs").insert({
-      actor_id: ebUserId,
-      action: `Sent mass email to ${emails.length} recipients`,
-      target_type: "SYSTEM",
-      target_id: "mass_email"
-    });
+    // Log to audit_logs
+    try {
+      await supabaseAdmin.from("audit_logs").insert({
+        actor_id: ebUserId,
+        action: `Sent mass email to ${emails.length} recipients`,
+        target_type: "SYSTEM",
+        // Using a NULL target_id because this is a system-wide action, not a specific object
+      });
+    } catch { /* ignore */ }
 
     return NextResponse.json({ ok: true, sentCount: emails.length });
   } catch (err: any) {

@@ -25,43 +25,50 @@ export async function GET() {
     supabaseAdmin
       .from("users")
       .select("id, full_name, email, role, badge_status, committee_assignments(country, committees(name))")
-      .eq("status", "APPROVED"),
+      .eq("status", "APPROVED")
+      .limit(50),
     supabaseAdmin
-      .from("incidents")
+      .from("security_incidents")
       .select("*")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(50),
     supabaseAdmin
-      .from("access_zones")
+      .from("security_access_zones")
       .select("*")
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true })
+      .limit(50),
     supabaseAdmin
-      .from("badge_events")
+      .from("security_badge_events")
       .select("*, users:user_id(full_name), officer:officer_id(full_name)")
       .order("created_at", { ascending: false })
       .limit(50),
     supabaseAdmin
-      .from("badge_checkins")
+      .from("security_badge_events")
       .select("*")
-      .gte("created_at", startOfDay),
+      .eq("event_type", "CHECKIN")
+      .gte("created_at", startOfDay)
+      .limit(50),
     supabaseAdmin
       .from("security_alerts")
       .select("*, sender:sent_by(full_name)")
       .order("created_at", { ascending: false })
-      .limit(10),
+      .limit(50),
     supabaseAdmin
       .from("security_briefings")
       .select("*, author:created_by(full_name)")
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .limit(50),
     supabaseAdmin
       .from("audit_logs")
       .select("*")
       .in("action", ["INCIDENT_CREATED", "ZONE_MOVED", "BADGE_UPDATED", "CHECKIN"])
       .order("performed_at", { ascending: false })
-      .limit(20),
+      .limit(50),
     supabaseAdmin
       .from("missing_persons")
       .select("*, users:user_id(full_name)")
       .eq("resolved", false)
+      .limit(50)
   ]);
 
   const checkedInCount = (badgeCheckins || []).length;

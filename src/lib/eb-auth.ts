@@ -57,16 +57,16 @@ export async function getEBContext(): Promise<{ context?: EBContext; error?: str
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-  if (!session?.user?.id) {
+  if (!authUser?.id) {
     return { error: "Unauthorized", status: 401 };
   }
 
   const { data: user } = await supabaseAdmin
     .from("users")
     .select("id, role")
-    .eq("id", session.user.id)
+    .eq("id", authUser.id)
     .single();
 
   if (!user || !["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL", "ADMIN"].includes(user.role)) {

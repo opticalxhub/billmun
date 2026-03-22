@@ -84,7 +84,7 @@ export default function OnboardingManager() {
   return (
     <OnboardingModal
       role={profile.role}
-      fullName={profile.full_name || profile.email || 'User'}
+      full_name={profile.full_name || profile.email || 'User'}
       committee={profile.preferred_committee}
       onComplete={complete}
     />

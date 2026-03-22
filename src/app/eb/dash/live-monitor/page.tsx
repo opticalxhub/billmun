@@ -4,6 +4,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
+import { X, Search, Filter, Shield, Clock, MapPin, User, Activity, AlertCircle } from "lucide-react";
 
 export default function LiveMonitorPage() {
   const [rows, setRows] = useState<any[]>([]);
@@ -23,14 +25,14 @@ export default function LiveMonitorPage() {
   const [notes, setNotes] = useState<any[]>([]);
   const [auditHistory, setAuditHistory] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [assignForm, setAssignForm] = useState({ committeeId: "", country: "", seatNumber: "" });
+  const [assignForm, setAssignForm] = useState({ committee_id: "", country: "", seat_number: "" });
   const [noteContent, setNoteContent] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    setCurrentUser(sessionData.session?.user?.id);
+    const { data: userData } = await supabase.auth.getUser();
+    setCurrentUser(userData.user?.id);
 
     const [
       { data: users },
@@ -40,41 +42,39 @@ export default function LiveMonitorPage() {
     ] = await Promise.all([
       supabase.from("users").select(`
         *,
-        committee_assignments(id, country, seat_number, committees(id, name))
+        committee_assignments!committee_assignments_user_id_fkey(id, country, seat_number, committees(id, name))
       `).eq("status", "APPROVED"),
       supabase.from("committees").select("id, name"),
       supabase.from("delegate_status_log").select("user_id, status, created_at").order("created_at", { ascending: false }),
       supabase.from("audit_logs").select("actor_id, performed_at").order("performed_at", { ascending: false })
     ]);
 
-    // Map latest status
-    const statusMap = new Map();
-    statusLogs?.forEach(log => {
-      if (!statusMap.has(log.user_id)) statusMap.set(log.user_id, log.status);
-    });
+    try {
+      // Map latest status
+      const statusMap = new Map();
+      statusLogs?.forEach((log: any) => {
+        if (!statusMap.has(log.user_id)) statusMap.set(log.user_id, log.status);
+      });
 
-    // Map latest audit
-    const auditMap = new Map();
-    latestAudits?.forEach(log => {
-      if (!auditMap.has(log.actor_id)) auditMap.set(log.actor_id, log.performed_at);
-    });
+      // Map latest audit
+      const auditMap = new Map();
+      latestAudits?.forEach((log: any) => {
+        if (!auditMap.has(log.actor_id)) auditMap.set(log.actor_id, log.performed_at);
+      });
 
-    const enrichedUsers = (users || []).map(u => ({
-      ...u,
-      physical_status: statusMap.get(u.id) || "UNKNOWN",
-      last_activity: auditMap.get(u.id) || u.updated_at
-    }));
+      const enrichedUsers = (users || []).map((u: any) => ({
+        ...u,
+        physical_status: statusMap.get(u.id) || "UNKNOWN",
+        last_activity: auditMap.get(u.id) || u.updated_at
+      }));
 
-    // Calculate committee delegate counts locally
-    const commCounts: Record<string, number> = {};
-    users?.forEach(u => {
-      const cid = u.committee_assignments?.[0]?.committees?.id;
-      if (cid) commCounts[cid] = (commCounts[cid] || 0) + 1;
-    });
-
-    setCommittees((comms || []).map(c => ({ ...c, count: commCounts[c.id] || 0 })));
-    setRows(enrichedUsers.sort((a, b) => new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime()));
-    setLoading(false);
+      setCommittees(comms || []);
+      setRows(enrichedUsers.sort((a: any, b: any) => new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime()));
+    } catch (err) {
+      console.error("Error loading live data:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -102,9 +102,9 @@ export default function LiveMonitorPage() {
   const openDrawer = async (user: any) => {
     setSelectedUser(user);
     setAssignForm({
-      committeeId: user.committee_assignments?.[0]?.committees?.id || "",
+      committee_id: user.committee_assignments?.[0]?.committees?.id || "",
       country: user.committee_assignments?.[0]?.country || "",
-      seatNumber: user.committee_assignments?.[0]?.seat_number || "",
+      seat_number: user.committee_assignments?.[0]?.seat_number || "",
     });
     setDrawerOpen(true);
     
@@ -126,13 +126,14 @@ export default function LiveMonitorPage() {
     const res = await fetch("/api/eb/registrations/action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, userId: selectedUser.id, ebUserId: currentUser, ...payload }),
+      body: JSON.stringify({ action, user_id: selectedUser.id, ebUserId: currentUser, ...payload }),
     });
     setSubmitting(false);
     if (res.ok) {
       setNoteContent("");
       await load();
-      const { data: refreshedUser } = await supabase.from("users").select(`*, committee_assignments(id, country, seat_number, committees(id, name))`).eq("id", selectedUser.id).single();
+      // Add the foreign key constraint reference in the select query
+      const { data: refreshedUser } = await supabase.from("users").select(`*, committee_assignments!committee_assignments_user_id_fkey(id, country, seat_number, committees(id, name))`).eq("id", selectedUser.id).single() ;
       if (refreshedUser) openDrawer(refreshedUser);
     }
   };
@@ -151,12 +152,15 @@ export default function LiveMonitorPage() {
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).getTime();
   const idleAlerts = rows.filter(r => new Date(r.last_activity).getTime() < twoHoursAgo && r.role === 'DELEGATE');
 
+  if (loading) return <DashboardLoadingState type="overview" />;
+
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <div className="space-y-4 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-jotia-bold">Live Monitor</h1>
-          <p className="text-sm text-text-dimmed">Real-time portal activity and physical status</p>
+        <h1 className="text-2xl font-jotia-bold">Live Monitor</h1>
+        <div className="flex gap-2">
+          <Badge variant="approved">{onlineUsers.size} Online</Badge>
+          <Badge variant="default">{rows.length} Active Users</Badge>
         </div>
       </div>
 
@@ -167,8 +171,11 @@ export default function LiveMonitorPage() {
             <option value="ALL">All Roles</option>
             <option value="DELEGATE">Delegate</option>
             <option value="CHAIR">Chair</option>
+            <option value="CO_CHAIR">Co-Chair</option>
             <option value="ADMIN">Admin</option>
+            <option value="MEDIA">Media</option>
             <option value="SECURITY">Security</option>
+            <option value="EXECUTIVE_BOARD">Executive Board</option>
           </select>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={filterCommittee} onChange={e => setFilterCommittee(e.target.value)}>
             <option value="ALL">All Committees</option>
@@ -182,45 +189,43 @@ export default function LiveMonitorPage() {
       </Card>
 
       <div className="flex-1 overflow-auto border border-border-subtle rounded-card bg-bg-card">
-        {loading ? <div className="p-8 text-center text-text-dimmed">Loading...</div> : (
-          <table className="w-full text-left border-collapse text-sm">
-            <thead className="bg-bg-raised sticky top-0 z-10">
-              <tr>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Status</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Name</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Role</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Committee</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Physical Status</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Last Portal Activity</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(row => {
-                const isOnline = onlineUsers.has(row.id);
-                return (
-                  <tr key={row.id} onClick={() => openDrawer(row)} className="border-b border-border-subtle hover:bg-bg-raised cursor-pointer transition-colors">
-                    <td className="p-3">
-                      <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_8px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
-                    </td>
-                    <td className="p-3 font-medium text-text-primary">{row.full_name}</td>
-                    <td className="p-3"><Badge variant="default">{row.role}</Badge></td>
-                    <td className="p-3 text-text-secondary">
-                      {row.committee_assignments?.[0]?.committees?.name || "-"} 
-                      {row.committee_assignments?.[0]?.country ? ` (${row.committee_assignments[0].country})` : ""}
-                    </td>
-                    <td className="p-3"><Badge variant={row.physical_status === 'CHECKED_IN' ? 'approved' : 'default'}>{row.physical_status}</Badge></td>
-                    <td className="p-3 text-text-dimmed text-[12px]">{new Date(row.last_activity).toLocaleString()}</td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-text-dimmed">No users found.</td>
+        <table className="w-full text-left border-collapse text-sm">
+          <thead className="bg-bg-raised sticky top-0 z-10">
+            <tr>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Status</th>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Name</th>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Role</th>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Committee</th>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Physical Status</th>
+              <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary">Last Portal Activity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(row => {
+              const isOnline = onlineUsers.has(row.id);
+              return (
+                <tr key={row.id} onClick={() => openDrawer(row)} className="border-b border-border-subtle hover:bg-bg-raised cursor-pointer transition-colors">
+                  <td className="p-3">
+                    <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_8px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
+                  </td>
+                  <td className="p-3 font-medium text-text-primary">{row.full_name}</td>
+                  <td className="p-3"><Badge variant="default">{row.role.replace('_', ' ')}</Badge></td>
+                  <td className="p-3 text-text-secondary">
+                    {row.committee_assignments?.[0]?.committees?.name || "-"} 
+                    {row.committee_assignments?.[0]?.country ? ` (${row.committee_assignments[0].country})` : ""}
+                  </td>
+                  <td className="p-3"><Badge variant={row.physical_status === 'CHECKED_IN' ? 'approved' : 'default'}>{row.physical_status.replace('_', ' ')}</Badge></td>
+                  <td className="p-3 text-text-dimmed text-[12px]">{new Date(row.last_activity).toLocaleString()}</td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-text-dimmed">No users found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {idleAlerts.length > 0 && (
@@ -253,7 +258,7 @@ export default function LiveMonitorPage() {
                   <p className="text-sm text-text-dimmed">{selectedUser.email}</p>
                 </div>
               </div>
-              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary">✕</button>
+              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
@@ -264,24 +269,27 @@ export default function LiveMonitorPage() {
                   <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={selectedUser.role} onChange={(e) => runAction("change_role", { role: e.target.value })} disabled={submitting}>
                     <option value="DELEGATE">Delegate</option>
                     <option value="CHAIR">Chair</option>
+                    <option value="CO_CHAIR">Co-Chair</option>
                     <option value="ADMIN">Admin</option>
                     <option value="MEDIA">Media</option>
                     <option value="SECURITY">Security</option>
                     <option value="EXECUTIVE_BOARD">Executive Board</option>
+                    <option value="SECRETARY_GENERAL">Secretary General</option>
+                    <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
                   </select>
                 </div>
                 <div className="pt-4 border-t border-border-subtle space-y-3">
                   <label className="text-xs text-text-dimmed block">Committee Assignment</label>
-                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={assignForm.committeeId} onChange={(e) => setAssignForm({...assignForm, committeeId: e.target.value})}>
+                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={assignForm.committee_id} onChange={(e) => setAssignForm({...assignForm, committee_id: e.target.value})}>
                     <option value="">No Committee</option>
                     {committees.map(c => <option key={c.id} value={c.id}>{c.name} ({c.count} del)</option>)}
                   </select>
                   <div className="flex gap-2">
                     <Input placeholder="Country/Character" className="flex-1" value={assignForm.country} onChange={(e) => setAssignForm({...assignForm, country: e.target.value})} />
-                    <Input placeholder="Seat" className="w-20" value={assignForm.seatNumber} onChange={(e) => setAssignForm({...assignForm, seatNumber: e.target.value})} />
+                    <Input placeholder="Seat" className="w-20" value={assignForm.seat_number} onChange={(e) => setAssignForm({...assignForm, seat_number: e.target.value})} />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" disabled={!assignForm.committeeId || submitting} onClick={() => runAction("assign_committee", assignForm)}>Save Assignment</Button>
+                    <Button size="sm" className="flex-1" disabled={!assignForm.committee_id || submitting} onClick={() => runAction("assign_committee", assignForm)}>Save Assignment</Button>
                     {selectedUser.committee_assignments?.length > 0 && <Button size="sm" variant="outline" disabled={submitting} onClick={() => runAction("remove_assignment")}>Remove</Button>}
                   </div>
                 </div>

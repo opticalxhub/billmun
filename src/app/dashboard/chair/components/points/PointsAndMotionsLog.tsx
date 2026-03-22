@@ -20,6 +20,8 @@ const MOTION_TYPES = [
   'Motion for a Moderated Caucus'
 ];
 
+import { Check, X, AlertCircle } from 'lucide-react';
+
 export function PointsAndMotionsLog({ committee, setSessionState }: { committee: any, setSessionState: any }) {
   const [logs, setLogs] = useState<any[]>([]);
   const [delegates, setDelegates] = useState<any[]>([]);
@@ -137,7 +139,7 @@ export function PointsAndMotionsLog({ committee, setSessionState }: { committee:
                   log.outcome === 'Failed' ? 'bg-red-500' : 
                   'bg-yellow-500'}`}
               >
-                {log.outcome === 'Passed' ? '✓' : log.outcome === 'Failed' ? '✕' : '!'}
+                {log.outcome === 'Passed' ? <Check className="w-4 h-4 text-status-approved-text" /> : log.outcome === 'Failed' ? <X className="w-4 h-4 text-status-rejected-text" /> : <AlertCircle className="w-4 h-4 text-status-pending-text" />}
               </div>
               <div className="bg-bg-raised border border-border-subtle p-3 rounded text-sm">
                 <div className="flex justify-between items-start mb-1">

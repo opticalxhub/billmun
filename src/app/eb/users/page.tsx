@@ -23,6 +23,7 @@ interface UserData {
 }
 
 export default function EBUsersPage() {
+  const [activeTab, setActiveTab] = useState<string>('users');
   const [users, setUsers] = useState<UserData[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +110,7 @@ export default function EBUsersPage() {
   };
 
   return (
-    <EBLayout>
+    <EBLayout activeTab={activeTab} onTabChange={setActiveTab}>
       <div className="min-h-screen bg-bg-base p-6 md:p-12">
         {/* Header */}
         <div className="mb-8">

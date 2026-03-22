@@ -79,7 +79,7 @@ export default function BlocManager(props: { user?: any; committeeAssignment?: a
     );
 
     const countMap = memberCounts.reduce((acc: Record<string, number>, curr) => {
-      acc[curr.blocId] = curr.count;
+      acc[curr.bloc_id] = curr.count;
       return acc;
     }, {});
 

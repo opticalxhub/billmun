@@ -21,9 +21,8 @@ export default function DashboardHub() {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: userData } = await supabase.auth.getUser();
-      const authUserId = userData.user?.id ?? session?.user?.id ?? null;
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const authUserId = authUser?.id ?? null;
       if (!authUserId) {
         router.push('/login');
         return;

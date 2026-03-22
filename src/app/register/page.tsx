@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/button';
 import { Input, FormLabel, FormGroup, ErrorMessage, Select } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
+import { Check, ChevronRight, ChevronLeft, User, Mail, Lock, Calendar, GraduationCap, Phone, Heart, Users, MapPin, AlertCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,19 +23,19 @@ export default function RegisterPage() {
   }, []);
 
   const [formData, setFormData] = useState({
-    fullName: '',
+    full_name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    dateOfBirth: '',
+    confirm_password: '',
+    date_of_birth: '',
     grade: '',
-    phoneNumber: '',
-    emergencyContactName: '',
-    emergencyContactRelation: '',
-    emergencyContactPhone: '',
-    dietaryRestrictions: '',
-    preferredCommittee: '',
-    allocatedCountry: '',
+    phone_number: '',
+    emergency_contact_name: '',
+    emergency_contact_relation: '',
+    emergency_contact_phone: '',
+    dietary_restrictions: '',
+    preferred_committee: '',
+    allocated_country: '',
     department: 'DELEGATE',
   });
 
@@ -45,18 +46,18 @@ export default function RegisterPage() {
     // Basic validation before moving next
     const stepErrors: Record<string, string> = {};
     if (currentStep === 1) {
-      if (!formData.fullName) stepErrors.fullName = 'Full name is required';
+      if (!formData.full_name) stepErrors.full_name = 'Full name is required';
       if (!formData.email) stepErrors.email = 'Email is required';
       if (!formData.password) stepErrors.password = 'Password is required';
-      if (formData.password !== formData.confirmPassword) stepErrors.confirmPassword = 'Passwords do not match';
-      if (formData.department === 'DELEGATE') {
-        if (!formData.preferredCommittee) stepErrors.preferredCommittee = 'Committee is required';
-        if (!formData.allocatedCountry) stepErrors.allocatedCountry = 'Country is required';
+      if (formData.password !== formData.confirm_password) stepErrors.confirm_password = 'Passwords do not match';
+      if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department)) {
+        if (!formData.preferred_committee) stepErrors.preferred_committee = 'Committee is required';
+        if (formData.department === 'DELEGATE' && !formData.allocated_country) stepErrors.allocated_country = 'Country is required';
       }
     } else if (currentStep === 2) {
-      if (!formData.dateOfBirth) stepErrors.dateOfBirth = 'Date of birth is required';
+      if (!formData.date_of_birth) stepErrors.date_of_birth = 'Date of birth is required';
       if (!formData.grade) stepErrors.grade = 'Grade is required';
-      if (!formData.phoneNumber) stepErrors.phoneNumber = 'Phone number is required';
+      if (!formData.phone_number) stepErrors.phone_number = 'Phone number is required';
     }
 
     if (Object.keys(stepErrors).length > 0) {
@@ -88,28 +89,28 @@ export default function RegisterPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.fullName) newErrors.fullName = 'Full name is required';
+    if (!formData.full_name) newErrors.full_name = 'Full name is required';
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
 
     if (!formData.password) newErrors.password = 'Password is required';
     if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = 'Passwords do not match';
     }
 
-    if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
     if (!formData.grade) newErrors.grade = 'Grade is required';
-    if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (!formData.phone_number) newErrors.phone_number = 'Phone number is required';
 
-    if (formData.department === 'DELEGATE') {
-      if (!formData.preferredCommittee) newErrors.preferredCommittee = 'Committee is required';
-      if (!formData.allocatedCountry) newErrors.allocatedCountry = 'Country is required';
+    if (!formData.emergency_contact_name) newErrors.emergency_contact_name = 'Emergency contact name is required';
+    if (!formData.emergency_contact_relation) newErrors.emergency_contact_relation = 'Emergency contact relation is required';
+    if (!formData.emergency_contact_phone) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
+
+    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department)) {
+      if (!formData.preferred_committee) newErrors.preferred_committee = 'Committee preference is required';
+      if (formData.department === 'DELEGATE' && !formData.allocated_country) newErrors.allocated_country = 'Country is required';
     }
-
-    if (!formData.emergencyContactName) newErrors.emergencyContactName = 'Emergency contact name is required';
-    if (!formData.emergencyContactRelation) newErrors.emergencyContactRelation = 'Relation is required';
-    if (!formData.emergencyContactPhone) newErrors.emergencyContactPhone = 'Contact phone is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -124,24 +125,24 @@ export default function RegisterPage() {
     if (!validateForm()) {
       setLoading(false);
       // Navigate to the first step that has errors so the user can see them
-      const step1Fields = ['fullName', 'email', 'password', 'confirmPassword', 'preferredCommittee', 'allocatedCountry'];
-      const step2Fields = ['dateOfBirth', 'grade', 'phoneNumber'];
+      const step1Fields = ['full_name', 'email', 'password', 'confirm_password', 'preferred_committee', 'allocated_country'];
+      const step2Fields = ['date_of_birth', 'grade', 'phone_number'];
       // Re-run validation to get fresh errors
       const newErrors: Record<string, string> = {};
-      if (!formData.fullName) newErrors.fullName = 'Full name is required';
+      if (!formData.full_name) newErrors.full_name = 'Full name is required';
       if (!formData.email) newErrors.email = 'Email is required';
       if (!formData.password) newErrors.password = 'Password is required';
-      if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-      if (!formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+      if (formData.password !== formData.confirm_password) newErrors.confirm_password = 'Passwords do not match';
+      if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
       if (!formData.grade) newErrors.grade = 'Grade is required';
-      if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
-      if (formData.department === 'DELEGATE') {
-        if (!formData.preferredCommittee) newErrors.preferredCommittee = 'Committee is required';
-        if (!formData.allocatedCountry) newErrors.allocatedCountry = 'Country is required';
+      if (!formData.phone_number) newErrors.phone_number = 'Phone number is required';
+      if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department)) {
+        if (!formData.preferred_committee) newErrors.preferred_committee = 'Committee is required';
+        if (formData.department === 'DELEGATE' && !formData.allocated_country) newErrors.allocated_country = 'Country is required';
       }
-      if (!formData.emergencyContactName) newErrors.emergencyContactName = 'Emergency contact name is required';
-      if (!formData.emergencyContactRelation) newErrors.emergencyContactRelation = 'Relation is required';
-      if (!formData.emergencyContactPhone) newErrors.emergencyContactPhone = 'Contact phone is required';
+      if (!formData.emergency_contact_name) newErrors.emergency_contact_name = 'Emergency contact name is required';
+      if (!formData.emergency_contact_relation) newErrors.emergency_contact_relation = 'Emergency contact relation is required';
+      if (!formData.emergency_contact_phone) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
       setErrors(newErrors);
 
       if (step1Fields.some(f => newErrors[f])) {
@@ -161,16 +162,16 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          fullName: formData.fullName,
-          dateOfBirth: formData.dateOfBirth,
+          full_name: formData.full_name,
+          date_of_birth: formData.date_of_birth,
           grade: formData.grade,
-          phoneNumber: formData.phoneNumber,
-          emergencyContactName: formData.emergencyContactName,
-          emergencyContactRelation: formData.emergencyContactRelation,
-          emergencyContactPhone: formData.emergencyContactPhone,
-          dietaryRestrictions: formData.dietaryRestrictions,
-          preferredCommittee: formData.preferredCommittee,
-          allocatedCountry: formData.allocatedCountry,
+          phone_number: formData.phone_number,    
+          emergency_contact_name: formData.emergency_contact_name,
+          emergency_contact_relation: formData.emergency_contact_relation,
+          emergency_contact_phone: formData.emergency_contact_phone,
+          dietary_restrictions: formData.dietary_restrictions,
+          preferred_committee: formData.preferred_committee,
+          allocated_country: formData.allocated_country,
           department: formData.department,
         }),
       });
@@ -222,7 +223,7 @@ export default function RegisterPage() {
                         : 'bg-bg-card border-border-subtle text-text-tertiary'
                   }`}
                 >
-                  {currentStep > step ? '✓' : step}
+                  {currentStep > step ? <Check className="w-5 h-5" /> : step}
                 </div>
               ))}
             </div>
@@ -235,6 +236,7 @@ export default function RegisterPage() {
                     <option value="DELEGATE">Delegate</option>
                     <option value="MEDIA">Press / Media</option>
                     <option value="CHAIR">Chair</option>
+                    <option value="CO_CHAIR">Co-Chair</option>
                     <option value="ADMIN">Administrator</option>
                     <option value="SECURITY">Security</option>
                     <option value="EXECUTIVE_BOARD">Executive Board</option>        
@@ -250,9 +252,9 @@ export default function RegisterPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormGroup>
-                    <FormLabel htmlFor="fullName">Full Name</FormLabel>
-                    <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleInputChange} required />
-                    {errors.fullName && <ErrorMessage>{errors.fullName}</ErrorMessage>}
+                    <FormLabel htmlFor="full_name">Full Name</FormLabel>
+                    <Input id="full_name" name="full_name" value={formData.full_name} onChange={handleInputChange} required />
+                    {errors.full_name && <ErrorMessage>{errors.full_name}</ErrorMessage>}
                   </FormGroup>
                   <FormGroup>
                     <FormLabel htmlFor="email">Email Address</FormLabel>
@@ -268,29 +270,31 @@ export default function RegisterPage() {
                     {errors.password && <ErrorMessage>{errors.password}</ErrorMessage>}
                   </FormGroup>
                   <FormGroup>
-                    <FormLabel htmlFor="confirmPassword">Confirm Password</FormLabel>
-                    <Input id="confirmPassword" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleInputChange} required />    
-                    {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
+                    <FormLabel htmlFor="confirm_password">Confirm Password</FormLabel>
+                    <Input id="confirm_password" name="confirm_password" type="password" value={formData.confirm_password} onChange={handleInputChange} required />    
+                    {errors.confirm_password && <ErrorMessage>{errors.confirm_password}</ErrorMessage>}
                   </FormGroup>
                 </div>
 
-                {formData.department === 'DELEGATE' && (
+                {['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department) && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormGroup>
-                      <FormLabel htmlFor="preferredCommittee">Committee</FormLabel> 
-                      <Select id="preferredCommittee" name="preferredCommittee" value={formData.preferredCommittee} onChange={handleInputChange} required>
+                      <FormLabel htmlFor="preferred_committee">Committee</FormLabel> 
+                      <Select id="preferred_committee" name="preferred_committee" value={formData.preferred_committee} onChange={handleInputChange} required>
                         <option value="" disabled>Select Committee</option>
                         {committees.map((c: any) => (
                           <option key={c.id} value={c.abbreviation}>{c.abbreviation} - {c.name}</option>
                         ))}
                       </Select>
-                      {errors.preferredCommittee && <ErrorMessage>{errors.preferredCommittee}</ErrorMessage>}
+                      {errors.preferred_committee && <ErrorMessage>{errors.preferred_committee}</ErrorMessage>}
                     </FormGroup>
-                    <FormGroup>
-                      <FormLabel htmlFor="allocatedCountry">Country</FormLabel>     
-                      <Input id="allocatedCountry" name="allocatedCountry" type="text" value={formData.allocatedCountry} onChange={handleInputChange} placeholder="Assigned Country" required />
-                      {errors.allocatedCountry && <ErrorMessage>{errors.allocatedCountry}</ErrorMessage>}
-                    </FormGroup>
+                    {formData.department === 'DELEGATE' && (
+                      <FormGroup>
+                        <FormLabel htmlFor="allocated_country">Country</FormLabel>     
+                        <Input id="allocated_country" name="allocated_country" type="text" value={formData.allocated_country} onChange={handleInputChange} placeholder="Assigned Country" required />
+                        {errors.allocated_country && <ErrorMessage>{errors.allocated_country}</ErrorMessage>}
+                      </FormGroup>
+                    )}
                   </div>
                 )}
               </div>
@@ -300,9 +304,9 @@ export default function RegisterPage() {
               <div className="space-y-6 animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormGroup>
-                    <FormLabel htmlFor="dateOfBirth">Date of Birth</FormLabel>      
-                    <Input id="dateOfBirth" name="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={handleInputChange} required />
-                    {errors.dateOfBirth && <ErrorMessage>{errors.dateOfBirth}</ErrorMessage>}
+                    <FormLabel htmlFor="date_of_birth">Date of Birth</FormLabel>      
+                    <Input id="date_of_birth" name="date_of_birth" type="date" value={formData.date_of_birth} onChange={handleInputChange} required />
+                    {errors.date_of_birth && <ErrorMessage>{errors.date_of_birth}</ErrorMessage>}
                   </FormGroup>
                   <FormGroup>
                     <FormLabel htmlFor="grade">Grade</FormLabel>
@@ -321,13 +325,13 @@ export default function RegisterPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormGroup>
-                    <FormLabel htmlFor="phoneNumber">Phone Number</FormLabel>       
-                    <Input id="phoneNumber" name="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleInputChange} placeholder="+966 5X XXX XXXX" required />
-                    {errors.phoneNumber && <ErrorMessage>{errors.phoneNumber}</ErrorMessage>}
+                    <FormLabel htmlFor="phone_number">Phone Number</FormLabel>       
+                    <Input id="phone_number" name="phone_number" type="tel" value={formData.phone_number} onChange={handleInputChange} placeholder="+966 5X XXX XXXX" required />
+                    {errors.phone_number && <ErrorMessage>{errors.phone_number}</ErrorMessage>}
                   </FormGroup>
                   <FormGroup>
-                    <FormLabel htmlFor="dietaryRestrictions">Dietary Restrictions</FormLabel>
-                    <Input id="dietaryRestrictions" name="dietaryRestrictions" type="text" value={formData.dietaryRestrictions} onChange={handleInputChange} placeholder="e.g. Vegetarian, None" />
+                    <FormLabel htmlFor="dietary_restrictions">Dietary Restrictions</FormLabel>
+                    <Input id="dietary_restrictions" name="dietary_restrictions" type="text" value={formData.dietary_restrictions} onChange={handleInputChange} placeholder="e.g. Vegetarian, None" />
                   </FormGroup>
                 </div>
               </div>
@@ -339,21 +343,21 @@ export default function RegisterPage() {
                   <h3 className="font-jotia text-xl mb-6 text-text-primary">Emergency Contact</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormGroup>
-                      <FormLabel htmlFor="emergencyContactName">Contact Name</FormLabel>
-                      <Input id="emergencyContactName" name="emergencyContactName" type="text" value={formData.emergencyContactName} onChange={handleInputChange} required />
-                      {errors.emergencyContactName && <ErrorMessage>{errors.emergencyContactName}</ErrorMessage>}
+                      <FormLabel htmlFor="emergency_contact_name">Contact Name</FormLabel>
+                      <Input id="emergency_contact_name" name="emergency_contact_name" type="text" value={formData.emergency_contact_name} onChange={handleInputChange} required />
+                      {errors.emergency_contact_name && <ErrorMessage>{errors.emergency_contact_name}</ErrorMessage>}
                     </FormGroup>
                     <FormGroup>
-                      <FormLabel htmlFor="emergencyContactRelation">Relation</FormLabel>
-                      <Input id="emergencyContactRelation" name="emergencyContactRelation" type="text" value={formData.emergencyContactRelation} onChange={handleInputChange} placeholder="e.g. Parent" required />
-                      {errors.emergencyContactRelation && <ErrorMessage>{errors.emergencyContactRelation}</ErrorMessage>}
+                      <FormLabel htmlFor="emergency_contact_relation">Relation</FormLabel>
+                      <Input id="emergency_contact_relation" name="emergency_contact_relation" type="text" value={formData.emergency_contact_relation} onChange={handleInputChange} placeholder="e.g. Parent" required />
+                      {errors.emergency_contact_relation && <ErrorMessage>{errors.emergency_contact_relation}</ErrorMessage>}
                     </FormGroup>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">      
                     <FormGroup>
-                      <FormLabel htmlFor="emergencyContactPhone">Contact Phone</FormLabel>
-                      <Input id="emergencyContactPhone" name="emergencyContactPhone" type="tel" value={formData.emergencyContactPhone} onChange={handleInputChange} required />
-                      {errors.emergencyContactPhone && <ErrorMessage>{errors.emergencyContactPhone}</ErrorMessage>}
+                      <FormLabel htmlFor="emergency_contact_phone">Contact Phone</FormLabel>
+                      <Input id="emergency_contact_phone" name="emergency_contact_phone" type="tel" value={formData.emergency_contact_phone} onChange={handleInputChange} required />
+                      {errors.emergency_contact_phone && <ErrorMessage>{errors.emergency_contact_phone}</ErrorMessage>}
                     </FormGroup>
                   </div>
                 </div>

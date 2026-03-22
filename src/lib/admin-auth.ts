@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type AdminContext = {
   adminUserId: string;
-  committeeId: string;
+  committee_id: string;
   committeeName: string | null;
 };
 
@@ -37,7 +37,7 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
         return {
           context: {
             adminUserId: adminAssignment.user_id,
-            committeeId: adminAssignment.committee_id,
+            committee_id: adminAssignment.committee_id,
             committeeName: (adminAssignment as any).committees?.name ?? null,
           },
         };
@@ -62,7 +62,7 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
         return {
           context: {
             adminUserId: fallbackActor.id,
-            committeeId: fallbackCommittee.id,
+            committee_id: fallbackCommittee.id, 
             committeeName: fallbackCommittee.name ?? null,
           },
         };
@@ -92,14 +92,14 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
   );
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return { error: "Unauthorized", status: 401 };
   }
 
-  const adminUserId = session.user.id;
+  const adminUserId = user.id;
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("users")
@@ -124,13 +124,20 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
     .maybeSingle();
 
   if (assignmentError || !assignment?.committee_id) {
-    return { error: "Admin has no committee assignment", status: 403 };
+    // Return context with null committee instead of 403, so the dashboard can show a "No assignment" state
+    return {
+      context: {
+        adminUserId,
+        committee_id: "",
+        committeeName: null,
+      },
+    };
   }
 
   return {
     context: {
       adminUserId,
-      committeeId: assignment.committee_id,
+      committee_id: assignment.committee_id,
       committeeName: (assignment as any).committees?.name ?? null,
     },
   };

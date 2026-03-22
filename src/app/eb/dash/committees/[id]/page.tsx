@@ -109,9 +109,9 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
   };
 
   const addDelegate = async () => {
-    if (!addDelegateForm.userId) return;
+    if (!addDelegateForm.user_id) return;
     await supabase.from("committee_assignments").insert({
-      user_id: addDelegateForm.userId,
+      user_id: addDelegateForm.user_id,
       committee_id: id,
       country: addDelegateForm.country,
       seat_number: addDelegateForm.seatNumber
@@ -122,7 +122,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
   };
 
   const reassignChair = async (chair_id: string) => {
-    await supabase.from("committees").update({ chair_id: chairId || null }).eq("id", id);
+    await supabase.from("committees").update({ chair_id: chair_id || null }).eq("id", id);
     load();
   };
 
@@ -345,7 +345,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
             <div className="space-y-4">
               <div>
                 <label className="text-xs mb-1 block text-text-dimmed">Select User</label>
-                <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={addDelegateForm.userId} onChange={e => setAddDelegateForm({...addDelegateForm, user_id: e.target.value})}>
+                <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={addDelegateForm.user_id} onChange={e => setAddDelegateForm({...addDelegateForm, user_id: e.target.value})}>
                   <option value="">Select...</option>
                   {availableUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>)}
                 </select>
@@ -360,7 +360,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
               </div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowAddDelegate(false)}>Cancel</Button>
-                <Button className="flex-1" disabled={!addDelegateForm.userId || !addDelegateForm.country} onClick={addDelegate}>Add Delegate</Button>
+                <Button className="flex-1" disabled={!addDelegateForm.user_id || !addDelegateForm.country} onClick={addDelegate}>Add Delegate</Button>
               </div>
             </div>
           </div>

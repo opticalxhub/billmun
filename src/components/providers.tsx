@@ -4,24 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { DataPreloader } from './data-preloader';
 
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000,
-            retry: (failureCount, error: any) => {
-              if (error?.status === 401) return false; // Don't retry on 401
-              return failureCount < 2;
-            },
-            refetchOnWindowFocus: false,
-          },
-        },
-      })
-  );
+  const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
     // Session refresh mechanism
@@ -55,6 +42,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <DataPreloader />
       {children}
     </QueryClientProvider>
   );

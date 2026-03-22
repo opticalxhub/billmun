@@ -51,7 +51,7 @@ export function SkeletonList({ count = 5 }: { count?: number }) {
 export function SkeletonBanner() {
   return (
     <div className="relative h-48 w-full rounded-card overflow-hidden border border-border-subtle mb-8 flex items-center justify-center bg-bg-raised/10">
-      <LoadingSpinner size="lg" label="Loading banner..." />
+      <LoadingSpinner size="lg" />
     </div>
   );
 }

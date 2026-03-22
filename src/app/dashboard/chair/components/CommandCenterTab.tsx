@@ -42,7 +42,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
 
   const loadSpeakers = async () => {
     const { data } = await supabase
-      .from('speakers_list')
+      .from('speaker_lists')
       .select('*, delegate:delegate_id(full_name)')
       .eq('committee_id', ctx.committee.id)
       .in('status', ['QUEUED', 'SPEAKING'])
@@ -96,17 +96,17 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
     }
 
     // Save status change details
-    await supabase.from('status_change_details').insert({
+    await supabase.from('session_status_history').insert({
       committee_id: ctx.committee.id,
       session_id: ctx.session?.id,
-      new_status: newStatus,
-      debate_topic: details.topic || null,
-      speaking_time_limit: details.speakingTime || null,
+      status: newStatus,
+      topic: details.topic || null,
+      speaking_time: details.speakingTime || null,
       duration: details.duration || null,
       purpose: details.purpose || null,
-      break_type: details.breakType || null,
-      session_summary: details.summary || null,
-      created_by: ctx.user.id,
+      break_type: details.break_type || null,
+      summary: details.summary || null,
+      created_by: ctx.user.id
     });
 
     // Log event
@@ -132,7 +132,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
     } else if (s === 'UNMODERATED_CAUCUS') {
       saveStatusChange(s, { duration: modalFields.duration, purpose: modalFields.purpose });
     } else if (s === 'ON_BREAK') {
-      saveStatusChange(s, { break_type: modalFields.breakType, duration: modalFields.duration });
+      saveStatusChange(s, { break_type: modalFields.break_type, duration: modalFields.duration });
     } else if (s === 'ADJOURNED') {
       saveStatusChange(s, { summary: modalFields.summary });
     }
@@ -315,7 +315,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
                 <>
                   <div>
                     <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Break Type</label>
-                    <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={modalFields.breakType} onChange={e => setModalFields(p => ({ ...p, break_type: e.target.value }))}>
+                    <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={modalFields.break_type} onChange={e => setModalFields(p => ({ ...p, break_type: e.target.value }))}>
                       <option value="SHORT">Short Break</option>
                       <option value="LUNCH">Lunch Break</option>
                       <option value="PRAYER">Prayer Break</option>

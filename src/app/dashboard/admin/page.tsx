@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { DashboardLoadingState } from '@/components/dashboard-shell';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { supabase } from '@/lib/supabase';
 
 type AdminTab =
   | 'overview'
@@ -67,8 +68,8 @@ export default function AdminDashboard() {
   const [voteForm, setVoteForm] = useState({
     motionType: '',
     outcome: 'PASSED',
-    votesFor: 0,
-    votesAgainst: 0,
+    votes_for: 0,
+    votes_against: 0,
     abstentions: 0,
   });
 
@@ -105,14 +106,14 @@ export default function AdminDashboard() {
     }
   });
 
-  const delegates = data?.delegates || [];
-  const attendance = data?.attendance || [];
-  const documentsQueue = data?.documents_queue || [];
-  const reviewedDocuments = data?.reviewed_documents || [];
-  const announcements = data?.announcements || [];
-  const resources = data?.resources || [];
-  const votes = data?.votes || [];
-  const alerts = data?.alerts || [];
+  const delegates = useMemo(() => data?.delegates || [], [data?.delegates]);
+  const attendance = useMemo(() => data?.attendance || [], [data?.attendance]);
+  const documentsQueue = useMemo(() => data?.documents_queue || [], [data?.documents_queue]);
+  const reviewedDocuments = useMemo(() => data?.reviewed_documents || [], [data?.reviewed_documents]);
+  const announcements = useMemo(() => data?.announcements || [], [data?.announcements]);
+  const resources = useMemo(() => data?.resources || [], [data?.resources]);
+  const votes = useMemo(() => data?.votes || [], [data?.votes]);
+  const alerts = useMemo(() => data?.alerts || [], [data?.alerts]);
 
   const filteredDelegates = useMemo(
     () =>
@@ -139,28 +140,79 @@ export default function AdminDashboard() {
     overscan: 10,
   });
 
+  // Real-time presence subscription
+  useEffect(() => {
+    if (data?.noAssignment || !data?.committee?.id) return;
+
+    const channel = supabase
+      .channel('admin-presence')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'delegate_presence_statuses',
+          filter: `committee_id=eq.${data.committee.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [data?.committee?.id, data?.noAssignment, queryClient]);
+
   if (isLoading && !data) {
-    return <LoadingSpinner label="Loading admin dashboard..." className="py-20" />;
+    return <DashboardLoadingState type="overview" />;
+  }
+
+  if (data?.noAssignment) {
+    return (
+      <div className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-8 text-center">
+        <div className="max-w-md w-full p-8 border border-border-subtle rounded-card bg-bg-card space-y-6">
+          <div className="w-16 h-16 bg-status-warning-bg/10 rounded-full flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-status-warning-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-jotia text-2xl uppercase tracking-tight text-text-primary">No Committee Assigned</h2>
+            <p className="text-sm text-text-dimmed leading-relaxed">
+              {data.error}
+            </p>
+          </div>
+          <Button 
+            className="w-full" 
+            onClick={() => window.location.reload()}
+          >
+            Refresh Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const postAction = async (payload: any) => {
     return actionMutation.mutateAsync(payload);
   };
 
-  const updateDelegateStatus = async (delegateUserId: string, physicalStatus: string) => {
-    await postAction({ action: 'update_delegate_status', delegateUserId, physicalStatus });
+  const updateDelegateStatus = async (user_id: string, physical_status: string) => {
+    await postAction({ action: 'update_delegate_status', user_id, physical_status });
   };
 
   const openDelegateHistory = async (delegate: any) => {
     setSelectedDelegate(delegate);
-    const json = await postAction({ action: 'get_delegate_status_history', delegateUserId: delegate.user_id });
+    const json = await postAction({ action: 'get_delegate_status_history', user_id: delegate.user_id });
     setSelectedHistory(json?.history || []);
   };
 
-  const handleAttendanceCorrection = async (recordId: string, status: string) => {
+  const handleAttendanceCorrection = async (record_id: string, status: string) => {
     const reason = window.prompt('Reason for correction (required)');
     if (!reason?.trim()) return;
-    await postAction({ action: 'correct_attendance', recordId, status, reason: reason.trim() });
+    await postAction({ action: 'correct_attendance', record_id, status, reason: reason.trim() });
   };
 
   const handleCreateAnnouncement = async () => {
@@ -180,7 +232,7 @@ export default function AdminDashboard() {
       action: 'create_resource',
       title: resourceTitle.trim(),
       description: resourceDescription.trim(),
-      fileUrl: resourceUrl.trim(),
+      file_url: resourceUrl.trim(),
     });
     setResourceTitle('');
     setResourceDescription('');
@@ -188,25 +240,25 @@ export default function AdminDashboard() {
   };
 
   const handleSaveSharedNote = async () => {
-    await postAction({ action: 'save_shared_note', noteText: sharedNote });
+    await postAction({ action: 'save_shared_note', note_text: sharedNote });
   };
 
   const handleSaveVote = async () => {
     if (!voteForm.motionType.trim()) return;
     await postAction({
       action: 'save_vote_record',
-      motionType: voteForm.motionType.trim(),
+      motion_type: voteForm.motionType.trim(),
       outcome: voteForm.outcome,
-      votesFor: Number(voteForm.votesFor),
-      votesAgainst: Number(voteForm.votesAgainst),
+      votes_for: Number(voteForm.votes_for),
+      votes_against: Number(voteForm.votes_against),
       abstentions: Number(voteForm.abstentions),
-      recordedVotes: [],
+      recorded_votes: [],
     });
     setVoteForm({
       motionType: '',
       outcome: 'PASSED',
-      votesFor: 0,
-      votesAgainst: 0,
+      votes_for: 0,
+      votes_against: 0,
       abstentions: 0,
     });
   };
@@ -216,7 +268,7 @@ export default function AdminDashboard() {
     return Date.now() - uploaded > 24 * 60 * 60 * 1000;
   });
 
-  if (isLoading) return <DashboardLoadingState label="Loading assistant dashboard..." type="overview" />;
+  if (isLoading) return <DashboardLoadingState type="overview" />;
   if (error) return <div className="p-12 text-center text-status-rejected-text">{(error as Error).message}</div>;
 
   return (
@@ -466,7 +518,7 @@ export default function AdminDashboard() {
                           <button
                             className="text-[10px] px-2 py-1 border border-border-subtle rounded"
                             onClick={async () => {
-                              await postAction({ action: 'assign_document_to_chair', documentId: doc.id, note: assignToChairNote || null });
+                              await postAction({ action: 'assign_document_to_chair', document_id: doc.id, note: assignToChairNote || null });
                             }}
                           >
                             Assign to Chair
@@ -558,7 +610,7 @@ export default function AdminDashboard() {
                   <button
                     className="text-xs px-2 py-1 border border-border-subtle rounded"
                     onClick={async () => {
-                      await postAction({ action: 'archive_resource', resourceId: resource.id, archived: !resource.archived });
+                      await postAction({ action: 'archive_resource', resource_id: resource.id, archived: !resource.archived });
                     }}
                   >
                     {resource.archived ? 'Unarchive' : 'Archive'}
@@ -624,14 +676,14 @@ export default function AdminDashboard() {
               <Input
                 type="number"
                 placeholder="For"
-                value={voteForm.votesFor}
-                onChange={(e) => setVoteForm((prev: any) => ({ ...prev, votesFor: Number(e.target.value) }))}
+                value={voteForm.votes_for}
+                onChange={(e) => setVoteForm((prev: any) => ({ ...prev, votes_for: Number(e.target.value) }))}
               />
               <Input
                 type="number"
                 placeholder="Against"
-                value={voteForm.votesAgainst}
-                onChange={(e) => setVoteForm((prev: any) => ({ ...prev, votesAgainst: Number(e.target.value) }))}
+                value={voteForm.votes_against}
+                onChange={(e) => setVoteForm((prev: any) => ({ ...prev, votes_against: Number(e.target.value) }))}
               />
               <Input
                 type="number"
@@ -668,7 +720,7 @@ export default function AdminDashboard() {
                     <select
                       className="h-9 rounded-input border border-border-input bg-bg-card px-2 text-xs"
                       value={task.status}
-                      onChange={(e) => postAction({ action: 'update_admin_task_status', taskId: task.id, status: e.target.value })}
+                      onChange={(e) => postAction({ action: 'update_admin_task_status', task_id: task.id, status: e.target.value })}
                     >
                       <option value="TODO">To Do</option>
                       <option value="IN_PROGRESS">In Progress</option>
@@ -685,24 +737,71 @@ export default function AdminDashboard() {
       )}
 
       {activeTab === 'communication' && (
-        <Card className="space-y-6">
-          <SectionLabel>Communication</SectionLabel>
-          <div className="flex flex-wrap gap-3">
-            <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center" href="/dashboard/chair">
-              Chair Workspace
-            </a>
-            <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center" href="/dashboard/security">
-              Security Workspace
-            </a>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-widest text-text-tertiary mb-2">Private admin-chair notes</p>
-            <Textarea value={sharedNote} onChange={(e) => setSharedNote(e.target.value)} />
-            <div className="mt-3">
-              <Button onClick={handleSaveSharedNote}>Save Note</Button>
+        <div className="space-y-6">
+          <Card className="space-y-6">
+            <SectionLabel>Cross-Department Links</SectionLabel>
+            <div className="flex flex-wrap gap-3">
+              <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center hover:bg-bg-raised transition-colors" href="/dashboard/chair">
+                Open Chair Dashboard
+              </a>
+              <a className="h-10 px-4 border border-border-subtle rounded-input text-xs uppercase tracking-widest inline-flex items-center hover:bg-bg-raised transition-colors" href="/dashboard/security">
+                Open Security Dashboard
+              </a>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="space-y-6">
+            <SectionLabel>Shared Notes with Chair</SectionLabel>
+            <p className="text-sm text-text-dimmed">
+              Use this area to maintain a live scratchpad between you and the committee chair.
+            </p>
+            <Textarea
+              className="min-h-[150px] font-mono text-sm bg-bg-raised"
+              placeholder="Enter shared notes here..."
+              value={sharedNote}
+              onChange={(e) => setSharedNote(e.target.value)}
+            />
+            <Button onClick={() => postAction({ action: 'update_shared_note', note: sharedNote })}>Save Notes</Button>
+          </Card>
+
+          <Card className="space-y-6">
+            <SectionLabel>Delegate Incidents & Notes</SectionLabel>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-text-tertiary mb-2">Select Delegate</p>
+                <select
+                  className="w-full h-10 rounded-input border border-border-input bg-bg-raised px-3 text-sm"
+                  onChange={(e) => setSelectedDelegate(delegates.find((d: any) => d.user_id === e.target.value))}
+                >
+                  <option value="">-- Choose Delegate --</option>
+                  {delegates.map((d: any) => (
+                    <option key={d.user_id} value={d.user_id}>
+                      {d.full_name} ({d.country || 'No Country'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-widest text-text-tertiary mb-2">Note Content</p>
+                <Textarea
+                  placeholder="Enter note or incident details..."
+                  value={assignToChairNote}
+                  onChange={(e) => setAssignToChairNote(e.target.value)}
+                  className="bg-bg-raised h-10"
+                />
+              </div>
+            </div>
+            <Button 
+              disabled={!selectedDelegate || !assignToChairNote}
+              onClick={() => {
+                postAction({ action: 'log_delegate_note', delegate_id: selectedDelegate.user_id, note: assignToChairNote });
+                setAssignToChairNote('');
+              }}
+            >
+              Add Note
+            </Button>
+          </Card>
+        </div>
       )}
 
       {activeTab === 'audit-log' && (
@@ -788,7 +887,7 @@ export default function AdminDashboard() {
                     onClick={async () => {
                       await postAction({
                         action: 'review_document',
-                        documentId: reviewDoc.id,
+                        document_id: reviewDoc.id,
                         status: reviewStatus,
                         feedback: reviewFeedback,
                       });
@@ -803,7 +902,7 @@ export default function AdminDashboard() {
                     onClick={async () => {
                       await postAction({
                         action: 'assign_document_to_chair',
-                        documentId: reviewDoc.id,
+                        document_id: reviewDoc.id,
                         note: assignToChairNote || null,
                       });
                     }}

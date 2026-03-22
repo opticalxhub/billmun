@@ -3,10 +3,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
 import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
+import { X, Check, Filter, Search, MoreVertical, Shield, Mail, Trash2, Ban, Pause, Play, UserCheck, UserX, Clock, MapPin, Phone, Calendar, Mail as MailIcon } from "lucide-react";
 
 const PAGE_SIZE = 50;
 
@@ -23,71 +24,52 @@ export default function RegistrationsPage() {
   const { data: committees = [] } = useQuery({
     queryKey: ['committees-list'],
     queryFn: async () => {
-      const { data, error } = await supabase.from("committees").select("id, name, committee_assignments(count)");
-      if (error) throw error;
+      const { data, error } = await supabase.from("committees").select("id, name");
+      if (error) throw error; 
       return (data || []).map(c => ({
         id: c.id,
-        name: c.name,
-        count: c.committee_assignments?.[0]?.count || 0
+        name: c.name
       }));
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  // useInfiniteQuery for Registrations
   const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
+    data: registrationData = { users: [], totalCount: 0 },
     isLoading,
     refetch
-  } = useInfiniteQuery({
+  } = useQuery({
     queryKey: ['eb-registrations', filterStatus, filterRole, filterCommittee, search],
-    initialPageParam: 0,
-    queryFn: async ({ pageParam = 0 }) => {
-      let query = supabase.from("users").select(`
-        *,
-        committee_assignments(
-          id, country, seat_number,
-          committees(id, name)
-        )
-      `, { count: 'exact' });
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filterStatus !== "ALL") params.set('status', filterStatus);
+      if (filterRole !== "ALL") params.set('role', filterRole);
+      if (filterCommittee !== "ALL") params.set('committee_id', filterCommittee);
+      if (search) params.set('q', search);
 
-      if (filterStatus !== "ALL") query = query.eq('status', filterStatus);
-      if (filterRole !== "ALL") query = query.eq('role', filterRole);
-      if (filterCommittee !== "ALL") {
-        // Since committee_assignments is a join, we filter by the existence of a matching assignment
-        // Supabase filter for nested join
-        query = query.filter('committee_assignments.committee_id', 'eq', filterCommittee);
-      }
-      if (search) {
-        query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
-      }
-
-      const from = pageParam * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      
-      const { data, error } = await query
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (error) throw error;
-      return data || [];
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === PAGE_SIZE ? allPages.length : undefined;
+      const res = await fetch(`/api/eb/registrations?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch registrations');
+      return await res.json();
     },
     staleTime: 30 * 1000,
   });
 
+  const allRows = registrationData.users || [];
+  const totalCount = registrationData.totalCount || 0;
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user?.id) setCurrentUser(data.session.user.id);
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.id) setCurrentUser(data.user.id);
     });
   }, []);
 
-  const allRows = useMemo(() => data?.pages.flat() || [], [data]);
+  useEffect(() => {
+    const channel = supabase
+      .channel("registrations-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, () => refetch())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [refetch]);
 
   const virtualizer = useVirtualizer({
     count: allRows.length,
@@ -97,19 +79,6 @@ export default function RegistrationsPage() {
   });
 
   const virtualItems = virtualizer.getVirtualItems();
-
-  useEffect(() => {
-    const lastItem = virtualItems[virtualItems.length - 1];
-    if (!lastItem) return;
-
-    if (
-      lastItem.index >= allRows.length - 1 &&
-      hasNextPage &&
-      !isFetchingNextPage
-    ) {
-      fetchNextPage();
-    }
-  }, [virtualItems, allRows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -121,7 +90,7 @@ export default function RegistrationsPage() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [noteContent, setNoteContent] = useState("");
-  const [assignForm, setAssignForm] = useState({ committeeId: "", country: "", seatNumber: "" });
+  const [assignForm, setAssignForm] = useState({ committee_id: "", country: "", seat_number: "" });
 
   const closeDrawer = React.useCallback(() => {
     setDrawerOpen(false);
@@ -142,14 +111,14 @@ export default function RegistrationsPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeDrawer, showRejectModal, showSuspendModal]);
 
-  if (isLoading) return <LoadingSpinner label="Loading registrations..." className="py-20" />;
+  if (isLoading) return <DashboardLoadingState type="overview" />;
 
   const openDrawer = async (user: any) => {
     setSelectedUser(user);
     setAssignForm({
-      committeeId: user.committee_assignments?.[0]?.committees?.id || "",
+      committee_id: user.committee_assignments?.[0]?.committees?.id || "",
       country: user.committee_assignments?.[0]?.country || "",
-      seatNumber: user.committee_assignments?.[0]?.seat_number || "",
+      seat_number: user.committee_assignments?.[0]?.seat_number || "",
     });
     setDrawerOpen(true);
     
@@ -167,7 +136,7 @@ export default function RegistrationsPage() {
     const res = await fetch("/api/eb/registrations/action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, userId: selectedUser.id, ebUserId: currentUser, ...payload }),
+      body: JSON.stringify({ action, user_id: selectedUser.id, ebUserId: currentUser, ...payload }),
     });
     setSubmitting(false);
     if (res.ok) {
@@ -187,7 +156,7 @@ export default function RegistrationsPage() {
     const headers = ["Full Name", "Email", "Role", "Status", "Grade", "Committee", "Country"];
     const csvContent = [
       headers.join(","),
-      ...allRows.map(r => [
+      ...allRows.map((r: any) => [
         `"${r.full_name}"`,
         `"${r.email}"`,
         r.role,
@@ -209,7 +178,10 @@ export default function RegistrationsPage() {
   return (
     <div className="space-y-4 h-full flex flex-col">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-2xl font-jotia-bold">Registrations</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-jotia-bold uppercase tracking-tight">Registrations</h1>
+          <Badge variant="default" className="font-mono">{totalCount} Total</Badge>
+        </div>
         <Button onClick={exportCSV} variant="outline" size="sm">Export CSV</Button>
       </div>
 
@@ -227,9 +199,11 @@ export default function RegistrationsPage() {
             <option value="ALL">All Roles</option>
             <option value="DELEGATE">Delegate</option>
             <option value="CHAIR">Chair</option>
+            <option value="CO_CHAIR">Co-Chair</option>
             <option value="ADMIN">Admin</option>
             <option value="MEDIA">Media</option>
             <option value="SECURITY">Security</option>
+            <option value="EXECUTIVE_BOARD">Executive Board</option>
           </select>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={filterCommittee} onChange={e => setFilterCommittee(e.target.value)}>
             <option value="ALL">All Committees</option>
@@ -291,11 +265,6 @@ export default function RegistrationsPage() {
               </tr>
             </tbody>
           </table>
-          {isFetchingNextPage && (
-            <div className="p-4 text-center text-xs text-text-dimmed font-jotia animate-pulse">
-              Loading more registrations...
-            </div>
-          )}
           {allRows.length === 0 && (
             <div className="p-20 text-center text-text-dimmed italic">No matching registrations found.</div>
           )}
@@ -317,7 +286,7 @@ export default function RegistrationsPage() {
                   <p className="text-sm text-text-dimmed">{selectedUser.email}</p>
                 </div>
               </div>
-              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary">✕</button>
+              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
@@ -358,25 +327,28 @@ export default function RegistrationsPage() {
                   >
                     <option value="DELEGATE">Delegate</option>
                     <option value="CHAIR">Chair</option>
+                    <option value="CO_CHAIR">Co-Chair</option>
                     <option value="ADMIN">Admin</option>
                     <option value="MEDIA">Media</option>
                     <option value="SECURITY">Security</option>
                     <option value="EXECUTIVE_BOARD">Executive Board</option>
+                    <option value="SECRETARY_GENERAL">Secretary General</option>
+                    <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
                   </select>
                 </div>
                 
                 <div className="pt-4 border-t border-border-subtle space-y-3">
                   <label className="text-xs text-text-dimmed block">Committee Assignment</label>
-                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={assignForm.committeeId} onChange={(e) => setAssignForm({...assignForm, committeeId: e.target.value})}>
+                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={assignForm.committee_id} onChange={(e) => setAssignForm({...assignForm, committee_id: e.target.value})}>
                     <option value="">No Committee</option>
                     {committees.map((c: any) => <option key={c.id} value={c.id}>{c.name} ({c.count} del)</option>)}
                   </select>
                   <div className="flex gap-2">
                     <Input placeholder="Country/Character" className="flex-1" value={assignForm.country} onChange={(e) => setAssignForm({...assignForm, country: e.target.value})} />
-                    <Input placeholder="Seat" className="w-20" value={assignForm.seatNumber} onChange={(e) => setAssignForm({...assignForm, seatNumber: e.target.value})} />
+                    <Input placeholder="Seat" className="w-20" value={assignForm.seat_number} onChange={(e) => setAssignForm({...assignForm, seat_number: e.target.value})} />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" disabled={!assignForm.committeeId || submitting} onClick={() => runAction("assign_committee", assignForm)}>Save Assignment</Button>
+                    <Button size="sm" className="flex-1" disabled={!assignForm.committee_id || submitting} onClick={() => runAction("assign_committee", assignForm)}>Save Assignment</Button>
                     {selectedUser.committee_assignments?.length > 0 && (
                       <Button size="sm" variant="outline" disabled={submitting} onClick={() => runAction("remove_assignment")}>Remove</Button>
                     )}

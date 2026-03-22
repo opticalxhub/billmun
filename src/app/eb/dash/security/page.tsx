@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, SectionLabel, Badge } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/button";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 export default function EBSecurityPage() {
   const [incidents, setIncidents] = useState<any[]>([]);
@@ -16,33 +17,37 @@ export default function EBSecurityPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    setCurrentUser(sessionData.session?.user?.id);
+    const { data: userData } = await supabase.auth.getUser();
+    setCurrentUser(userData.user?.id);
 
-    const [
-      { data: incidentRows },
-      { data: userRows },
-      { data: alertRows },
-      { data: officers }
-    ] = await Promise.all([
-      supabase.from("incidents").select("*, reporter:reported_by(full_name)").in("status", ["OPEN", "IN_PROGRESS"]).order("created_at", { ascending: false }),
-      supabase.from("users").select("badge_status").not("badge_status", "is", null),
-      supabase.from("security_alerts").select("*, sender:sent_by(full_name)").order("created_at", { ascending: false }).limit(10),
-      supabase.from("users").select("id, full_name, email").eq("role", "SECURITY")
-    ]);
+    try {
+      const [
+        { data: incidentRows },
+        { data: userRows },
+        { data: alertRows },
+        { data: officers }
+      ] = await Promise.all([
+        supabase.from("security_incidents").select("*, reporter:reported_by(full_name)").in("status", ["OPEN", "IN_PROGRESS"]).order("created_at", { ascending: false }),
+        supabase.from("users").select("badge_status").not("badge_status", "is", null),
+        supabase.from("security_alerts").select("*, sender:sent_by(full_name)").order("created_at", { ascending: false }).limit(10),
+        supabase.from("users").select("id, full_name, email").eq("role", "SECURITY")
+      ]);
 
-    setIncidents(incidentRows || []);
-    setAlerts(alertRows || []);
-    setSecurityOfficers(officers || []);
+      setIncidents(incidentRows || []);
+      setAlerts(alertRows || []);
+      setSecurityOfficers(officers || []);
 
-    const stats = { active: 0, suspended: 0, lost: 0, flagged: 0 };
-    (userRows || []).forEach((u: any) => {
-      if (u.badge_status === "ACTIVE") stats.active++;
-      else if (u.badge_status === "SUSPENDED") stats.suspended++;
-      else if (u.badge_status === "LOST") stats.lost++;
-      else if (u.badge_status === "FLAGGED") stats.flagged++;
-    });
-    setBadgeStats(stats);
+      const stats = { active: 0, suspended: 0, lost: 0, flagged: 0 };
+      (userRows || []).forEach((u: any) => {
+        if (u.badge_status === "ACTIVE") stats.active++;
+        else if (u.badge_status === "SUSPENDED") stats.suspended++;
+        else if (u.badge_status === "LOST") stats.lost++;
+        else if (u.badge_status === "FLAGGED") stats.flagged++;
+      });
+      setBadgeStats(stats);
+    } catch (error) {
+      console.error("Error loading security data:", error);
+    }
     setLoading(false);
   };
 
@@ -64,7 +69,7 @@ export default function EBSecurityPage() {
   }, []);
 
   const escalateIncident = async (id: string, severity: string, type: string) => {
-    await supabase.from("incidents").update({ status: "ESCALATED", updated_at: new Date().toISOString() }).eq("id", id);
+    await supabase.from("security_incidents").update({ status: "ESCALATED", updated_at: new Date().toISOString() }).eq("id", id);
     
     // Notify all EB
     const { data: ebRows } = await supabase.from("users").select("id").in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL"]);
@@ -80,17 +85,19 @@ export default function EBSecurityPage() {
       );
     }
     
-    await supabase.from("audit_logs").insert({
-      actor_id: currentUser,
-      action: "Escalated security incident to EB",
-      target_type: "INCIDENT",
-      target_id: id
-    });
+    try {
+      await supabase.from("audit_logs").insert({
+        actor_id: currentUser,
+        action: "Escalated security incident to EB",
+        target_type: "INCIDENT",
+        target_id: id
+      });
+    } catch { /* ignore */ }
     
     load();
   };
 
-  if (loading) return <div className="p-12 text-center text-text-dimmed">Loading security data...</div>;
+  if (loading) return <DashboardLoadingState type="overview" />;
 
   return (
     <div className="space-y-6 font-inter h-full flex flex-col">

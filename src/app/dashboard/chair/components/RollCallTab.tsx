@@ -74,7 +74,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
     }
   };
 
-  const cycleState = (delegate_id: string) => {
+  const cycleState = (delegateId: string) => {
     const current = entries[delegateId] || 'ABSENT';
     const idx = ATTENDANCE_STATES.indexOf(current as any);
     const next = ATTENDANCE_STATES[(idx + 1) % ATTENDANCE_STATES.length];

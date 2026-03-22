@@ -14,10 +14,10 @@ export default function EBDashOverview() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session && !document.cookie.includes('emergency_expires=')) throw new Error('No session');
-      if (!session) return { id: 'emergency', role: 'EXECUTIVE_BOARD' };
-      const { data } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser && !document.cookie.includes('emergency_expires=')) throw new Error('No session');
+      if (!authUser) return { id: 'emergency', role: 'EXECUTIVE_BOARD' };
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
       return data;
     },
   });
@@ -42,7 +42,7 @@ export default function EBDashOverview() {
         supabase.from('documents').select('id', { count: 'exact' }).gte('uploaded_at', startOfDay),
         supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', startOfDay),
         supabase.from('ai_feedback').select('id', { count: 'exact' }).gte('created_at', startOfDay),
-        supabase.from('incidents').select('id', { count: 'exact' }).neq('status', 'RESOLVED'),
+        supabase.from('security_incidents').select('id', { count: 'exact' }).neq('status', 'RESOLVED'),
         supabase.from('audit_logs').select('*, actor:actor_id(full_name)').order('performed_at', { ascending: false }).limit(30),
         supabase.from('committees').select('*, committee_sessions(id, status), chair:chair_id(full_name)')
       ]);
@@ -52,8 +52,22 @@ export default function EBDashOverview() {
         const sessionId = c.committee_sessions?.[0]?.id;
         let presentCount = 0;
         if (sessionId) {
-          const { count } = await supabase.from('roll_calls').select('id', { count: 'exact' }).eq('session_id', sessionId).eq('status', 'PRESENT');
-          presentCount = count || 0;
+          const { data: latestRollCall } = await supabase
+            .from('roll_call_records')
+            .select('id')
+            .eq('session_id', sessionId)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestRollCall) {
+            const { count } = await supabase
+              .from('roll_call_entries')
+              .select('id', { count: 'exact', head: true })
+              .eq('roll_call_id', latestRollCall.id)
+              .in('status', ['PRESENT', 'PRESENT_AND_VOTING']);
+            presentCount = count || 0;
+          }
         }
         return {
           id: c.id,
@@ -87,14 +101,14 @@ export default function EBDashOverview() {
       .channel("eb-overview")
       .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "committee_sessions" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "incidents" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
       .subscribe();
       
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
   if (userLoading || ebLoading) {
-    return <DashboardLoadingState label="Loading EB overview..." type="overview" />;
+    return <DashboardLoadingState type="overview" />;
   }
 
   const stats = ebData?.stats || { totalUsers: 0, pending: 0, approved: 0, committeesInSession: 0, documentsToday: 0, messagesToday: 0, ai_analyses_today: 0, open_incidents: 0 };

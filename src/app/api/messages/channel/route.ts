@@ -6,24 +6,25 @@ export async function GET(req: NextRequest) {
   const { context, error, status } = await getRequestUserContext();
   if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
-  const channelId = req.nextUrl.searchParams.get("channelId");
-  if (!channelId) return NextResponse.json({ error: "Missing channelId" }, { status: 400 });
+  const channel_id = req.nextUrl.searchParams.get("channel_id");
+  if (!channel_id) return NextResponse.json({ error: "Missing channel_id" }, { status: 400 });
 
   const { data: membership } = await supabaseAdmin
     .from("channel_members")
     .select("id")
-    .eq("channel_id", channelId)
+    .eq("channel_id", channel_id)
     .eq("user_id", context.userId)
     .maybeSingle();
   if (!membership?.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const before = req.nextUrl.searchParams.get("before");
-  const limit = parseInt(req.nextUrl.searchParams.get("limit") || "50");
+  const limitParam = parseInt(req.nextUrl.searchParams.get("limit") || "50");
+  const limit = Math.min(limitParam, 50);
 
   let query = supabaseAdmin
     .from("messages")
     .select("id, channel_id, sender_id, content, type, created_at, reply_to_id, is_pinned")
-    .eq("channel_id", channelId)
+    .eq("channel_id", channel_id)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
   await supabaseAdmin
     .from("channel_members")
     .update({ last_read_at: new Date().toISOString() })
-    .eq("channel_id", channelId)
+    .eq("channel_id", channel_id)
     .eq("user_id", context.userId);
 
   return NextResponse.json({

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
-import { DashboardAnimatedTabPanel, DashboardTabBar } from "@/components/dashboard-shell";
+import { DashboardAnimatedTabPanel, DashboardTabBar, DashboardLoadingState } from "@/components/dashboard-shell";
 
 type TabName = "Announcements" | "Mass Email" | "In-Portal Notifications";
 const TABS: TabName[] = ["Announcements", "Mass Email", "In-Portal Notifications"];
@@ -43,8 +43,8 @@ export default function CommunicationsPage() {
 
   const loadData = async () => {
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    setCurrentUser(sessionData.session?.user?.id || null);
+    const { data: userData } = await supabase.auth.getUser();
+    setCurrentUser(userData.user?.id || null);
 
     const [{ data: anns }, { data: comms }, { data: emails }] = await Promise.all([
       supabase.from("announcements").select("*, author:author_id(full_name), user_announcement_dismissals(count)").order("created_at", { ascending: false }),
@@ -104,30 +104,59 @@ export default function CommunicationsPage() {
     const res = await fetch("/api/eb/announcements/action", { method: "POST", body: JSON.stringify(payload) });
     setSubmitting(false);
     if (res.ok) { resetAnnForm(); loadData(); }
+    else { alert("Failed to save"); }
   };
 
   const deleteAnn = async (id: string) => {
     if (!confirm("Delete announcement?")) return;
-    const res = await fetch("/api/eb/announcements/action", { method: "POST", body: JSON.stringify({ action: "delete", id, ebUserId: currentUser }) });
-    if (res.ok) loadData();
+    try {
+      const res = await fetch("/api/eb/announcements/action", { method: "POST", body: JSON.stringify({ action: "delete", id, ebUserId: currentUser }) });
+      if (res.ok) loadData();
+    } catch (err) {
+      console.error("Error deleting announcement:", err);
+      alert("Failed to delete announcement. Please try again.");
+    }
   };
 
   const sendMassEmail = async () => {
     if (!confirm(`Send email to ${matchedCount} recipients?`)) return;
     setSubmitting(true);
-    const res = await fetch("/api/eb/mass-email", { method: "POST", body: JSON.stringify({ subject: emailSubject, html: emailHtml, filters, ebUserId: currentUser }) });
-    setSubmitting(false);
-    if (res.ok) { alert("Emails dispatched!"); setEmailSubject(""); setEmailHtml(""); loadData(); }
-    else { alert("Failed to send"); }
+    try {
+      const res = await fetch("/api/eb/mass-email", { method: "POST", body: JSON.stringify({ subject: emailSubject, html: emailHtml, filters, ebUserId: currentUser }) });
+      setSubmitting(false);
+      if (res.ok) { 
+        alert("Emails dispatched!"); 
+        setEmailSubject(""); 
+        setEmailHtml(""); 
+        loadData(); 
+      } else { 
+        alert("Failed to send"); 
+      }
+    } catch (err) {
+      setSubmitting(false);
+      console.error("Error sending mass email:", err);
+      alert("Error sending mass email.");
+    }
   };
 
   const sendNotification = async () => {
     if (!confirm(`Send portal notification to ${matchedCount} users?`)) return;
     setSubmitting(true);
-    const res = await fetch("/api/eb/mass-notification", { method: "POST", body: JSON.stringify({ title: notifTitle, message: notifMessage, filters, ebUserId: currentUser }) });
-    setSubmitting(false);
-    if (res.ok) { alert("Notifications sent!"); setNotifTitle(""); setNotifMessage(""); }
-    else { alert("Failed to send"); }
+    try {
+      const res = await fetch("/api/eb/mass-notification", { method: "POST", body: JSON.stringify({ title: notifTitle, message: notifMessage, filters, ebUserId: currentUser }) });
+      setSubmitting(false);
+      if (res.ok) { 
+        alert("Notifications sent!"); 
+        setNotifTitle(""); 
+        setNotifMessage(""); 
+      } else { 
+        alert("Failed to send"); 
+      }
+    } catch (err) {
+      setSubmitting(false);
+      console.error("Error sending notification:", err);
+      alert("Error sending notification.");
+    }
   };
 
   const toggleRoleFilter = (r: string) => {
@@ -175,7 +204,7 @@ export default function CommunicationsPage() {
     </div>
   );
 
-  if (loading && announcements.length === 0) return <div className="p-12 text-center text-text-dimmed">Loading communications...</div>;
+  if (loading && announcements.length === 0) return <DashboardLoadingState type="overview" />;
 
   return (
     <div className="space-y-6 font-inter h-full">

@@ -21,13 +21,17 @@ export async function POST(req: NextRequest) {
     }
 
     let query = supabaseAdmin.from("users").select("id, committee_assignments(committee_id)");
-    if (filters.status !== "ALL") query = query.eq("status", filters.status);
+    if (filters.status && filters.status !== "ALL") query = query.eq("status", filters.status);
     if (filters.roles && filters.roles.length > 0) query = query.in("role", filters.roles);
 
-    const { data: users } = await query;
+    const { data: users, error: uErr } = await query;
+    if (uErr) {
+      console.error("User query error:", uErr);
+      return NextResponse.json({ error: "Failed to fetch users" }, { status: 400 });
+    }
     let matchedUsers = users || [];
     
-    if (filters.committeeId !== "ALL") {
+    if (filters.committeeId && filters.committeeId !== "ALL") {
       matchedUsers = matchedUsers.filter((u: { committee_assignments?: { committee_id: string }[] }) => 
         u.committee_assignments?.some(ca => ca.committee_id === filters.committeeId)
       );
@@ -48,12 +52,15 @@ export async function POST(req: NextRequest) {
       if (insErr) throw insErr;
     }
 
-    await supabaseAdmin.from("audit_logs").insert({
-      actor_id: ebUserId,
-      action: `Broadcasted notification to ${notifications.length} users`,
-      target_type: "SYSTEM",
-      target_id: "mass_notification"
-    });
+    // Log to audit_logs
+    try {
+      await supabaseAdmin.from("audit_logs").insert({
+        actor_id: ebUserId,
+        action: `Broadcasted notification to ${notifications.length} users`,
+        target_type: "SYSTEM",
+        // Using a NULL target_id because this is a system-wide action
+      });
+    } catch { /* ignore */ }
 
     return NextResponse.json({ ok: true, sentCount: notifications.length });
   } catch (err: any) {

@@ -20,14 +20,14 @@ export async function POST(req: NextRequest) {
   const { text, committee_id } = body;
   if (!text || typeof text !== "string") return NextResponse.json({ error: "Text is required" }, { status: 400 });
 
-  if (committee_id && context.committeeId && committee_id !== context.committeeId && !context.emergency) {
+  if (committee_id && context.committee_id && committee_id !== context.committee_id && !context.emergency) {
     return NextResponse.json({ error: "Forbidden committee scope" }, { status: 403 });
   }
 
   const result = await runChairAi("working_paper", text.slice(0, 12000));
   await supabaseAdmin.from("chair_ai_runs").insert({
     chair_id: context.userId,
-    committee_id: committee_id || context.committeeId,
+    committee_id: committee_id || context.committee_id,
     tool: "working_paper",
     input_text: text.slice(0, 12000),
     score: result.score,

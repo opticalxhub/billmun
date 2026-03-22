@@ -4,10 +4,11 @@ import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/button";
 import { displayRole } from "@/lib/roles";
+import { X, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
 interface OnboardingModalProps {
   role: string;
-  fullName: string;
+  full_name: string;
   committee?: string;
   onComplete: () => void;
 }
@@ -35,7 +36,7 @@ const roleHighlights: Record<string, string[]> = {
   ],
 };
 
-export default function OnboardingModal({ role, fullName, committee, onComplete }: OnboardingModalProps) {
+export default function OnboardingModal({ role, full_name, committee, onComplete }: OnboardingModalProps) {
   const [step, setStep] = useState(1);
 
   const roleUpper = role?.toUpperCase?.();
@@ -44,7 +45,7 @@ export default function OnboardingModal({ role, fullName, committee, onComplete 
   const stepContent = useMemo(() => {
     if (step === 1) {
       return {
-        title: `Welcome, ${fullName}`,
+        title: `Welcome, ${full_name}`,
         description: `You are logged in as ${displayRole(role)}. Let's get you set up.`,
       };
     }
@@ -66,7 +67,7 @@ export default function OnboardingModal({ role, fullName, committee, onComplete 
       title: "You’re all set",
       description: "Close this guide and start using BILLMUN with confidence.",
     };
-  }, [step, committee, fullName, roleUpper]);
+  }, [step, committee, full_name, roleUpper]);
 
   const next = () => {
     if (step < 4) setStep(step + 1);
@@ -97,10 +98,10 @@ export default function OnboardingModal({ role, fullName, committee, onComplete 
             </div>
             <button
               onClick={onComplete}
-              className="text-text-secondary hover:text-text-primary text-xl font-bold"
+              className="text-text-secondary hover:text-text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Close onboarding"
             >
-              ✕
+              <X className="w-6 h-6" />
             </button>
           </div>
 

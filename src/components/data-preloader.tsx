@@ -9,10 +9,10 @@ export function DataPreloader() {
 
   useEffect(() => {
     async function preload() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-      const userId = session.user.id;
+      const userId = user.id;
 
       // 1. Preload User Profile
       queryClient.prefetchQuery({

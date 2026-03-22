@@ -12,11 +12,11 @@ const VALID_PHYSICAL_STATUSES = [
   "Absent without Reason",
 ];
 
-async function assertDelegateInCommittee(delegateUserId: string, committeeId: string) {
+async function assertDelegateInCommittee(delegateUserId: string, committee_id: string) {
   const { data } = await supabaseAdmin
     .from("committee_assignments")
     .select("user_id")
-    .eq("committee_id", committeeId)
+    .eq("committee_id", committee_id)
     .eq("user_id", delegateUserId)
     .maybeSingle();
   return Boolean(data?.user_id);
@@ -28,76 +28,49 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error }, { status: status || 500 });
   }
 
-  const { adminUserId, committeeId } = context;
+  const { adminUserId, committee_id } = context;
   const body = await request.json();
   const action = body?.action;
 
   try {
     if (action === "update_delegate_status") {
-      const delegateUserId = body?.delegateUserId as string;
-      const physicalStatus = body?.physicalStatus as string;
-      const note = (body?.note as string) || null;
-
-      if (!delegateUserId || !VALID_PHYSICAL_STATUSES.includes(physicalStatus)) {
-        return NextResponse.json({ error: "Invalid status payload" }, { status: 400 });
+      const user_id = body?.user_id as string;
+      const physical_status = body?.physical_status as string;
+      if (!user_id || !physical_status) {
+        return NextResponse.json({ error: "Missing status fields" }, { status: 400 });
       }
-
-      const inCommittee = await assertDelegateInCommittee(delegateUserId, committeeId);
+      const inCommittee = await assertDelegateInCommittee(user_id, committee_id);
       if (!inCommittee) {
         return NextResponse.json({ error: "Forbidden: delegate not in assigned committee" }, { status: 403 });
       }
 
-      await supabaseAdmin.from("delegate_presence_statuses").upsert({
-        committee_id: committeeId,
-        user_id: delegateUserId,
-        current_status: physicalStatus,
-        last_changed_by: adminUserId,
-        last_changed_at: new Date().toISOString(),
-        note,
-      });
+      await supabaseAdmin
+        .from("delegate_presence_statuses")
+        .upsert({
+          user_id: user_id,
+          committee_id: committee_id,
+          current_status: physical_status,
+          last_changed_at: new Date().toISOString(),
+          last_changed_by: adminUserId,
+        });
+      
+      await supabaseAdmin
+        .from("delegate_presence_history")
+        .insert({
+          user_id: user_id,
+          committee_id: committee_id,
+          status: physical_status,
+          changed_by: adminUserId,
+        });
 
-      await supabaseAdmin.from("delegate_presence_history").insert({
-        committee_id: committeeId,
-        user_id: delegateUserId,
-        status: physicalStatus,
-        changed_by: adminUserId,
-        note,
-      });
-
-      await supabaseAdmin.from("audit_logs").insert({
-        actor_id: adminUserId,
-        action: "ADMIN_UPDATED_DELEGATE_PHYSICAL_STATUS",
-        target_type: "USER",
-        target_id: delegateUserId,
-        metadata: {
-          committee_id: committeeId,
-          physical_status: physicalStatus,
-          note,
-        },
-      });
-
-      if (physicalStatus === "Lavatory Break" || physicalStatus === "Missing") {
-        const { data: chairRows } = await supabaseAdmin
-          .from("committee_assignments")
-          .select("user_id, users(role)")
-          .eq("committee_id", committeeId);
-        const { data: ebRows } = await supabaseAdmin
-          .from("users")
-          .select("id")
-          .in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"]);
-
-        const chairRecipients = (chairRows || [])
-          .filter((r: any) => r?.users?.role === "CHAIR")
-          .map((r: any) => r.user_id);
-        const ebRecipients = (ebRows || []).map((r: any) => r.id);
-        const recipients = [...new Set([...chairRecipients, ...ebRecipients])];
-
-        if (recipients.length) {
+      if (["LAVATORY_BREAK", "MEDICAL_BREAK", "MISSING"].includes(physical_status)) {
+        const { data: securityUsers } = await supabaseAdmin.from("users").select("id").eq("role", "SECURITY");
+        if (securityUsers?.length) {
           await supabaseAdmin.from("notifications").insert(
-            recipients.map((uid: string) => ({
-              user_id: uid,
+            securityUsers.map((u) => ({
+              user_id: u.id,
               title: "Delegate status alert",
-              message: `Delegate marked as ${physicalStatus}.`,
+              message: `Delegate marked as ${physical_status}.`,
               type: "WARNING",
               link: "/dashboard/admin",
             })),
@@ -109,115 +82,119 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "get_delegate_status_history") {
-      const delegateUserId = body?.delegateUserId as string;
-      if (!delegateUserId) {
-        return NextResponse.json({ error: "Missing delegateUserId" }, { status: 400 });
+      const user_id = body?.user_id as string;
+      if (!user_id) {
+        return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
       }
-      const inCommittee = await assertDelegateInCommittee(delegateUserId, committeeId);
+      const inCommittee = await assertDelegateInCommittee(user_id, committee_id);
       if (!inCommittee) {
         return NextResponse.json({ error: "Forbidden: delegate not in assigned committee" }, { status: 403 });
       }
       const { data } = await supabaseAdmin
         .from("delegate_presence_history")
         .select("id, status, changed_at, note, changed_by")
-        .eq("committee_id", committeeId)
-        .eq("user_id", delegateUserId)
+        .eq("committee_id", committee_id)
+        .eq("user_id", user_id)
         .order("changed_at", { ascending: false });
       return NextResponse.json({ history: data || [] });
     }
 
     if (action === "correct_attendance") {
-      const recordId = body?.recordId as string;
-      const newStatus = body?.status as string;
+      const record_id = body?.record_id as string;
+      const status = body?.status as string;
       const reason = body?.reason as string;
-      if (!recordId || !newStatus || !reason) {
+      if (!record_id || !status || !reason) {
         return NextResponse.json({ error: "Missing attendance correction fields" }, { status: 400 });
       }
       const { data: record } = await supabaseAdmin
         .from("attendance_records")
         .select("id, committee_id, user_id")
-        .eq("id", recordId)
+        .eq("id", record_id)
         .maybeSingle();
-      if (!record || record.committee_id !== committeeId) {
+      if (!record || record.committee_id !== committee_id) {
         return NextResponse.json({ error: "Forbidden: attendance record not in assigned committee" }, { status: 403 });
       }
       await supabaseAdmin
         .from("attendance_records")
         .update({
-          status: newStatus,
+          status: status,
           corrected_by: adminUserId,
           correction_note: reason,
           corrected_at: new Date().toISOString(),
         })
-        .eq("id", recordId);
-      await supabaseAdmin.from("audit_logs").insert({
-        actor_id: adminUserId,
-        action: "ADMIN_CORRECTED_ATTENDANCE",
-        target_type: "ATTENDANCE_RECORD",
-        target_id: recordId,
-        metadata: {
-          committee_id: committeeId,
-          status: newStatus,
-          reason,
-        },
-      });
+        .eq("id", record_id);
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "ADMIN_CORRECTED_ATTENDANCE",
+          target_type: "ATTENDANCE_RECORD",
+          target_id: record_id,
+          metadata: {
+            committee_id: committee_id,
+            status: status,
+            reason,
+          }
+        });
+      } catch { /* ignore */ }
       return NextResponse.json({ success: true });
     }
 
     if (action === "review_document") {
-      const documentId = body?.documentId as string;
-      const statusValue = body?.status as string;
+      const document_id = body?.document_id as string;
+      const status = body?.status as string;
       const feedback = (body?.feedback as string) || null;
-      if (!documentId || !statusValue) {
+      if (!document_id || !status) {
         return NextResponse.json({ error: "Missing document review fields" }, { status: 400 });
       }
       const { data: doc } = await supabaseAdmin
         .from("documents")
         .select("id, committee_id, user_id")
-        .eq("id", documentId)
+        .eq("id", document_id)
         .maybeSingle();
-      if (!doc || doc.committee_id !== committeeId) {
+      if (!doc || doc.committee_id !== committee_id) {
         return NextResponse.json({ error: "Forbidden: document not in assigned committee" }, { status: 403 });
       }
       await supabaseAdmin
         .from("documents")
         .update({
-          status: statusValue,
+          status: status,
           feedback,
           reviewed_by_id: adminUserId,
           reviewed_at: new Date().toISOString(),
         })
-        .eq("id", documentId);
+        .eq("id", document_id);
 
       await supabaseAdmin.from("notifications").insert({
         user_id: doc.user_id,
         title: "Document status updated",
-        message: `Your document review status is now ${statusValue}.`,
-        type: statusValue === "APPROVED" ? "SUCCESS" : "INFO",
+        message: `Your document review status is now ${status}.`,
+        type: status === "APPROVED" ? "SUCCESS" : "INFO",
         link: "/documents",
       });
       return NextResponse.json({ success: true });
     }
 
     if (action === "assign_document_to_chair") {
-      const documentId = body?.documentId as string;
+      const document_id = body?.document_id as string;
       const note = (body?.note as string) || null;
-      if (!documentId) {
-        return NextResponse.json({ error: "Missing documentId" }, { status: 400 });
+      if (!document_id) {
+        return NextResponse.json({ error: "Missing document_id" }, { status: 400 });
       }
       const { data: doc } = await supabaseAdmin
         .from("documents")
         .select("id, committee_id")
-        .eq("id", documentId)
+        .eq("id", document_id)
         .maybeSingle();
-      if (!doc || doc.committee_id !== committeeId) {
+      if (!doc || doc.committee_id !== committee_id) {
         return NextResponse.json({ error: "Forbidden: document not in assigned committee" }, { status: 403 });
       }
-      await supabaseAdmin.from("document_chair_flags").insert({
-        document_id: documentId,
-        committee_id: committeeId,
-        flagged_by: adminUserId,
-        note,
+      await supabaseAdmin.from("committee_admin_tasks").insert({
+        committee_id: committee_id,
+        title: `Document Flagged: ${doc.id}`,
+        description: note,
+        created_by: adminUserId,
+        status: "PENDING",
+        priority: "MEDIUM",
       });
       return NextResponse.json({ success: true });
     }
@@ -230,9 +207,9 @@ export async function POST(request: NextRequest) {
       }
 
       const { data: created } = await supabaseAdmin
-        .from("committee_announcements")
+        .from("announcements")
         .insert({
-          committee_id: committeeId,
+          committee_id: committee_id,
           title: title.trim(),
           body: messageBody.trim(),
           sent_by: adminUserId,
@@ -243,7 +220,7 @@ export async function POST(request: NextRequest) {
       const { data: delegateRows } = await supabaseAdmin
         .from("committee_assignments")
         .select("user_id, users(role, status)")
-        .eq("committee_id", committeeId);
+        .eq("committee_id", committee_id);
       const recipients = (delegateRows || [])
         .filter((r: any) => r?.users?.role === "DELEGATE" && r?.users?.status === "APPROVED")
         .map((r: any) => r.user_id);
@@ -265,96 +242,96 @@ export async function POST(request: NextRequest) {
     if (action === "create_resource") {
       const title = (body?.title as string) || "";
       const description = (body?.description as string) || "";
-      const fileUrl = (body?.fileUrl as string) || "";
-      if (!title.trim() || !fileUrl.trim()) {
+      const file_url = (body?.file_url as string) || "";
+      if (!title.trim() || !file_url.trim()) {
         return NextResponse.json({ error: "Title and file URL are required" }, { status: 400 });
       }
       await supabaseAdmin.from("committee_resources").insert({
-        committee_id: committeeId,
+        committee_id: committee_id,
         title: title.trim(),
         description: description.trim() || null,
-        file_url: fileUrl.trim(),
+        file_url: file_url.trim(),
         uploaded_by: adminUserId,
       });
       return NextResponse.json({ success: true });
     }
 
     if (action === "archive_resource") {
-      const resourceId = body?.resourceId as string;
-      const archived = Boolean(body?.archived);
-      if (!resourceId) {
-        return NextResponse.json({ error: "Missing resourceId" }, { status: 400 });
+      const resource_id = body?.resource_id as string;
+      const archived = !!body?.archived;
+      if (!resource_id) {
+        return NextResponse.json({ error: "Missing resource_id" }, { status: 400 });
       }
       const { data: resource } = await supabaseAdmin
         .from("committee_resources")
         .select("id, committee_id")
-        .eq("id", resourceId)
+        .eq("id", resource_id)
         .maybeSingle();
-      if (!resource || resource.committee_id !== committeeId) {
+      if (!resource || resource.committee_id !== committee_id) {
         return NextResponse.json({ error: "Forbidden: resource not in assigned committee" }, { status: 403 });
-      }
-      await supabaseAdmin.from("committee_resources").update({ archived, updated_at: new Date().toISOString() }).eq("id", resourceId);
+      } 
+      await supabaseAdmin.from("committee_resources").update({ archived, updated_at: new Date().toISOString() }).eq("id", resource_id);
       return NextResponse.json({ success: true });
     }
 
     if (action === "save_shared_note") {
-      const noteText = (body?.noteText as string) || "";
+      const note_text = (body?.note_text as string) || "";
       const { data: chairRows } = await supabaseAdmin
         .from("committee_assignments")
         .select("user_id, users(role)")
-        .eq("committee_id", committeeId);
+        .eq("committee_id", committee_id);
       const chairUserId = (chairRows || []).find((r: any) => r?.users?.role === "CHAIR")?.user_id ?? null;
       await supabaseAdmin.from("admin_chair_notes").upsert({
-        committee_id: committeeId,
+        committee_id: committee_id,
         admin_user_id: adminUserId,
         chair_user_id: chairUserId,
-        note_text: noteText,
+        note_text: note_text,
         updated_at: new Date().toISOString(),
       });
       return NextResponse.json({ success: true });
     }
 
     if (action === "save_vote_record") {
-      const motionType = (body?.motionType as string) || "";
+      const motion_type = (body?.motion_type as string) || "";
       const outcome = (body?.outcome as string) || "";
-      const votesFor = Number(body?.votesFor || 0);
-      const votesAgainst = Number(body?.votesAgainst || 0);
+      const votes_for = Number(body?.votes_for || 0);
+      const votes_against = Number(body?.votes_against || 0);
       const abstentions = Number(body?.abstentions || 0);
-      const recordedVotes = Array.isArray(body?.recordedVotes) ? body.recordedVotes : [];
-      if (!motionType || !outcome) {
+      const recorded_votes = Array.isArray(body?.recorded_votes) ? body.recorded_votes : [];
+      if (!motion_type || !outcome) {
         return NextResponse.json({ error: "Missing vote fields" }, { status: 400 });
       }
       await supabaseAdmin.from("committee_vote_records").insert({
-        committee_id: committeeId,
-        motion_type: motionType,
+        committee_id: committee_id,
+        motion_type: motion_type,
         outcome,
-        votes_for: votesFor,
-        votes_against: votesAgainst,
+        votes_for: votes_for,
+        votes_against: votes_against,
         abstentions,
-        recorded_votes: recordedVotes,
+        recorded_votes: recorded_votes,
         recorded_by: adminUserId,
       });
       return NextResponse.json({ success: true });
     }
 
     if (action === "update_admin_task_status") {
-      const taskId = body?.taskId as string;
-      const statusValue = body?.status as string;
-      if (!taskId || !statusValue) {
+      const task_id = body?.task_id as string;
+      const status = body?.status as string;
+      if (!task_id || !status) {
         return NextResponse.json({ error: "Missing task fields" }, { status: 400 });
       }
       const { data: task } = await supabaseAdmin
         .from("committee_admin_tasks")
         .select("id, committee_id")
-        .eq("id", taskId)
+        .eq("id", task_id)
         .maybeSingle();
-      if (!task || task.committee_id !== committeeId) {
+      if (!task || task.committee_id !== committee_id) {
         return NextResponse.json({ error: "Forbidden: task not in assigned committee" }, { status: 403 });
       }
       await supabaseAdmin
         .from("committee_admin_tasks")
-        .update({ status: statusValue, updated_at: new Date().toISOString(), assigned_admin_id: adminUserId })
-        .eq("id", taskId);
+        .update({ status: status, updated_at: new Date().toISOString(), assigned_admin_id: adminUserId })
+        .eq("id", task_id);
       return NextResponse.json({ success: true });
     }
 

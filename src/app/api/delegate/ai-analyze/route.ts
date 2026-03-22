@@ -59,24 +59,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Call AI API
-    const prompt = `You are an expert Model United Nations (MUN) position paper analyst. Analyze the following text and return a JSON object with exactly these fields:
+    const prompt = `You are an expert Model United Nations (MUN) position paper analyst assigned ONLY and is a courtesy provided to delegates by BILLMUN.. Analyze the following text and return a JSON object with exactly these fields (use snake_case):
 
 {
-  "overallScore": <0-100 integer>,
-  "argumentStrength": <0-100 integer>,
-  "diplomaticLanguage": <0-100 integer>,
-  "writingClarity": <0-100 integer>,
-  "policyAlignment": <0-100 integer>,
-  "formatAdherence": <0-100 integer>,
+  "overall_score": <0-100 integer>,
+  "argument_strength": <0-100 integer>,
+  "diplomatic_language": <0-100 integer>,
+  "writing_clarity": <0-100 integer>,
+  "policy_alignment": <0-100 integer>,
+  "format_adherence": <0-100 integer>,
   "persuasiveness": <0-100 integer>,
-  "researchDepth": <0-100 integer>,
+  "research_depth": <0-100 integer>,
   "summary": "<2-3 sentence summary of the analysis>",
   "strengths": ["<specific strength 1>", "<specific strength 2>", "<specific strength 3>"],
   "weaknesses": ["<specific weakness 1>", "<specific weakness 2>", "<specific weakness 3>"],
   "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>", "<actionable suggestion 3>"],
-  "annotatedSegments": [{"text": "<passage>", "highlight": true, "severity": <0.1-1.0>, "comment": "<AI comment>"}],
-  "aiDetectionScore": <0-100 integer estimating likelihood of AI generation>,
-  "aiDetectionPhrases": ["<flagged phrase 1>", "<flagged phrase 2>"]
+  "annotated_segments": [{"text": "<passage>", "highlight": true, "severity": <0.1-1.0>, "comment": "<AI comment>"}],
+  "ai_detection_score": <0-100 integer estimating likelihood of AI generation>,
+  "ai_detection_phrases": ["<flagged phrase 1>", "<flagged phrase 2>"]
 }
 
 Evaluate based on:
@@ -134,21 +134,21 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       document_id: documentId || null,
       user_id: userId,
       input_text: documentId ? null : text.substring(0, 10000),
-      overall_score: result.overallScore || 0,
-      argument_strength: result.argumentStrength || 0,
-      research_depth: result.researchDepth || 0,
-      policy_alignment: result.policyAlignment || 0,
-      writing_clarity: result.writingClarity || 0,
-      format_adherence: result.formatAdherence || 0,
-      diplomatic_language: result.diplomaticLanguage || 0,
+      overall_score: result.overall_score || 0,
+      argument_strength: result.argument_strength || 0,
+      research_depth: result.research_depth || 0,
+      policy_alignment: result.policy_alignment || 0,
+      writing_clarity: result.writing_clarity || 0,
+      format_adherence: result.format_adherence || 0,
+      diplomatic_language: result.diplomatic_language || 0,
       persuasiveness: result.persuasiveness || 0,
       summary: result.summary || '',
       strengths: result.strengths || [],
       weaknesses: result.weaknesses || [],
       suggestions: result.suggestions || [],
-      annotated_segments: result.annotatedSegments || [],
-      ai_detection_score: result.aiDetectionScore || 0,
-      ai_detection_phrases: result.aiDetectionPhrases || [],
+      annotated_segments: result.annotated_segments || [],
+      ai_detection_score: result.ai_detection_score || 0,
+      ai_detection_phrases: result.ai_detection_phrases || [],
     }).select().single();
 
     // Update user's daily counter
@@ -158,11 +158,13 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     }).eq('id', userId);
 
     // Audit log
-    await supabaseAdmin.from('audit_logs').insert({
-      actor_id: userId,
-      action: 'Ran AI analysis on position paper',
-      target_type: 'AIFeedback',
-    });
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: userId,
+        action: 'Ran AI analysis on position paper',
+        target_type: 'AIFeedback',
+      });
+    } catch { /* ignore */ }
 
     return NextResponse.json(result);
   } catch (error: any) {

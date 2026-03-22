@@ -114,7 +114,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   if (settingsLoading || eventsLoading || tasksLoading) {
-    return <LoadingSpinner label="Loading schedule..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   // Group events by day

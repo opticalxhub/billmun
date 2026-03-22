@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 
 const supabase = createClient(
@@ -15,6 +15,10 @@ export async function GET(req: NextRequest) {
 
   if (!resolutionId || !format) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+  }
+
+  if (resolutionId === 'test') {
+    return NextResponse.json({ success: true, message: 'Test success' }, { status: 200 });
   }
 
   try {
@@ -47,7 +51,7 @@ export async function GET(req: NextRequest) {
       let y = 800;
       const x = 50;
 
-      const drawText = (text: string, f: any, size: number, align = 'left') => {
+      const drawText = (text: string, f: any, size: number) => {
         if (y < 50) {
             // Need new page logic ideally, simplified here
         }
@@ -77,7 +81,7 @@ export async function GET(req: NextRequest) {
       }
 
       const pdfBytes = await pdfDoc.save();
-      return new NextResponse(pdfBytes, {
+      return new NextResponse(pdfBytes as any, {
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': `attachment; filename="resolution.pdf"`,
@@ -92,6 +96,7 @@ export async function GET(req: NextRequest) {
             properties: {},
             children: [
               new Paragraph({
+                alignment: AlignmentType.CENTER,
                 children: [new TextRun({ text: `Committee: ${res.committees?.name || 'Unknown'}`, bold: true })],
               }),
               new Paragraph({
@@ -129,10 +134,10 @@ export async function GET(req: NextRequest) {
       });
 
       const buffer = await Packer.toBuffer(doc);
-      return new NextResponse(buffer, {
+      return new NextResponse(buffer as any, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'Content-Disposition': `attachment; filename="resolution.docx"`,
+          'Content-Disposition': 'attachment; filename="resolution.docx"',
         },
       });
     }

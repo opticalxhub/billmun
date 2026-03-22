@@ -15,8 +15,8 @@ export default function LandingPage() {
   useEffect(() => {
     async function fetchData() {
       // Check auth state
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsLoggedIn(!!user);
 
       // Fetch conference settings
       const { data: sData } = await supabase.from('conference_settings').select('conference_date').single();

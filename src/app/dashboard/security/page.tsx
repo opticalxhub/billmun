@@ -30,8 +30,8 @@ export default function SecurityDashboard() {
 
   // Form states
   const [incidentForm, setIncidentForm] = useState({ type: "Unauthorized Access", location: "", parties: [] as string[], desc: "", severity: "LOW", action: "", notifyEb: false });
-  const [checkinForm, setCheckinForm] = useState({ userId: "", location: "Main Entrance" });
-  const [flagForm, setFlagForm] = useState({ userId: "", reason: "", type: "FLAGGED" });
+  const [checkinForm, setCheckinForm] = useState({ user_id: "", location: "Main Entrance" });
+  const [flagForm, setFlagForm] = useState({ user_id: "", reason: "", type: "FLAGGED" });
   const [alertForm, setAlertForm] = useState({ severity: "LOW", message: "" });
   const [briefingForm, setBriefingForm] = useState({ title: "", body: "" });
   const [zoneForm, setZoneForm] = useState({ name: "", description: "", capacity: 0, roles: [] as string[], status: "OPEN" });
@@ -57,10 +57,10 @@ export default function SecurityDashboard() {
   useEffect(() => {
     const channel = supabase
       .channel("security-live-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "incidents" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "access_zones" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "badge_checkins" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_access_zones" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_badge_events" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
       .on("postgres_changes", { event: "*", schema: "public", table: "security_alerts" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
       .subscribe();
     return () => {
@@ -122,7 +122,7 @@ export default function SecurityDashboard() {
   });
 
   if (isLoading && !data) {
-    return <LoadingSpinner label="Loading security dashboard..." className="py-20" />;
+    return <DashboardLoadingState type="overview" />;
   }
 
   const getSeverityColor = (sev: string) => {
@@ -254,7 +254,7 @@ export default function SecurityDashboard() {
                           <div className="flex gap-2 flex-wrap">
                             <Button size="sm" onClick={() => runAction({ action: "badge_checkin", user_id: d.id, location: "Main" })} disabled={submitting}>Check In</Button>
                             <Button size="sm" variant="outline" onClick={() => runAction({ action: "badge_checkout", user_id: d.id })} disabled={submitting}>Check Out</Button>
-                            <Button size="sm" variant="outline" onClick={() => { setFlagForm({ ...flagForm, userId: d.id, type: "SUSPENDED" }); setActiveModal("flag"); }}>Suspend</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setFlagForm({ ...flagForm, user_id: d.id, type: "SUSPENDED" }); setActiveModal("flag"); }}>Suspend</Button>  
                             <Button size="sm" variant="outline" onClick={() => runAction({ action: "mark_badge_lost", user_id: d.id })} disabled={submitting}>Mark Lost</Button>
                           </div>
                         </div>
@@ -562,13 +562,13 @@ export default function SecurityDashboard() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs mb-1 block">Select Delegate</label>
-                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={checkinForm.userId} onChange={(e) => setCheckinForm({...checkinForm, userId: e.target.value})}>
+                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={checkinForm.user_id} onChange={(e) => setCheckinForm({...checkinForm, user_id: e.target.value})}>
                     <option value="">Select...</option>
                     {delegates.map((d: any) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
                   </select>
                 </div>
                 <div><label className="text-xs mb-1 block">Location</label><Input value={checkinForm.location} onChange={(e) => setCheckinForm({...checkinForm, location: e.target.value})} /></div>
-                <div className="flex gap-2 pt-2"><Button variant="outline" className="flex-1" onClick={() => setActiveModal(null)}>Cancel</Button><Button className="flex-1" disabled={!checkinForm.userId} onClick={() => runAction({ action: "badge_checkin", user_id: checkinForm.userId, location: checkinForm.location })}>Check In</Button></div>
+                <div className="flex gap-2 pt-2"><Button variant="outline" className="flex-1" onClick={() => setActiveModal(null)}>Cancel</Button><Button className="flex-1" disabled={!checkinForm.user_id} onClick={() => runAction({ action: "badge_checkin", user_id: checkinForm.user_id, location: checkinForm.location })}>Check In</Button></div>
               </div>
             </div>
           </div>
@@ -581,14 +581,14 @@ export default function SecurityDashboard() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs mb-1 block">Select Delegate</label>
-                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={flagForm.userId} onChange={(e) => setFlagForm({...flagForm, userId: e.target.value})}>
+                  <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={flagForm.user_id} onChange={(e) => setFlagForm({...flagForm, user_id: e.target.value})}>
                     <option value="">Select...</option>
                     {delegates.map((d: any) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
                   </select>
                 </div>
                 <div><label className="text-xs mb-1 block">Action</label><select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={flagForm.type} onChange={(e) => setFlagForm({...flagForm, type: e.target.value})}><option value="FLAGGED">Flag Badge</option><option value="SUSPENDED">Suspend Badge</option></select></div>
                 <div><label className="text-xs mb-1 block">Reason</label><Textarea rows={3} value={flagForm.reason} onChange={(e) => setFlagForm({...flagForm, reason: e.target.value})} /></div>
-                <div className="flex gap-2 pt-2"><Button variant="outline" className="flex-1" onClick={() => setActiveModal(null)}>Cancel</Button><Button className="flex-1" disabled={!flagForm.userId || !flagForm.reason} onClick={() => runAction({ action: "flag_badge", ...flagForm })}>Apply</Button></div>
+                <div className="flex gap-2 pt-2"><Button variant="outline" className="flex-1" onClick={() => setActiveModal(null)}>Cancel</Button><Button className="flex-1" disabled={!flagForm.user_id || !flagForm.reason} onClick={() => runAction({ action: "flag_badge", ...flagForm })}>Apply</Button></div>
               </div>
             </div>
           </div>

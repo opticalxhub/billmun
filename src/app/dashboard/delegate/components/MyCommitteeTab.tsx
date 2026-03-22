@@ -83,7 +83,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   }
 
   if (settingsLoading || announcementsLoading || rosterLoading || chairLoading) {
-    return <LoadingSpinner label="Loading committee data..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';
@@ -118,10 +118,10 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
           <span className={`w-2 h-2 rounded-full ${statusCfg.color} ${statusCfg.pulse ? 'animate-pulse' : ''}`} />
           <span className="text-sm font-jotia-bold text-text-primary">{statusCfg.label}</span>
         </div>
-        {sessionStatus === 'MODERATED_CAUCUS' && ctx.session?.debateTopic && (
+        {sessionStatus === 'MODERATED_CAUCUS' && ctx.session?.debate_topic && (
           <div className="text-sm text-text-dimmed font-jotia mt-2">
-            <p>Debate: {ctx.session.debateTopic}</p>
-            {ctx.session.speakingTimeLimit && <p>Speaking time: {ctx.session.speakingTimeLimit}s</p>}
+            <p>Debate: {ctx.session.debate_topic}</p>
+            {ctx.session.speaking_time_limit && <p>Speaking time: {ctx.session.speaking_time_limit}s</p>}
           </div>
         )}
       </div>

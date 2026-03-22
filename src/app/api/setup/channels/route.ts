@@ -21,7 +21,7 @@ async function ensureChannel(name: string, type: string, committeeId?: string | 
 
 async function upsertMembers(channel_id: string, userIds: string[]) {
   if (!userIds.length) return;
-  const payload = userIds.map((user_id) => ({ channel_id: channelId, user_id }));
+  const payload = userIds.map((user_id) => ({ channel_id, user_id }));
   await supabaseAdmin.from("channel_members").upsert(payload, { onConflict: "channel_id,user_id" });
 }
 

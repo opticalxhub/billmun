@@ -5,7 +5,7 @@ import { Card, Input, SectionLabel } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { LoadingSpinner } from "@/components/loading-spinner";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 const PAGE_SIZE = 50;
 
@@ -73,7 +73,7 @@ export default function AuditPage() {
     }
   }, [virtualItems, filtered.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) return <LoadingSpinner label="Loading audit logs..." className="py-20" />;
+  if (isLoading) return <DashboardLoadingState type="overview" />;
 
   return (
     <div className="space-y-4">

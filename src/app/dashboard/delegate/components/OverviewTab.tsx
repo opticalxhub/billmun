@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { X, Users, MessageSquare, FileText, Calendar, Clock, AlertCircle, ChevronRight, Activity, MapPin } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
   IN_SESSION: { label: 'In Session', color: 'bg-text-primary/70', pulse: true },
@@ -145,7 +146,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   }, [conferenceDate]);
 
   if (settingsLoading || statsLoading || activityLoading || chairLoading) {
-    return <LoadingSpinner label="Loading overview..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';
@@ -178,11 +179,11 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
             <span className="text-sm font-jotia text-text-primary">{statusCfg.label}</span>
           </div>
         </div>
-        {sessionStatus === 'MODERATED_CAUCUS' && ctx.session?.debateTopic && (
+        {sessionStatus === 'MODERATED_CAUCUS' && ctx.session?.debate_topic && (
           <div className="mt-3 pt-3 border-t border-border-subtle text-sm text-text-dimmed font-jotia">
-            <p>Debate: {ctx.session.debateTopic}</p>
-            {ctx.session.speakingTimeLimit && (
-              <p>Speaking time: {ctx.session.speakingTimeLimit}s</p>
+            <p>Debate: {ctx.session.debate_topic}</p>
+            {ctx.session.speaking_time_limit && (
+              <p>Speaking time: {ctx.session.speaking_time_limit}s</p>
             )}
           </div>
         )}
@@ -300,7 +301,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
           <div className="w-full h-full md:h-auto md:max-h-[80vh] md:max-w-3xl bg-bg-card border border-border-subtle rounded-card flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-lg font-jotia-bold text-text-primary">Committee Roster</h3>
-              <button onClick={() => setShowRoster(false)} className="text-text-dimmed hover:text-text-primary p-2">✕</button>
+              <button onClick={() => setShowRoster(false)} className="text-text-dimmed hover:text-text-primary p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-auto p-4">
               <table className="w-full text-left text-sm">

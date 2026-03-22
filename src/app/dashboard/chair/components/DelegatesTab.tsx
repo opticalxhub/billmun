@@ -45,7 +45,8 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
         .from('delegate_ratings')
         .select('*')
         .eq('committee_id', ctx.committee.id)
-        .eq('rated_by', ctx.user.id);
+        .eq('rated_by', ctx.user.id)
+        .limit(50);
       const r: Record<string, Rating> = {};
       (data || []).forEach((d: any) => {
         r[d.delegate_id] = {
@@ -65,10 +66,11 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
       const { data } = await supabase
-        .from('speakers_list')
+        .from('speaker_lists')
         .select('delegate_id, actual_speaking_time')
         .eq('committee_id', ctx.committee.id)
-        .eq('status', 'COMPLETED');
+        .eq('status', 'COMPLETED')
+        .limit(50);
       const s: Record<string, { time: number; count: number }> = {};
       (data || []).forEach((r: any) => {
         if (!s[r.delegate_id]) s[r.delegate_id] = { time: 0, count: 0 };
@@ -162,19 +164,19 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
 
   const saving = addNomineeMutation.isPending || removeNomineeMutation.isPending;
 
-  const getScore = (delegateId: string) => {
+  const getScore = useCallback((delegateId: string) => {
     const r = ratings[delegateId];
     const s = speakingStats[delegateId];
     const ratingAvg = r ? (r.argumentation_quality + r.diplomacy + r.preparation) / 3 : 0;
     const speechScore = s ? Math.min(s.count * 0.5, 2.5) : 0;
     return Math.round((ratingAvg + speechScore) * 10) / 10;
-  };
+  }, [ratings, speakingStats]);
 
   const sortedDelegates = useMemo(() => [...ctx.delegates].sort((a, b) => {
-    const aId = a.user_id || a.user?.id;
-    const bId = b.user_id || b.user?.id;
+    const aId = a.id;
+    const bId = b.id;
     return getScore(bId) - getScore(aId);
-  }), [ctx.delegates, ratings, speakingStats]);
+  }), [ctx.delegates, getScore]);
 
   const fmt = (t: number) => `${Math.floor(t / 60)}m ${t % 60}s`;
 
@@ -205,15 +207,20 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {sortedDelegates.map((d, i) => {
-                const dId = d.user_id || d.user?.id;
+                const dId = d.id;
                 const r = ratings[dId] || { argumentation_quality: 0, diplomacy: 0, preparation: 0, private_notes: '' };
-                const s = speakingStats[dId] || { time: 0, count: 0 };
+                const s = speakingStats[dId] || { count: 0, time: 0 };
+                const score = getScore(dId);
+                const isExpanded = expandedDelegate === dId;
+
                 return (
-                  <tr key={dId} className="hover:bg-bg-raised/30 cursor-pointer" onClick={() => setExpandedDelegate(expandedDelegate === dId ? null : dId)}>
-                    <td className="p-3 text-sm font-bold text-text-tertiary">{i + 1}</td>
+                  <tr key={dId} className="hover:bg-bg-raised/30 transition-colors border-b border-border-subtle/50 cursor-pointer" onClick={() => setExpandedDelegate(isExpanded ? null : dId)}>
+                    <td className="p-3 text-xs text-text-tertiary font-mono">{i + 1}</td>
                     <td className="p-3">
-                      <p className="text-sm font-medium text-text-primary">{d.user?.full_name}</p>
-                      <p className="text-xs text-text-dimmed">{d.country}</p>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-primary">{d.full_name}</span>
+                        <span className="text-[10px] text-text-dimmed uppercase tracking-wider">{d.country}</span>
+                      </div>
                     </td>
                     <td className="p-3 text-sm text-text-secondary">{s.count}</td>
                     <td className="p-3 text-sm text-text-secondary font-mono">{fmt(s.time)}</td>

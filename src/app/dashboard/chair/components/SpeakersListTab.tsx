@@ -98,7 +98,7 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
     if (!current) return;
     const elapsed = speakingLimit - speakingTimer;
     await supabase.from('speakers_list').update({
-      status: 'COMPLETED',
+      status: 'YIELDED',
       yield_type: type,
       actual_speaking_time: elapsed,
       completed_at: new Date().toISOString(),

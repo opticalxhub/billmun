@@ -50,12 +50,12 @@ export default function DelegateDashboard() {
   const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('No session');
       const { data, error } = await supabase
         .from('users')
-        .select('*')
-        .eq('id', session.user.id)
+        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status')
+        .eq('id', authUser.id)
         .single();
       if (error) throw error;
       return data;
@@ -144,7 +144,7 @@ export default function DelegateDashboard() {
   }, [refetchUser, refetchAssignment, refetchSession]);
 
   if (loading) {
-    return <DashboardLoadingState label="Loading delegate dashboard..." type={activeTab === 'Overview' ? 'overview' : 'list'} />;
+    return <DashboardLoadingState type="overview" />;
   }
 
   if (!user && !userLoading) {

@@ -28,9 +28,9 @@ export default function PressDashboard() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-      const { data } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('No session');
+      const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
       return data;
     },
     staleTime: 5 * 60 * 1000,
@@ -153,7 +153,7 @@ export default function PressDashboard() {
     submitPrMutation.mutate({ title: prTitle.trim(), body: prBody.trim() });
   };
 
-  if (userLoading || pressLoading) return <DashboardLoadingState label="Loading media dashboard..." type="overview" />;
+  if (userLoading || pressLoading) return <DashboardLoadingState type="overview" />;
 
   if (!user) {
     router.push('/login');

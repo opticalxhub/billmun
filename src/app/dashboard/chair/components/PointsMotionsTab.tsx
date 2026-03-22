@@ -85,7 +85,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
     });
 
     // Log event
-    const delegateName = ctx.delegates.find(d => (d.user_id || d.user?.id) === delegateId)?.user?.full_name || 'Unknown';
+    const delegateName = ctx.delegates.find(d => (d.id || d.user_id || d.user?.id) === delegateId)?.full_name || 'Unknown';
     const typeLabel = TYPES.find(t => t.value === type)?.label || type;
     await supabase.from('session_events').insert({
       committee_id: ctx.committee.id,
@@ -93,7 +93,13 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
       event_type: 'MOTION',
       title: `${typeLabel} by ${delegateName} — ${outcome}`,
       description,
-      metadata: { type, outcome, votesFor, votesAgainst, votesAbstain },
+      metadata: { 
+        type, 
+        outcome, 
+        votes_for: votesFor, 
+        votes_against: votesAgainst, 
+        votes_abstain: votesAbstain 
+      },
       created_by: ctx.user.id,
     });
 

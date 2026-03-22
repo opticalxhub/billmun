@@ -11,13 +11,13 @@ export default function PendingPage() {
 
   useEffect(() => {
     const checkStatus = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
 
       const { data: user } = await supabase
         .from('users')
         .select('status')
-        .eq('id', session.user.id)
+        .eq('id', authUser.id)
         .single();
 
       if (user?.status === 'APPROVED') {
@@ -28,14 +28,14 @@ export default function PendingPage() {
 
       // Real-time status subscription
       const channel = supabase
-        .channel(`user_status_${session.user.id}`)
+        .channel(`user_status_${authUser.id}`)
         .on(
           'postgres_changes',
           {
             event: 'UPDATE',
             schema: 'public',
             table: 'users',
-            filter: `id=eq.${session.user.id}`,
+            filter: `id=eq.${authUser.id}`,
           },
           (payload) => {
             const newStatus = payload.new.status;

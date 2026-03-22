@@ -33,10 +33,6 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
     staleTime: 60 * 1000,
   });
 
-  if (speechesLoading) {
-    return <LoadingSpinner label="Loading speeches..." className="py-20" />;
-  }
-
   const selectSpeech = (speech: any) => {
     setSelectedId(speech.id);
     setTitle(speech.title);
@@ -68,7 +64,7 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
     if (!selectedId || saving) return;
     setSaving(true);
     await saveMutation.mutateAsync({ id: selectedId, title, body, notes });
-  }, [selectedId, title, body, notes, saving]);
+  }, [selectedId, title, body, notes, saving, saveMutation]);
 
   // Autosave every 30s
   useEffect(() => {
@@ -163,6 +159,10 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
     win.document.close();
     win.print();
   };
+
+  if (speechesLoading) {
+    return <LoadingSpinner className="py-20" />;
+  }
 
   const selected = speeches.find(s => s.id === selectedId);
 

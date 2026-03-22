@@ -77,7 +77,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   }, [ctx.user]);
 
   if (documentsLoading || pastAnalysesLoading) {
-    return <LoadingSpinner label="Loading AI feedback tools..." className="py-20" />;
+    return <LoadingSpinner className="py-20" />;
   }
 
   const runAnalysis = async () => {
@@ -200,18 +200,18 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
           <div className="bg-bg-card border border-border-subtle rounded-card p-6 flex flex-col items-center">
             <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Overall Score</h3>
             <div className="relative">
-              <ScoreRing score={result.overallScore || 0} size={140} />
+              <ScoreRing score={result.overall_score || 0} size={140} />
             </div>
           </div>
 
           {/* Sub-scores */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
-              { label: 'Argument Strength', key: 'argumentStrength' },
-              { label: 'Diplomatic Language', key: 'diplomaticLanguage' },
-              { label: 'Structural Clarity', key: 'writingClarity' },
-              { label: 'Policy Alignment', key: 'policyAlignment' },
-              { label: 'MUN Format', key: 'formatAdherence' },
+              { label: 'Argument Strength', key: 'argument_strength' },
+              { label: 'Diplomatic Language', key: 'diplomatic_language' },
+              { label: 'Structural Clarity', key: 'writing_clarity' },
+              { label: 'Policy Alignment', key: 'policy_alignment' },
+              { label: 'Format', key: 'format_adherence' },
               { label: 'Persuasiveness', key: 'persuasiveness' },
             ].map(s => (
               <div key={s.key} className="bg-bg-card border border-border-subtle rounded-card p-4 flex flex-col items-center">
@@ -246,11 +246,11 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
           </div>
 
           {/* Annotated Document */}
-          {result.annotatedSegments && Array.isArray(result.annotatedSegments) && result.annotatedSegments.length > 0 && (
+          {result.annotated_segments && Array.isArray(result.annotated_segments) && result.annotated_segments.length > 0 && (
             <div className="bg-bg-card border border-border-subtle rounded-card p-6">
               <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Annotated Document</h3>
               <div className="font-jotia text-sm text-text-dimmed leading-relaxed space-y-1">
-                {result.annotatedSegments.map((seg: any, i: number) => (
+                {result.annotated_segments.map((seg: any, i: number) => (
                   <span key={i} className="group relative inline" style={{ backgroundColor: seg.highlight ? `rgba(240, 237, 230, ${0.05 + (seg.severity || 0.1) * 0.15})` : 'transparent' }}>
                     {seg.text}
                     {seg.comment && (
@@ -265,16 +265,16 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
           )}
 
           {/* AI Detection */}
-          {result.aiDetectionScore !== undefined && (
+          {result.ai_detection_score !== undefined && (
             <div className="bg-bg-card border border-border-subtle rounded-card p-6">
               <h3 className="font-jotia-bold text-lg text-text-primary mb-2">AI Detection</h3>
               <p className="text-text-dimmed font-jotia text-sm">
-                Estimated AI-generated likelihood: <span className="text-text-primary font-jotia-bold">{result.aiDetectionScore}%</span>
+                Estimated AI-generated likelihood: <span className="text-text-primary font-jotia-bold">{result.ai_detection_score}%</span>
               </p>
-              {result.aiDetectionPhrases && result.aiDetectionPhrases.length > 0 && (
+              {result.ai_detection_phrases && result.ai_detection_phrases.length > 0 && (
                 <div className="mt-3 space-y-1">
                   <p className="text-text-tertiary font-jotia text-xs">Flagged phrases:</p>
-                  {result.aiDetectionPhrases.map((phrase: string, i: number) => (
+                  {result.ai_detection_phrases.map((phrase: string, i: number) => (
                     <p key={i} className="text-text-dimmed font-jotia text-xs italic bg-bg-raised rounded px-2 py-1 inline-block mr-2 mb-1">&ldquo;{phrase}&rdquo;</p>
                   ))}
                 </div>

@@ -4,6 +4,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
+import { X, Search, Filter, FileText, Download, CheckCircle, AlertCircle, Clock, History, ExternalLink } from "lucide-react";
+import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 export default function DocumentsDashPage() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -26,8 +28,8 @@ export default function DocumentsDashPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    setCurrentUser(sessionData.session?.user?.id);
+    const { data: userData } = await supabase.auth.getUser();
+    setCurrentUser(userData.user?.id);
 
     const [{ data: docs }, { data: comms }] = await Promise.all([
       supabase.from("documents").select("*, users(full_name, email), committees(name)").order("uploaded_at", { ascending: false }),
@@ -64,7 +66,7 @@ export default function DocumentsDashPage() {
     const res = await fetch("/api/eb/documents/action", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, docId: selectedDoc.id, feedback, ebUserId: currentUser }),
+      body: JSON.stringify({ action, doc_id: selectedDoc.id, feedback, ebUserId: currentUser }),
     });
     setSubmitting(false);
     if (res.ok) {
@@ -87,7 +89,7 @@ export default function DocumentsDashPage() {
   }, [documents, searchTerm, filterStatus, filterCommittee, filterType]);
 
   if (loading) {
-    return <div className="p-12 text-center text-text-dimmed">Loading documents...</div>;
+    return <DashboardLoadingState type="table" />;
   }
 
   return (
@@ -186,7 +188,7 @@ export default function DocumentsDashPage() {
                 <h2 className="text-xl font-bold text-text-primary">{selectedDoc.title}</h2>
                 <p className="text-sm text-text-dimmed">By {selectedDoc.users?.full_name}</p>
               </div>
-              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary">✕</button>
+              <button onClick={closeDrawer} className="p-2 text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">

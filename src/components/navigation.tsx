@@ -11,9 +11,9 @@ export function Navigation() {
   const { data: user } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
-      const { data } = await supabase.from('users').select('*').eq('id', session.user.id).single();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from('users').select('*').eq('id', user.id).single();
       return data;
     },
   });

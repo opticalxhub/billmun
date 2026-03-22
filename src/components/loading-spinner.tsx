@@ -7,7 +7,7 @@ interface LoadingSpinnerProps {
   label?: string;
 }
 
-export function LoadingSpinner({ className, size = "md", label }: LoadingSpinnerProps) {
+export function LoadingSpinner({ className, size = "md" }: LoadingSpinnerProps) {
   const sizeClasses = {
     sm: "w-4 h-4 border-2",
     md: "w-8 h-8 border-3",
@@ -23,15 +23,14 @@ export function LoadingSpinner({ className, size = "md", label }: LoadingSpinner
           sizeClasses[size]
         )}
       />
-      {label && <p className="text-sm font-jotia text-text-dimmed animate-pulse">{label}</p>}
     </div>
   );
 }
 
-export function FullPageSpinner({ label = "Loading portal..." }: { label?: string }) {
+export function FullPageSpinner() {
   return (
     <div className="fixed inset-0 bg-bg-base z-[100] flex items-center justify-center">
-      <LoadingSpinner size="xl" label={label} />
+      <LoadingSpinner size="xl" />
     </div>
   );
 }
