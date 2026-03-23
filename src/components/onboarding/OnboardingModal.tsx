@@ -89,7 +89,7 @@ export default function OnboardingModal({ role, full_name, committee, onComplete
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 20, opacity: 0, scale: 0.96 }}
           transition={{ type: "spring", stiffness: 280, damping: 24 }}
-          className="w-full max-w-2xl rounded-2xl bg-bg-card border border-border-subtle p-8 shadow-modal"
+          className="w-full max-w-2xl rounded-2xl bg-bg-card border border-border-subtle p-4 sm:p-8 shadow-modal"
         >
           <div className="flex justify-between items-start mb-4">
             <div>

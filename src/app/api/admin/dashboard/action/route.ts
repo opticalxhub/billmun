@@ -279,8 +279,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    if (action === "save_shared_note") {
-      const note_text = (body?.note_text as string) || "";
+    if (action === "save_shared_note" || action === "update_shared_note") {
+      const note_text = (body?.note_text as string) || (body?.note as string) || "";
       const { data: chairRows } = await supabaseAdmin
         .from("committee_assignments")
         .select("user_id, users(role)")

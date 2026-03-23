@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import type { DelegateContext } from '../page';
 
 export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
@@ -19,7 +19,7 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
   const autosaveResRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // useQuery for Research Data
-  const { isLoading: researchLoading } = useQuery({
+  const { isLoading: researchLoading, isError: researchError } = useQuery({
     queryKey: ['country-research', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -39,7 +39,7 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Stances
-  const { isLoading: stancesLoading } = useQuery({
+  const { isLoading: stancesLoading, isError: stancesError } = useQuery({
     queryKey: ['stance-notes', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -119,6 +119,9 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
 
   if (researchLoading || stancesLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (researchError || stancesError) {
+    return <QueryErrorState message="Failed to load research data." />;
   }
 
   return (

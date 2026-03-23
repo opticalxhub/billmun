@@ -3,6 +3,7 @@ import { UTApi } from "uploadthing/server";
 import { getRequestUserContext } from "@/lib/auth-context";
 
 export async function POST(req: NextRequest) {
+  try {
   const { context, error, status } = await getRequestUserContext();
   if (!context) return NextResponse.json({ error }, { status: status || 500 });
   if (!["MEDIA", "PRESS", "EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(context.role)) {
@@ -33,4 +34,8 @@ export async function POST(req: NextRequest) {
     size: uploaded.data.size || file.size,
     type: uploaded.data.type || file.type,
   });
+  } catch (err: any) {
+    console.error('[media/upload]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

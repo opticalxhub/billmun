@@ -27,7 +27,7 @@ export default function PressDashboard() {
   const [prTitle, setPrTitle] = useState('');
   const [prBody, setPrBody] = useState('');
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user, isLoading: userLoading, isError: userError } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
       // Emergency Override Check
@@ -50,14 +50,14 @@ export default function PressDashboard() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: pressData, isLoading: pressLoading } = useQuery({
+  const { data: pressData, isLoading: pressLoading, isError: pressError } = useQuery({
     queryKey: ['press-dashboard'],
     enabled: !!user?.id,
     queryFn: async () => {
       const [{ data: media }, { data: events }, { data: resources }, { data: pr }] = await Promise.all([
         supabase.from('media_gallery').select('*').order('created_at', { ascending: false }).limit(100),
-        supabase.from('conference_schedule').select('*').order('start_time', { ascending: true }).limit(50),
-        supabase.from('committee_resources').select('*').eq('resource_type', 'MEDIA').order('created_at', { ascending: false }).limit(50),
+        supabase.from('schedule_events').select('*').order('start_time', { ascending: true }).limit(50),
+        supabase.from('committee_resources').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(50),
         supabase.from('press_releases').select('*').order('created_at', { ascending: false }).limit(50),
       ]);
       return { media: media || [], events: events || [], resources: resources || [], pressReleases: pr || [] };
@@ -168,6 +168,9 @@ export default function PressDashboard() {
   };
 
   if (userLoading || pressLoading) return <DashboardLoadingState type="overview" />;
+  if ((userError || pressError) && !user) {
+    return <div className="flex items-center justify-center min-h-screen"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load press dashboard.</p><button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
+  }
 
   if (!user) {
     router.push('/login');
@@ -183,7 +186,7 @@ export default function PressDashboard() {
         user={user}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
         <div className="xl:col-span-8">
           <DashboardAnimatedTabPanel activeKey={activeTab}>
             {activeTab === 'Overview' && (

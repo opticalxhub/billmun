@@ -60,7 +60,7 @@ export default function ChairDashboard() {
   const [activeTab, setActiveTab] = useState<TabName>('Command Center');
 
   // useQuery for User Profile
-  const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
       // Emergency Override Check
@@ -264,7 +264,7 @@ export default function ChairDashboard() {
       <AnnouncementBanner user={user} committeeId={committee?.id} />
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
         <div className="xl:col-span-8">
           <DashboardAnimatedTabPanel activeKey={activeTab}>
             {activeTab === 'Command Center' && <CommandCenterTab ctx={ctx} />}
@@ -284,7 +284,7 @@ export default function ChairDashboard() {
           </DashboardAnimatedTabPanel>
         </div>
         
-        <div className="xl:col-span-4 space-y-6">
+        <div className="xl:col-span-4 space-y-4 sm:space-y-6">
           <Notepad dashboardKey="CHAIR" userId={user?.id} />
         </div>
       </div>

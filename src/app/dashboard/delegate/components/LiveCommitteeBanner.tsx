@@ -45,7 +45,7 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
         .from('committee_sessions')
         .select('*')
         .eq('committee_id', committee_id)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -53,8 +53,8 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
 
       if (sessionData.caucus_type === 'MODERATED') {
         setSessionStatus('Moderated Caucus');
-        setDebateTopic(sessionData.current_topic || '');
-        setSpeakingTime(sessionData.timer_duration_seconds || 0);
+        setDebateTopic(sessionData.debate_topic || '');
+        setSpeakingTime(sessionData.speaking_time_limit || 0);
       } else if (sessionData.caucus_type === 'UNMODERATED') {
         setSessionStatus('Unmoderated Caucus');
         setDebateTopic('');

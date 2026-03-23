@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, SectionLabel, Input, Textarea, Badge, Select } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Card, SectionLabel, Input, Textarea, Badge } from '@/components/ui';
+import { Button } from '@/components/button';
 import { supabase } from '@/lib/supabase';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { Search, Plus, Users, FileText, CheckCircle2, XCircle, BrainCircuit } from 'lucide-react';
@@ -244,7 +244,7 @@ export function PointsSystem({ committee }: { committee: any }) {
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-text-dimmed uppercase">Stance</div>
                   <p className="text-sm italic text-text-secondary leading-relaxed">
-                    "{bloc.stance || 'No stance recorded yet.'}"
+                    "&ldquo;{bloc.stance || 'No stance recorded yet.'}&rdquo;"
                   </p>
                 </div>
 

@@ -53,7 +53,7 @@ export default function SecurityDashboard() {
   const parentRefBadge = useRef<HTMLDivElement>(null);
   const parentRefFeed = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['security-dashboard'],
     queryFn: async () => {
       const res = await fetch("/api/security/dashboard");
@@ -138,6 +138,9 @@ export default function SecurityDashboard() {
   if (isLoading && !data) {
     return <DashboardLoadingState type="overview" />;
   }
+  if (isError && !data) {
+    return <div className="flex items-center justify-center min-h-screen"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load security dashboard.</p><button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
+  }
 
   const getSeverityColor = (sev: string) => {
     if (sev === "CRITICAL") return "rejected";
@@ -155,7 +158,7 @@ export default function SecurityDashboard() {
         user={data?.user}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6 relative">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6 relative">
         <div className="xl:col-span-8">
           {actionError && (
             <div className="mb-4 p-3 rounded-card border border-status-rejected-border bg-status-rejected-bg text-status-rejected-text text-sm">

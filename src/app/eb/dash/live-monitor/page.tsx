@@ -12,6 +12,7 @@ export default function LiveMonitorPage() {
   const [committees, setCommittees] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   
   // Filters
   const [search, setSearch] = useState("");
@@ -31,6 +32,8 @@ export default function LiveMonitorPage() {
 
   const load = async () => {
     setLoading(true);
+    setFetchError(false);
+    try {
     const { data: userData } = await supabase.auth.getUser();
     setCurrentUser(userData.user?.id);
 
@@ -72,7 +75,13 @@ export default function LiveMonitorPage() {
       setRows(enrichedUsers.sort((a: any, b: any) => new Date(b.last_activity).getTime() - new Date(a.last_activity).getTime()));
     } catch (err) {
       console.error("Error loading live data:", err);
+      setFetchError(true);
     } finally {
+      setLoading(false);
+    }
+    } catch (outerErr) {
+      console.error("Error loading live monitor:", outerErr);
+      setFetchError(true);
       setLoading(false);
     }
   };
@@ -155,6 +164,7 @@ export default function LiveMonitorPage() {
   const idleAlerts = rows.filter(r => new Date(r.last_activity).getTime() < twoHoursAgo && r.role === 'DELEGATE');
 
   if (loading) return <DashboardLoadingState type="overview" />;
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load live monitor.</p><button onClick={() => load()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-4 h-full flex flex-col">

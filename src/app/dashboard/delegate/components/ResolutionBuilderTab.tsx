@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 
 const PREAMBULATORY_PHRASES = [
   'Affirming', 'Alarmed by', 'Approving', 'Aware of', 'Believing', 'Cognizant of', 'Confident',
@@ -54,7 +54,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const [sharing, setSharing] = useState(false);
 
   // useQuery for Resolutions
-  const { data: resolutions = [], isLoading: resolutionsLoading, refetch: refetchResolutions } = useQuery({
+  const { data: resolutions = [], isLoading: resolutionsLoading, isError: resolutionsError, refetch: refetchResolutions } = useQuery({
     queryKey: ['resolutions', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -66,13 +66,13 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   });
 
   // useQuery for User Blocs
-  const { data: userBlocs = [], isLoading: blocsLoading } = useQuery({
+  const { data: userBlocs = [], isLoading: blocsLoading, isError: blocsError } = useQuery({
     queryKey: ['user-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('bloc_members')
-        .select('bloc_id, blocs(name, channel_id)')
+        .select('bloc_id, blocs(name)')
         .eq('user_id', ctx.user.id);
       if (error) throw error;
       return (data || []).map((b: any) => ({
@@ -124,6 +124,9 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
 
   if (resolutionsLoading || blocsLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (resolutionsError || blocsError) {
+    return <QueryErrorState message="Failed to load resolution data." onRetry={() => refetchResolutions()} />;
   }
 
   const createResolution = async () => {

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 
 export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const queryClient = useQueryClient();
@@ -14,7 +14,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const [taskDue, setTaskDue] = useState('');
 
   // useQuery for Conference Settings (Date)
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
       const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').single();
@@ -25,7 +25,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Events
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useQuery({
     queryKey: ['schedule-events'],
     queryFn: async () => {
       const { data, error } = await supabase.from('schedule_events').select('*').order('start_time', { ascending: true });
@@ -36,7 +36,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Tasks
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useQuery({
     queryKey: ['personal-tasks', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -53,7 +53,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Committee Schedule
-  const { data: committeeSchedule = [], isLoading: committeeScheduleLoading } = useQuery({
+  const { data: committeeSchedule = [] } = useQuery({
     queryKey: ['committee-schedule', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -131,6 +131,9 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
 
   if (settingsLoading || eventsLoading || tasksLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (settingsError || eventsError || tasksError) {
+    return <QueryErrorState message="Failed to load schedule data." />;
   }
 
   // Group events by day

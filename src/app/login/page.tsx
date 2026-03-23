@@ -60,14 +60,14 @@ export default function LoginPage() {
         <BackgroundPaths title="Portal Login" />
       </div>
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-md bg-white/10 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl p-8 shadow-2xl">
-          <div className="flex justify-center mb-8">
+        <div className="w-full max-w-md bg-white/10 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-2xl p-5 sm:p-8 shadow-2xl">
+          <div className="flex justify-center mb-6 sm:mb-8">
             <Link href="/">
-              <img src="/billmun.png" alt="BILLMUN Logo" className="w-32 h-auto dark:invert" />
+              <img src="/billmun.png" alt="BILLMUN Logo" className="w-24 sm:w-32 h-auto dark:invert" />
             </Link>
           </div>
           
-          <h1 className="font-jotia text-2xl text-center mb-6 tracking-widest text-text-primary">PORTAL LOGIN</h1>
+          <h1 className="font-jotia text-xl sm:text-2xl text-center mb-6 tracking-widest text-text-primary">PORTAL LOGIN</h1>
           
           <form onSubmit={handleLogin} className="space-y-6">
             <FormGroup>
@@ -106,7 +106,7 @@ export default function LoginPage() {
             </Button>
             
             <div className="text-center mt-6 text-sm text-text-secondary">
-              Don't have an account? <Link href="/register" className="text-primary hover:underline">Register</Link>
+              Don&apos;t have an account? <Link href="/register" className="text-primary hover:underline">Register</Link>
             </div>
           </form>
         </div>

@@ -87,107 +87,109 @@
       transform: translateX(100%);
     }
   }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-* {
-  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+/*
+ * ALL element-level defaults MUST go inside @layer base
+ * so that Tailwind utility classes can always override them.
+ * Placing them outside @layer causes them to beat utilities.
+ */
+@layer base {
+  * {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    @apply bg-bg-base text-text-primary;
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg-base text-text-primary font-inter;
+    min-height: 100vh;
+  }
+
+  /* Typography defaults — utility classes will override these */
+  h1 {
+    @apply font-jotia text-heading-1 text-text-primary;
+  }
+  h2 {
+    @apply font-jotia text-2xl text-text-primary;
+  }
+  h3 {
+    @apply font-jotia text-xl text-text-primary;
+  }
+  p {
+    @apply font-inter text-text-primary leading-relaxed;
+  }
+
+  /* Button defaults */
+  button {
+    @apply transition-all duration-150 ease-out;
+  }
+  button:disabled {
+    @apply opacity-35 cursor-not-allowed;
+  }
+
+  /* Link defaults — utility classes like text-text-secondary WILL override */
+  a {
+    @apply transition-colors;
+  }
+
+  /* Form defaults */
+  input, textarea, select {
+    @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
+  }
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    @apply text-text-disabled;
+  }
+  select option {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  /* Lists */
+  ul, ol {
+    @apply list-none;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-text-dimmed text-white-pure;
+  }
 }
 
-html {
-  @apply bg-bg-base text-text-primary;
-}
-
-body {
-  @apply bg-bg-base text-text-primary font-inter;
-  min-height: 100vh;
-}
-
-/* Base text styles */
-h1 {
-  @apply font-jotia text-heading-1 text-text-primary;
-}
-
-h2 {
-  @apply font-jotia text-2xl text-text-primary;
-}
-
-h3 {
-  @apply font-jotia text-xl text-text-primary;
-}
-
-p {
-  @apply font-inter text-text-primary leading-relaxed;
-}
-
-/* Buttons base */
-button {
-  @apply transition-all duration-150 ease-out;
-}
-
-button:disabled {
-  @apply opacity-35 cursor-not-allowed;
-}
-
-/* Links */
-a {
-  @apply text-text-primary hover:text-text-secondary transition-colors;
-}
-
-/* Form defaults */
-input, textarea, select, button {
-  @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
-}
-
-input::placeholder,
-textarea::placeholder,
-select::placeholder {
-  @apply text-text-disabled;
-}
-
-select option,
-input,
-textarea,
-button {
-  background-color: var(--bg-card);
-  color: var(--text-primary);
-}
-
-html,
-body {
-  color-scheme: dark;
-  background-color: var(--bg-base);
-  color: var(--text-primary);
-}
-
-.bg-white {
-  color: #000;
-}
-
-/* Scrollbar styling */
+/* Scrollbar styling (pseudo-elements, not affected by utility override concerns) */
 ::-webkit-scrollbar {
   @apply w-2;
 }
-
 ::-webkit-scrollbar-track {
   @apply bg-bg-card;
 }
-
 ::-webkit-scrollbar-thumb {
   @apply bg-border-subtle hover:bg-border-emphasized rounded-full;
 }
 
-/* Remove default margin from lists */
-ul, ol {
-  @apply list-none;
-}
-
-/* Selection styling */
-::selection {
-  @apply bg-text-dimmed text-white-pure;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  input, textarea, select {
+    font-size: 16px !important; /* Prevent iOS zoom on focus */
   }
 }

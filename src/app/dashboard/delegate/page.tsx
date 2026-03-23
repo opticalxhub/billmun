@@ -22,7 +22,7 @@ import {
   DashboardLoadingState,
   DashboardTabBar,
 } from '@/components/dashboard-shell';
-import { LoadingSpinner } from '@/components/loading-spinner';
+// LoadingSpinner available from loading-spinner if needed
 
 const TABS = [
   'Overview',
@@ -215,14 +215,14 @@ export default function DelegateDashboard() {
       <AnnouncementBanner user={user} committeeId={assignment?.committee_id} />
 
       {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
         <div className="xl:col-span-8">
           <DashboardAnimatedTabPanel activeKey={activeTab}>
             {renderTabContent()}
           </DashboardAnimatedTabPanel>
         </div>
 
-        <div className="xl:col-span-4 space-y-6">
+        <div className="xl:col-span-4 space-y-4 sm:space-y-6">
           <Notepad dashboardKey="DELEGATE" userId={user?.id} />
         </div>
       </div>

@@ -11,24 +11,27 @@ export async function GET(req: NextRequest) {
   const { adminUserId, committee_id, committeeName } = context;
   const q = req.nextUrl.searchParams.get('q') || '';
 
+  // Fetch admin user profile for header and banner
+  const { data: adminProfile } = await supabaseAdmin
+    .from("users")
+    .select("id, full_name, email, role, status")
+    .eq("id", adminUserId)
+    .single();
+
   if (!committee_id) {
     return NextResponse.json({
-      admin: { id: adminUserId, name: null },
+      admin: adminProfile || { id: adminUserId, full_name: null, role: 'ADMIN' },
       committee: { id: null, name: null },
       error: "No committee assignment found. Please contact the Executive Board to be assigned to a committee.",
       noAssignment: true
     });
   }
 
-  let delegatesQuery = supabaseAdmin
+  // Always fetch all delegates; filter in JS for search since .or() on joined tables doesn't work in PostgREST
+  const delegatesQuery = supabaseAdmin
     .from("committee_assignments")
     .select("user_id, country, users(id, full_name, email, phone_number, role, status)")
     .eq("committee_id", committee_id);
-
-  if (q.length >= 2) {
-    // Note: Use .or with the relationship syntax to filter the joined users table or country
-    delegatesQuery = delegatesQuery.or(`country.ilike.%${q}%,users.full_name.ilike.%${q}%`);
-  }
 
   const [
     { data: chairAssignments },
@@ -47,6 +50,7 @@ export async function GET(req: NextRequest) {
     { count: openIncidents },
     { count: pendingAdminTasks },
     { data: conferenceSettings },
+    { data: auditLogs },
   ] = await Promise.all([
       supabaseAdmin
         .from("committee_assignments")
@@ -133,6 +137,11 @@ export async function GET(req: NextRequest) {
         .select("whatsapp_group_link")
         .limit(1)
         .maybeSingle(),
+      supabaseAdmin
+        .from("audit_logs")
+        .select("id, actor_id, action, target_type, target_id, metadata, performed_at, actor:actor_id(full_name)")
+        .order("performed_at", { ascending: false })
+        .limit(100),
     ]);
 
   const chairUserRaw = (chairAssignments || []).find(
@@ -140,10 +149,19 @@ export async function GET(req: NextRequest) {
   )?.users;
   const chairUser = Array.isArray(chairUserRaw) ? chairUserRaw[0] : chairUserRaw;
 
+  const searchLower = q.trim().toLowerCase();
   const delegateRows = (delegates || [])
     .filter((d: any) => {
       const u = Array.isArray(d.users) ? d.users[0] : d.users;
-      return u?.role === "DELEGATE" && u?.status === "APPROVED";
+      if (u?.role !== "DELEGATE" || u?.status !== "APPROVED") return false;
+      // Apply search filter in JS (PostgREST .or() doesn't work on joined tables)
+      if (searchLower.length >= 2) {
+        const nameMatch = (u?.full_name || "").toLowerCase().includes(searchLower);
+        const countryMatch = (d.country || "").toLowerCase().includes(searchLower);
+        const emailMatch = (u?.email || "").toLowerCase().includes(searchLower);
+        return nameMatch || countryMatch || emailMatch;
+      }
+      return true;
     })
     .map((d: any) => {
       const u = Array.isArray(d.users) ? d.users[0] : d.users;
@@ -195,6 +213,7 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
+    admin: adminProfile || { id: adminUserId, full_name: null, role: 'ADMIN' },
     committee: {
       id: committee_id,
       name: committeeName,
@@ -235,6 +254,7 @@ export async function GET(req: NextRequest) {
     resources: resources || [],
     votes: voteRecords || [],
     admin_tasks: adminTasks || [],
+    audit_logs: auditLogs || [],
     conference: conferenceSettings || null,
   });
 }

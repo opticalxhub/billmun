@@ -7,7 +7,7 @@ import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { DashboardAnimatedTabPanel, DashboardTabBar, DashboardLoadingState } from "@/components/dashboard-shell";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Mail, Bell, Users, Filter, Send } from "lucide-react";
+import { Mail, Bell, Filter, Send } from "lucide-react";
 
 type TabName = "Announcements" | "Mass Email" | "In-Portal Notifications";
 const TABS: TabName[] = ["Announcements", "Mass Email", "In-Portal Notifications"];
@@ -111,13 +111,6 @@ export default function CommunicationsPage() {
     setAnnCommittee("ALL"); setAnnPinned(false); setAnnSchedule(false); setAnnScheduleDate("");
   };
 
-  const editAnn = (a: any) => {
-    setAnnId(a.id); setAnnTitle(a.title); setAnnBody(a.body); setAnnTargetRoles(a.target_roles || []);
-    setAnnCommittee(a.committee_id || "ALL"); setAnnPinned(a.is_pinned); 
-    setAnnSchedule(!!a.scheduled_for); setAnnScheduleDate(a.scheduled_for ? new Date(a.scheduled_for).toISOString().slice(0,16) : "");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   const saveAnn = async () => {
     if (!annTitle || !annBody) return;
     setSubmitting(true);
@@ -136,17 +129,6 @@ export default function CommunicationsPage() {
     setSubmitting(false);
     if (res.ok) { resetAnnForm(); queryClient.invalidateQueries({ queryKey: ['communications-dashboard'] }); }
     else { alert("Failed to save"); }
-  };
-
-  const deleteAnn = async (id: string) => {
-    if (!confirm("Delete announcement?")) return;
-    try {
-      const res = await fetch("/api/eb/announcements/action", { method: "POST", body: JSON.stringify({ action: "delete", id, ebUserId: currentUser }) });
-      if (res.ok) queryClient.invalidateQueries({ queryKey: ['communications-dashboard'] });
-    } catch (err) {
-      console.error("Error deleting announcement:", err);
-      alert("Failed to delete announcement. Please try again.");
-    }
   };
 
   const sendMassEmail = async () => {

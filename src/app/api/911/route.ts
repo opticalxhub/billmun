@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
+  try {
   if (process.env.DISABLE_EMERGENCY_ACCESS === 'true') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -62,4 +63,8 @@ export async function POST(request: Request) {
   });
 
   return response;
+  } catch (err: any) {
+    console.error('[911]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

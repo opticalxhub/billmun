@@ -13,6 +13,7 @@ export default function EBSecurityPage() {
   const [onlineOfficers, setOnlineOfficers] = useState<Set<string>>(new Set());
   const [badgeStats, setBadgeStats] = useState({ active: 0, suspended: 0, lost: 0, flagged: 0 });
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   const load = async () => {
@@ -47,6 +48,7 @@ export default function EBSecurityPage() {
       setBadgeStats(stats);
     } catch (error) {
       console.error("Error loading security data:", error);
+      setFetchError(true);
     }
     setLoading(false);
   };
@@ -98,6 +100,7 @@ export default function EBSecurityPage() {
   };
 
   if (loading) return <DashboardLoadingState type="overview" />;
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load security data.</p><button onClick={() => load()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-6 font-inter h-full flex flex-col">

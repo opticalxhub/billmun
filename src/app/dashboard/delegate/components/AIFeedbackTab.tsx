@@ -4,8 +4,8 @@ import React, { useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
-import { Minus, Plus, AlertTriangle, ShieldCheck, FileText, BrainCircuit, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { Minus, Plus } from 'lucide-react';
 
 const LOADING_MESSAGES = [
   'Reading your argument structure',
@@ -41,7 +41,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   const queryClient = useQueryClient();
 
   // useQuery for Documents
-  const { data: documents = [], isLoading: documentsLoading } = useQuery({
+  const { data: documents = [], isLoading: documentsLoading, isError: documentsError } = useQuery({
     queryKey: ['delegate-documents-ai', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -53,7 +53,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Past Analyses
-  const { data: pastAnalyses = [], isLoading: pastAnalysesLoading } = useQuery({
+  const { data: pastAnalyses = [], isLoading: pastAnalysesLoading, isError: pastError } = useQuery({
     queryKey: ['delegate-ai-analyses', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -79,6 +79,9 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
 
   if (documentsLoading || pastAnalysesLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (documentsError || pastError) {
+    return <QueryErrorState message="Failed to load AI feedback data." />;
   }
 
   const runAnalysis = async () => {

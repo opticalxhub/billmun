@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { X } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
@@ -19,7 +19,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   // useQuery for Conference Settings
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
       const { data, error } = await supabase.from('conference_settings').select('*').eq('id', '1').single();
@@ -30,7 +30,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   // useQuery for Stats
-  const { data: stats = { documents: 0, aiToday: 0, speeches: 0, blocs: 0 }, isLoading: statsLoading } = useQuery({
+  const { data: stats = { documents: 0, aiToday: 0, speeches: 0, blocs: 0 }, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['delegate-stats', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -53,7 +53,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   // useQuery for Activity
-  const { data: activity = [], isLoading: activityLoading } = useQuery({
+  const { data: activity = [], isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
     queryKey: ['delegate-activity', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -102,7 +102,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   // useQuery for Chair
-  const { data: chair, isLoading: chairLoading } = useQuery({
+  const { data: chair, isLoading: chairLoading, isError: chairError, refetch: refetchChair } = useQuery({
     queryKey: ['committee-chair', ctx.committee?.chair_id],
     enabled: !!ctx.committee?.chair_id,
     queryFn: async () => {
@@ -159,8 +159,12 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
     return () => clearInterval(interval);
   }, [conferenceDate]);
 
+  const hasError = settingsError || statsError || activityError || chairError;
   if ((ctx.committee?.id && (settingsLoading || statsLoading || activityLoading || chairLoading))) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (hasError) {
+    return <QueryErrorState message="Failed to load overview data." onRetry={() => { refetchSettings(); refetchStats(); refetchActivity(); refetchChair(); }} />;
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';

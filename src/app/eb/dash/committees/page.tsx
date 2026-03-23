@@ -9,12 +9,15 @@ import { DashboardLoadingState } from "@/components/dashboard-shell";
 export default function CommitteesDashPage() {
   const [committees, setCommittees] = useState<Record<string, any>[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     const fetchCommittees = async () => {
       try {
-        const { data: comms } = await supabase.from("committees").select("*").order("name");
-        const { data: assigns } = await supabase.from("committee_assignments").select("committee_id");
+        const [{ data: comms }, { data: assigns }] = await Promise.all([
+          supabase.from("committees").select("*").order("name"),
+          supabase.from("committee_assignments").select("committee_id"),
+        ]);
 
         const counts: Record<string, number> = {};
         assigns?.forEach(a => {
@@ -29,6 +32,7 @@ export default function CommitteesDashPage() {
         }
       } catch (error) {
         console.error("Error fetching committees:", error);
+        setFetchError(true);
       } finally {
         setLoading(false);
       }
@@ -39,6 +43,9 @@ export default function CommitteesDashPage() {
 
   if (loading) {
     return <DashboardLoadingState type="overview" />;
+  }
+  if (fetchError) {
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load committees.</p><button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
   }
 
   return (

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Input, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 const STATUS_OPTIONS = [
   { value: 'IN_SESSION', label: 'In Session', color: 'bg-text-primary/70' },
@@ -313,7 +313,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
               <Button onClick={createAdminTask} loading={saving}>Create Task</Button>
             </div>
             <div className="space-y-2">
-              {adminTasks.slice(0, 6).map((task) => (
+              {adminTasks.slice(0, 6).map((task: any) => (
                 <div key={task.id} className="p-3 bg-bg-raised rounded-card border border-border-subtle">
                   <p className="text-sm font-semibold text-text-primary">{task.title}</p>
                   <p className="text-xs text-text-dimmed">{task.priority} · {task.status}</p>

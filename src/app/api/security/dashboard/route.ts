@@ -45,7 +45,7 @@ export async function GET() {
     supabaseAdmin
       .from("security_badge_events")
       .select("*")
-      .eq("event_type", "CHECKIN")
+      .eq("action", "CHECKIN")
       .gte("created_at", startOfDay)
       .limit(50),
     supabaseAdmin

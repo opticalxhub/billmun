@@ -16,6 +16,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
   
   const [committee, setCommittee] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [activeTab, setActiveTab] = useState<TabName>("Delegates");
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
@@ -47,10 +48,10 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
         supabase.from("committee_assignments").select("id, user_id, country, seat_number, users:user_id(id, full_name, email, role, status)").eq("committee_id", id),
         supabase.from("documents").select("id, status, user_id").eq("committee_id", id),
         supabase.from("users").select("id, full_name, email, role, status").eq("status", "APPROVED"),
-        supabase.from("committee_sessions").select("*").eq("committee_id", id).order("started_at", { ascending: false })
+        supabase.from("committee_sessions").select("*").eq("committee_id", id).order("updated_at", { ascending: false })
       ]);
 
-      const { data: rollCalls } = await supabase.from("roll_calls").select("status").in("session_id", (sessionsData || []).map((s: any) => s.id));
+      const { data: rollCalls } = await supabase.from("roll_call_records").select("quorum_established").in("session_id", (sessionsData || []).map((s: any) => s.id));
 
       // Calculate docs per delegate
       const docCounts: Record<string, number> = {};
@@ -83,6 +84,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
       
     } catch (e) {
       console.error(e);
+      setFetchError(true);
     }
     setLoading(false);
   };
@@ -141,6 +143,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
   };
 
   if (loading) return <div className="p-12 text-center text-text-dimmed">Loading committee...</div>;
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load committee.</p><button onClick={() => load()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
   if (!committee) return <div className="p-12 text-center">Committee not found.</div>;
 
   return (

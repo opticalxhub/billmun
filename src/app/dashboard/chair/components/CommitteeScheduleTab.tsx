@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card, SectionLabel, Button, Input, Textarea } from '@/components/ui';
+import { Card, Button, Input, Textarea } from '@/components/ui';
 import { 
   Plus, 
   Trash2, 
@@ -11,8 +11,7 @@ import {
   Save, 
   X,
   Calendar,
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 interface CommitteeScheduleTabProps {
@@ -20,7 +19,7 @@ interface CommitteeScheduleTabProps {
   user: { id: string };
 }
 
-export default function CommitteeScheduleTab({ committee, user }: CommitteeScheduleTabProps) {
+export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTabProps) {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

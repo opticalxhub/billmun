@@ -3,23 +3,29 @@ import { getRequestUserContext } from "@/lib/auth-context";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function GET(req: NextRequest) {
-  const { context, error, status } = await getRequestUserContext();
-  if (!context) return NextResponse.json({ error }, { status: status || 500 });
+  try {
+    const { context, error, status } = await getRequestUserContext();
+    if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
-  const q = (req.nextUrl.searchParams.get("q") || "").trim();
-  if (!q) return NextResponse.json({ users: [] });
+    const q = (req.nextUrl.searchParams.get("q") || "").trim();
+    if (!q) return NextResponse.json({ users: [] });
 
-  const { data } = await supabaseAdmin
-    .from("users")
-    .select("id, full_name, role")
-    .eq("status", "APPROVED")
-    .neq("id", context.userId)
-    .ilike("full_name", `%${q}%`)
-    .limit(15);
-  return NextResponse.json({ users: data || [] });
+    const { data } = await supabaseAdmin
+      .from("users")
+      .select("id, full_name, role")
+      .eq("status", "APPROVED")
+      .neq("id", context.userId)
+      .ilike("full_name", `%${q}%`)
+      .limit(15);
+    return NextResponse.json({ users: data || [] });
+  } catch (err: any) {
+    console.error('[messages/dm GET]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const { context, error, status } = await getRequestUserContext();
   if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
@@ -57,4 +63,8 @@ export async function POST(req: NextRequest) {
   ]);
 
   return NextResponse.json({ channel_id: channel.id });
+  } catch (err: any) {
+    console.error('[messages/dm POST]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

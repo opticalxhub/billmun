@@ -3,6 +3,7 @@ import { UTApi } from "uploadthing/server";
 import { getRequestUserContext } from "@/lib/auth-context";
 
 export async function POST(req: NextRequest) {
+  try {
   const { context, error, status } = await getRequestUserContext();
   if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
@@ -30,4 +31,8 @@ export async function POST(req: NextRequest) {
     file_size: uploaded.data.size || file.size,
     mime_type: uploaded.data.type || file.type,
   });
+  } catch (err: any) {
+    console.error('[messages/upload]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

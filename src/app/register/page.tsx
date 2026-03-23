@@ -195,14 +195,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center p-4 py-12 font-sans">
+    <div className="min-h-screen bg-bg-base flex items-center justify-center p-3 sm:p-4 py-8 sm:py-12 font-sans">
       <div className="w-full max-w-2xl">
-        <div className="bg-bg-card border border-border-subtle rounded-lg p-10 shadow-lg">
+        <div className="bg-bg-card border border-border-subtle rounded-lg p-4 sm:p-6 md:p-10 shadow-lg">
           {/* Brand Logo */}
-          <div className="flex justify-center mb-10">
-            <Link href="/" className="flex items-center gap-4">
-              <img src="/billmun.png" alt="BILLMUN Logo" className="w-36 h-auto dark:invert" />
-              <span className="font-jotia text-2xl text-text-primary tracking-widest uppercase">
+          <div className="flex justify-center mb-6 sm:mb-10">
+            <Link href="/" className="flex items-center gap-3 sm:gap-4">
+              <img src="/billmun.png" alt="BILLMUN Logo" className="w-24 sm:w-36 h-auto dark:invert" />
+              <span className="font-jotia text-lg sm:text-2xl text-text-primary tracking-widest uppercase">
                  Registration
               </span>
             </Link>

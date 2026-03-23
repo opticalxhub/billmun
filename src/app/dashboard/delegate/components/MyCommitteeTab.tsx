@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
   IN_SESSION: { label: 'In Session', color: 'bg-green-500', pulse: true },
@@ -16,7 +16,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: bool
 
 export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   // useQuery for Conference Settings
-  const { data: settings, isLoading: settingsLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
       const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').single();
@@ -27,7 +27,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Announcements
-  const { data: announcements = [], isLoading: announcementsLoading } = useQuery({
+  const { data: announcements = [], isLoading: announcementsLoading, isError: announcementsError } = useQuery({
     queryKey: ['committee-announcements', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -44,7 +44,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Roster
-  const { data: roster = [], isLoading: rosterLoading } = useQuery({
+  const { data: roster = [], isLoading: rosterLoading, isError: rosterError } = useQuery({
     queryKey: ['committee-roster', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -59,7 +59,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Chair
-  const { data: chair, isLoading: chairLoading } = useQuery({
+  const { data: chair, isLoading: chairLoading, isError: chairError } = useQuery({
     queryKey: ['committee-chair', ctx.committee?.chair_id],
     enabled: !!ctx.committee?.chair_id,
     queryFn: async () => {
@@ -84,6 +84,9 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
 
   if (settingsLoading || announcementsLoading || rosterLoading || chairLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (settingsError || announcementsError || rosterError || chairError) {
+    return <QueryErrorState message="Failed to load committee data." />;
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';

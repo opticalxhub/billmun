@@ -26,6 +26,7 @@ async function upsertMembers(channel_id: string, userIds: string[]) {
 }
 
 export async function POST() {
+  try {
   const ctx = await getAdminContext();
   if (ctx.error) return NextResponse.json({ error: ctx.error }, { status: ctx.status || 500 });
 
@@ -76,4 +77,8 @@ export async function POST() {
   await upsertMembers(allChannelId, approvedUsers.map((u) => u.id));
 
   return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    console.error('[setup/channels]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

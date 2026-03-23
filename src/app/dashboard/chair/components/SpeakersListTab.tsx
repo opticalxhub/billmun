@@ -16,20 +16,20 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
 
   const loadQueue = useCallback(async () => {
     if (!ctx.committee?.id) return;
-    const { data } = await supabase
-      .from('speakers_list')
-      .select('*, delegate:delegate_id(id, full_name)')
-      .eq('committee_id', ctx.committee.id)
-      .in('status', ['QUEUED', 'SPEAKING'])
-      .order('position', { ascending: true });
+    const [{ data }, { data: completed }] = await Promise.all([
+      supabase
+        .from('speakers_list')
+        .select('*, delegate:delegate_id(id, full_name)')
+        .eq('committee_id', ctx.committee.id)
+        .in('status', ['QUEUED', 'SPEAKING'])
+        .order('position', { ascending: true }),
+      supabase
+        .from('speakers_list')
+        .select('delegate_id, actual_speaking_time')
+        .eq('committee_id', ctx.committee.id)
+        .eq('status', 'COMPLETED'),
+    ]);
     setQueue(data || []);
-
-    // Load stats
-    const { data: completed } = await supabase
-      .from('speakers_list')
-      .select('delegate_id, actual_speaking_time')
-      .eq('committee_id', ctx.committee.id)
-      .eq('status', 'COMPLETED');
     const s: Record<string, { time: number; count: number }> = {};
     (completed || []).forEach((r: any) => {
       if (!s[r.delegate_id]) s[r.delegate_id] = { time: 0, count: 0 };

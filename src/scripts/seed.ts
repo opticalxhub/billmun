@@ -74,7 +74,7 @@ async function main() {
 
     // 4. Create an Access Zone
     const zoneId = uuidv4();
-    const { error: zErr } = await supabase.from('access_zones').insert({
+    const { error: zErr } = await supabase.from('security_access_zones').insert({
       id: zoneId,
       name: 'Test Zone',
       description: 'Test zone description',

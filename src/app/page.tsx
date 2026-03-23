@@ -80,93 +80,87 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg-base text-text-primary font-sans flex flex-col">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-6 backdrop-blur-md bg-bg-base/80 border-b border-border-subtle">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-4 sm:py-6 backdrop-blur-md bg-bg-base/80 border-b border-border-subtle">
         <div className="max-w-7xl mx-auto flex items-center justify-center">
           <Link href="/" className="flex items-center gap-4 group">
-            <span className="font-jotia text-2xl tracking-widest uppercase">BILLMUN<sup className="text-lg"></sup></span>
+            <span className="font-jotia text-xl sm:text-2xl tracking-widest uppercase">BILLMUN</span>
           </Link>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div className="relative z-10 max-w-4xl mx-auto px-8 text-center">
-          <div className="flex flex-col items-center">
-            <div className="mb-8 mt-16">
-              <Image 
-                src="/billmun.png" 
-                alt="BILLMUN Logo" 
-                width={360} 
-                height={360}
-                className="hover:scale-105 transition-transform duration-700 drop-shadow-2xl dark:invert"
-                priority={true}
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8A8A"
-              />
-            </div>
-            <div className="flex flex-col items-center gap-2 mb-12">
-              <p className="font-jotia text-m md:text-2xl text-text-primary tracking-wide">
-                The official digital portal for the BILLMUN 2026 conference
-              </p>
-              <div className="flex flex-col md:flex-row items-center gap-2 md:gap-6 mt-4">
-                <span className="font-jotia text-m text-text-secondary uppercase tracking-[0.2em]">
-                  27-28th March
-                </span>
-                <span className="hidden md:block w-1 h-1 rounded-full bg-border-strong" />
-                <span className="font-jotia text-m text-text-secondary uppercase tracking-[0.1em]">
-                  Rowad Al Khaleej
-                </span>
-              </div>
-              <p className="font-jotia text-m text-text-tertiary uppercase tracking-[0.1em] mt-2">
-                Made by Kenan Nezar & Alaa Abbadi
-              </p>
-            </div>
+      {/* Hero Section — viewport-fitted */}
+      <section className="relative h-[100dvh] flex items-center justify-center">
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center flex flex-col items-center justify-center gap-4 sm:gap-5">
+          <Image 
+            src="/billmun.png" 
+            alt="BILLMUN Logo" 
+            width={400} 
+            height={400}
+            className="w-auto h-auto max-h-[28vh] object-contain hover:scale-105 transition-transform duration-700 drop-shadow-2xl dark:invert"
+            priority={true}
+            unoptimized={true}
+          />
 
-            {(timeLeft || isLoadingCountdown) && (
-              <div className="flex items-center justify-center gap-6 mb-16">
-                {isLoadingCountdown ? (
-                  <div className="flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-text-primary" />
-                  </div>
-                ) : (
-                  [
-                    { label: 'Days', value: timeLeft!.days },
-                    { label: 'Hours', value: timeLeft!.hours },
-                    { label: 'Min', value: timeLeft!.minutes },
-                    { label: 'Sec', value: timeLeft!.seconds },
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex flex-col items-center">
-                      <span className="font-jotia text-4xl md:text-5xl font-light text-text-primary mb-1">
-                        {item.value.toString().padStart(2, '0')}
-                      </span>
-                      <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                        {item.label}
-                      </span>
-                    </div>  ))
-                )}
-              </div>
-            )}
-            <div className="flex items-center justify-center gap-8">
-              <Link 
-                href={isLoggedIn ? '/dashboard' : '/login'} 
-                className="group flex items-center gap-3 px-12 py-5 bg-text-primary text-bg-base rounded-full font-bold text-lg hover:opacity-90 transition-opacity"
-              >
-              {isLoggedIn ? 'Open Portal' : 'Sign In'}                
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              {!isLoggedIn && (
-                <Link 
-                  href="/register" 
-                  className="group flex items-center gap-2 px-10 py-5 border border-border-emphasized text-text-secondary rounded-full font-semibold text-lg hover:border-border-strong hover:text-text-primary transition-colors"
-                >
-                  Register
-                </Link>
+          <div className="flex flex-col items-center gap-1">
+            <p className="font-jotia text-base sm:text-lg md:text-2xl text-text-primary tracking-wide px-2">
+              The official digital portal for the BILLMUN 2026 conference
+            </p>
+            <div className="flex items-center gap-3 sm:gap-6 mt-1">
+              <span className="font-jotia text-xs sm:text-sm text-text-secondary uppercase tracking-[0.2em]">
+                27-28th March
+              </span>
+              <span className="w-1 h-1 rounded-full bg-border-strong" />
+              <span className="font-jotia text-xs sm:text-sm text-text-secondary uppercase tracking-[0.1em]">
+                Rowad Al Khaleej
+              </span>
+            </div>
+            <p className="font-jotia text-xs sm:text-sm text-text-tertiary uppercase tracking-[0.1em] mt-1">
+              Made by Kenan Nezar & Alaa Abbadi
+            </p>
+          </div>
+
+          {(timeLeft || isLoadingCountdown) && (
+            <div className="flex items-center justify-center gap-4 sm:gap-6">
+              {isLoadingCountdown ? (
+                <Loader2 className="w-8 h-8 animate-spin text-text-primary" />
+              ) : (
+                [
+                  { label: 'Days', value: timeLeft!.days },
+                  { label: 'Hours', value: timeLeft!.hours },
+                  { label: 'Min', value: timeLeft!.minutes },
+                  { label: 'Sec', value: timeLeft!.seconds },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center">
+                    <span className="font-jotia text-3xl sm:text-4xl md:text-5xl font-light text-text-primary mb-0.5">
+                      {item.value.toString().padStart(2, '0')}
+                    </span>
+                    <span className="text-[9px] sm:text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+                      {item.label}
+                    </span>
+                  </div>))
               )}
             </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 w-full px-4 sm:px-0 mt-1">
+            <Link 
+              href={isLoggedIn ? '/dashboard' : '/login'} 
+              className="group flex items-center justify-center gap-3 w-full sm:w-auto px-8 sm:px-12 py-3.5 sm:py-4 bg-text-primary text-bg-base rounded-full font-bold text-base sm:text-lg hover:opacity-90 transition-opacity"
+            >
+              {isLoggedIn ? 'Open Portal' : 'Sign In'}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            {!isLoggedIn && (
+              <Link 
+                href="/register" 
+                className="group flex items-center justify-center gap-2 w-full sm:w-auto px-8 sm:px-10 py-3.5 sm:py-4 border border-border-emphasized text-text-secondary rounded-full font-semibold text-base sm:text-lg hover:border-border-strong hover:text-text-primary transition-colors"
+              >
+                Register
+              </Link>
+            )}
           </div>
         </div>
       </section>
-      <div className="mt-32"></div>
       <Footer />
     </div>
   );

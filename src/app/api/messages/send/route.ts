@@ -3,6 +3,7 @@ import { getRequestUserContext } from "@/lib/auth-context";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
+  try {
   const { context, error, status } = await getRequestUserContext();
   if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
@@ -94,4 +95,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ message: inserted });
+  } catch (err: any) {
+    console.error('[messages/send]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

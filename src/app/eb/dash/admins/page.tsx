@@ -6,11 +6,19 @@ import { Card } from "@/components/ui";
 
 export default function EBAdminsPage() {
   const [admins, setAdmins] = useState<any[]>([]);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    supabase.from("users").select("id, full_name, email, preferred_committee").eq("role", "ADMIN").eq("status", "APPROVED")
-      .then(({ data }) => setAdmins(data || []));
+    (async () => {
+      try {
+        const { data, error: err } = await supabase.from("users").select("id, full_name, email, preferred_committee").eq("role", "ADMIN").eq("status", "APPROVED");
+        if (err) throw err;
+        setAdmins(data || []);
+      } catch { setError(true); }
+    })();
   }, []);
+
+  if (error) return <Card><p className="text-status-rejected-text">Failed to load admins.</p><button onClick={() => window.location.reload()} className="text-xs underline mt-2">Retry</button></Card>;
 
   return (
     <Card>

@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, SectionLabel, Input, Textarea, Badge, Select } from '@/components/ui';
+import { Card, Input } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { 
-  Search, Plus, Users, FileText, CheckCircle2, XCircle, 
-  BrainCircuit, Table as TableIcon, MessageSquare, Save, TrendingUp 
+  Search, 
+  BrainCircuit, MessageSquare, Save, TrendingUp 
 } from 'lucide-react';
 
 interface DelegateStat {
@@ -259,7 +259,7 @@ export function DelegateStatsSpreadsheet({ committee }: { committee: any }) {
                     <td className="p-4 max-w-xs">
                       {stat.ai_performance_review ? (
                         <div className="text-xs text-text-secondary line-clamp-3 bg-primary/5 p-2 rounded border border-primary/10 italic">
-                          "{stat.ai_performance_review}"
+                          "&ldquo;{stat.ai_performance_review}&rdquo;"
                         </div>
                       ) : (
                         <span className="text-xs text-text-dimmed italic">No review yet</span>

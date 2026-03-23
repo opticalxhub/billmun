@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card, SectionLabel, Button, Input, Textarea } from '@/components/ui';
+import { Card, Button, Input, Textarea } from '@/components/ui';
 import { 
   Plus, 
   Trash2, 
@@ -12,14 +12,14 @@ import {
   Save, 
   X,
   Calendar,
-  Loader2,
-  AlertCircle
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function EBSchedulePage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -36,12 +36,18 @@ export default function EBSchedulePage() {
 
   const fetchEvents = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('schedule_events')
-      .select('*')
-      .order('start_time', { ascending: true });
-    
-    if (!error && data) setEvents(data);
+    setFetchError(false);
+    try {
+      const { data, error } = await supabase
+        .from('schedule_events')
+        .select('*')
+        .order('start_time', { ascending: true });
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (e) {
+      console.error(e);
+      setFetchError(true);
+    }
     setLoading(false);
   };
 
@@ -76,6 +82,8 @@ export default function EBSchedulePage() {
   };
 
   const roles = ['DELEGATE', 'CHAIR', 'ADMIN', 'SECURITY', 'MEDIA', 'EB'];
+
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load schedule.</p><button onClick={() => fetchEvents()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-6 animate-fade-in">

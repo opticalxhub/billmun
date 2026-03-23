@@ -34,3 +34,25 @@ export function FullPageSpinner() {
     </div>
   );
 }
+
+export function QueryErrorState({ message, onRetry, className }: { message?: string; onRetry?: () => void; className?: string }) {
+  return (
+    <div className={cn("flex flex-col items-center justify-center gap-4 p-12 text-center", className)}>
+      <div className="w-12 h-12 rounded-full bg-status-rejected-bg border border-status-rejected-border flex items-center justify-center">
+        <span className="text-status-rejected-text text-xl font-bold">!</span>
+      </div>
+      <div>
+        <p className="text-text-primary font-semibold text-sm">Something went wrong</p>
+        <p className="text-text-dimmed text-xs mt-1">{message || "Failed to load data. Please try again."}</p>
+      </div>
+      {onRetry && (
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-bg-raised border border-border-subtle rounded-button text-text-primary hover:bg-bg-hover transition-colors min-h-[36px]"
+        >
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}

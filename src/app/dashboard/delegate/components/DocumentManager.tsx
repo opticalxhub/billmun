@@ -56,9 +56,9 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
 
       const newDoc = {
         title: file.name,
-        document_url: urlData.publicUrl,
-        document_type: 'POSITION_PAPER',
-        uploader_id: user.id,
+        file_url: urlData.publicUrl,
+        type: 'POSITION_PAPER',
+        user_id: user.id,
       };
 
       const { data: dbData, error: dbError } = await supabase
@@ -157,10 +157,10 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
                   >
                     <td className="py-3 text-sm font-medium">{doc.title}</td>
                     <td className="py-3">
-                      <Badge className="text-[10px]">{doc.document_type || 'DOCUMENT'}</Badge>
+                      <Badge className="text-[10px]">{doc.type || 'DOCUMENT'}</Badge>
                     </td>
                     <td className="py-3 text-sm text-text-secondary">
-                      {new Date(doc.created_at).toLocaleDateString()}
+                      {new Date(doc.uploaded_at).toLocaleDateString()}
                     </td>
                     <td className="py-3">
                       <Badge
@@ -201,8 +201,8 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
           </div>
           
           <div className="h-[55%] w-full bg-bg-raised mb-4 rounded overflow-hidden">
-            {selectedDoc.document_url ? (
-              <iframe src={`${selectedDoc.document_url}#view=FitH`} className="w-full h-full border-0" />
+            {selectedDoc.file_url ? (
+              <iframe src={`${selectedDoc.file_url}#view=FitH`} className="w-full h-full border-0" />
             ) : (
               <div className="flex items-center justify-center h-full text-text-tertiary">
                 Preview not available
@@ -213,9 +213,9 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
           <div className="flex-1 overflow-y-auto space-y-4 text-sm">
             <div className="grid grid-cols-2 gap-y-2">
               <span className="text-text-tertiary">Type:</span>
-              <span>{selectedDoc.document_type}</span>
+              <span>{selectedDoc.type}</span>
               <span className="text-text-tertiary">Uploaded:</span>
-              <span>{new Date(selectedDoc.created_at).toLocaleString()}</span>
+              <span>{new Date(selectedDoc.uploaded_at).toLocaleString()}</span>
               <span className="text-text-tertiary">Status:</span>
               <Badge className="w-max text-[10px]">{selectedDoc.status || 'SUBMITTED'}</Badge>
             </div>
@@ -226,7 +226,7 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
                 <div className="relative pl-6">
                   <div className="absolute left-0 top-1.5 w-3 h-3 rounded-full bg-primary -ml-[5px] ring-4 ring-bg-card" />
                   <p className="text-xs font-medium text-text-primary">Submitted</p>
-                  <p className="text-[10px] text-text-tertiary">{new Date(selectedDoc.created_at).toLocaleString()}</p>
+                  <p className="text-[10px] text-text-tertiary">{new Date(selectedDoc.uploaded_at).toLocaleString()}</p>
                 </div>
               </div>
             </div>
@@ -242,7 +242,7 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
           </div>
 
           <div className="mt-4 pt-4 border-t border-border-subtle flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => window.open(selectedDoc.document_url, '_blank')}>
+            <Button variant="outline" className="flex-1" onClick={() => window.open(selectedDoc.file_url, '_blank')}>
               Download
             </Button>
             {selectedDoc.status === 'SUBMITTED' && (

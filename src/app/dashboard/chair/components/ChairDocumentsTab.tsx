@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 import { X, ExternalLink } from "lucide-react";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,16 +21,16 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
   const [selected, setSelected] = useState<any>(null);
   const [reviewStatus, setReviewStatus] = useState('PENDING');
   const [feedback, setFeedback] = useState('');
-  const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [consolidating, setConsolidating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const loadDocuments = async () => {
     if (!ctx.committee?.id) return;
     queryClient.invalidateQueries({ queryKey: ['chair-documents', ctx.committee.id] });
   };
 
-  const { data: documents = [], isLoading } = useQuery({
+  const { data: documents = [], isError, refetch } = useQuery({
     queryKey: ['chair-documents', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -194,6 +194,10 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
       setSaving(false);
     }
   };
+
+  if (isError) {
+    return <QueryErrorState message="Failed to load documents." onRetry={() => refetch()} />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

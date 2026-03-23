@@ -10,7 +10,7 @@ import { Notepad } from "@/components/notepad";
 export default function EBDashOverview() {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user, isLoading: userLoading, isError: userError } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -21,7 +21,7 @@ export default function EBDashOverview() {
     },
   });
 
-  const { data: ebData, isLoading: ebLoading } = useQuery({
+  const { data: ebData, isLoading: ebLoading, isError: ebError } = useQuery({
     queryKey: ['eb-overview'],
     enabled: !!user?.id,
     queryFn: async () => {
@@ -108,6 +108,9 @@ export default function EBDashOverview() {
 
   if (userLoading || ebLoading) {
     return <DashboardLoadingState type="overview" />;
+  }
+  if ((userError || ebError) && !ebData) {
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load EB overview.</p><button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
   }
 
   const stats = ebData?.stats || { totalUsers: 0, pending: 0, approved: 0, committeesInSession: 0, documentsToday: 0, messagesToday: 0, ai_analyses_today: 0, open_incidents: 0 };

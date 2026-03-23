@@ -39,7 +39,7 @@ async function main() {
 
     // Delete test zone
     const { error: zErr } = await supabase
-      .from('access_zones')
+      .from('security_access_zones')
       .delete()
       .eq('name', 'Test Zone');
       

@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         actor_id: ebUserId,
         action: `Sent mass email to ${emails.length} recipients`,
         target_type: "SYSTEM",
-        // Using a NULL target_id because this is a system-wide action, not a specific object
+        target_id: ebUserId,
       });
     } catch { /* ignore */ }
 

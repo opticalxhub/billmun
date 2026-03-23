@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         actor_id: ebUserId,
         action: `Broadcasted notification to ${notifications.length} users`,
         target_type: "SYSTEM",
-        // Using a NULL target_id because this is a system-wide action
+        target_id: ebUserId,
       });
     } catch { /* ignore */ }
 

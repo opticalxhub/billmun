@@ -64,7 +64,7 @@ export default function RegistrationsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: registrationData = { users: [], totalCount: 0 }, isLoading, refetch, isFetching } = useQuery({
+  const { data: registrationData = { users: [], totalCount: 0 }, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['eb-registrations', filterStatus, filterRole, filterCommittee, debouncedSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -140,6 +140,9 @@ export default function RegistrationsPage() {
   }, [closeDrawer, showRejectModal, showSuspendModal]);
 
   if (isLoading) return <DashboardLoadingState type="overview" />;
+  if (isError) {
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load registrations.</p><button onClick={() => refetch()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
+  }
 
   const openDrawer = async (user: Record<string, unknown> & { id: string }) => {
     setSelectedUser(user);
@@ -376,7 +379,7 @@ export default function RegistrationsPage() {
       {drawerOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/60" onClick={closeDrawer} />
-          <div className="relative w-full max-w-[480px] bg-bg-base h-full border-l border-border-subtle shadow-2xl flex flex-col animate-in slide-in-from-right">
+          <div className="relative w-full sm:max-w-[480px] bg-bg-base h-full border-l border-border-subtle shadow-2xl flex flex-col animate-in slide-in-from-right">
             <div className="p-6 border-b border-border-subtle bg-bg-card flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-bg-raised border border-border-subtle flex items-center justify-center text-lg font-bold">

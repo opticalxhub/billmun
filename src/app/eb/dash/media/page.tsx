@@ -6,10 +6,19 @@ import { Card, Badge } from "@/components/ui";
 
 export default function EBMediaPage() {
   const [rows, setRows] = useState<any[]>([]);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    supabase.from("media_gallery").select("*").order("created_at", { ascending: false }).then(({ data }) => setRows(data || []));
+    (async () => {
+      try {
+        const { data, error: err } = await supabase.from("media_gallery").select("*").order("created_at", { ascending: false });
+        if (err) throw err;
+        setRows(data || []);
+      } catch { setError(true); }
+    })();
   }, []);
+
+  if (error) return <Card><p className="text-status-rejected-text">Failed to load media.</p><button onClick={() => window.location.reload()} className="text-xs underline mt-2">Retry</button></Card>;
 
   return (
     <Card>

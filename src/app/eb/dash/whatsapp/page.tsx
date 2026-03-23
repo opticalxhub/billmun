@@ -9,13 +9,17 @@ export default function EBWhatsAppTab() {
 
   useEffect(() => {
     const fetchLink = async () => {
-      const { data } = await supabase
-        .from('conference_settings')
-        .select('whatsapp_group_link')
-        .eq('id', '1')
-        .maybeSingle();
-      if (data?.whatsapp_group_link) {
-        setWhatsappLink(data.whatsapp_group_link);
+      try {
+        const { data } = await supabase
+          .from('conference_settings')
+          .select('whatsapp_group_link')
+          .eq('id', '1')
+          .maybeSingle();
+        if (data?.whatsapp_group_link) {
+          setWhatsappLink(data.whatsapp_group_link);
+        }
+      } catch (e) {
+        console.error('Failed to fetch WhatsApp link:', e);
       }
     };
     fetchLink();

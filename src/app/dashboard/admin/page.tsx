@@ -56,11 +56,11 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Handle search debouncing
+  // Handle search debouncing — 400ms delay so it doesn't fire on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
     abstentions: 0,
   });
 
-  const { data, isLoading, error, isFetching } = useQuery({
+  const { data, isLoading, error, isError, isFetching } = useQuery({
     queryKey: ['admin-dashboard', debouncedSearch.trim().length >= 2 ? debouncedSearch.trim() : ''],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -108,6 +108,7 @@ export default function AdminDashboard() {
     },
     staleTime: 60 * 1000,
     refetchInterval: 30 * 1000,
+    placeholderData: (prev: unknown) => prev,
   });
 
   useEffect(() => {
@@ -261,6 +262,16 @@ export default function AdminDashboard() {
 
   if (isLoading && !data) {
     return <DashboardLoadingState type="overview" />;
+  }
+  if (isError && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-status-rejected-text font-jotia text-lg">Failed to load admin dashboard.</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -451,14 +462,14 @@ export default function AdminDashboard() {
 
       <AnnouncementBanner user={data?.admin} committeeId={data?.committee?.id} />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-8 space-y-6 sm:space-y-8">
         <div className="pb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-1 border border-border-subtle rounded-card bg-bg-card p-1">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide border border-border-subtle rounded-card bg-bg-card p-1 -mx-3 px-3 sm:mx-0 sm:px-1 sm:flex-wrap">
             {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`h-10 px-3 text-[10px] font-semibold uppercase tracking-widest transition-colors border rounded-input ${
+                className={`shrink-0 h-9 sm:h-10 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest transition-colors border rounded-input whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'bg-bg-raised text-text-primary border-border-emphasized'
                     : 'text-text-secondary hover:text-text-primary border-transparent'

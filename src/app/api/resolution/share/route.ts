@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: authError || 'Unauthorized' }, { status: status || 401 });
     }
 
-    const { resolutionId, blocId } = await req.json();
+    const body = await req.json();
+    const resolutionId = body.resolutionId ?? body.resolution_id;
+    const blocId = body.blocId ?? body.bloc_id;
 
     if (!resolutionId || !blocId) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });

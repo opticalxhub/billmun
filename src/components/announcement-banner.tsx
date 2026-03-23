@@ -23,7 +23,7 @@ export function AnnouncementBanner({ user, committeeId }: { user: any, committee
   const fetchAnnouncements = async () => {
     if (!user) return;
 
-    let query = supabase
+    const query = supabase
       .from('announcements')
       .select('*')
       .order('is_pinned', { ascending: false })

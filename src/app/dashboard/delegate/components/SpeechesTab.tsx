@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 
 export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
   const queryClient = useQueryClient();
@@ -17,7 +17,7 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // useQuery for Speeches
-  const { data: speeches = [], isLoading: speechesLoading } = useQuery({
+  const { data: speeches = [], isLoading: speechesLoading, isError: speechesError, refetch: refetchSpeeches } = useQuery({
     queryKey: ['delegate-speeches', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -162,6 +162,9 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
 
   if (speechesLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (speechesError) {
+    return <QueryErrorState message="Failed to load speeches." onRetry={() => refetchSpeeches()} />;
   }
 
   const selected = speeches.find(s => s.id === selectedId);

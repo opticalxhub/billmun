@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { Button } from '@/components/button';
 import { Input, Textarea } from '@/components/ui';
-import { LoadingSpinner } from '@/components/loading-spinner';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { X, FilePlus } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, string> = {
@@ -92,7 +92,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   }, [ctx.user?.id, queryClient]);
 
   // useQuery for Documents
-  const { data: documents = [], isLoading: documentsLoading } = useQuery({
+  const { data: documents = [], isLoading: documentsLoading, isError: documentsError, refetch: refetchDocuments } = useQuery({
     queryKey: ['delegate-documents', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -340,6 +340,9 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
   if (documentsLoading) {
     return <LoadingSpinner className="py-20" />;
+  }
+  if (documentsError) {
+    return <QueryErrorState message="Failed to load documents." onRetry={() => refetchDocuments()} />;
   }
 
   return (

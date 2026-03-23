@@ -55,31 +55,38 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  
-  // If authenticated, get profile for status/role checks
-  let userProfile = null;
-  if (user) {
-    const { data } = await supabase.from('users').select('status, role').eq('id', user.id).maybeSingle();
-    userProfile = data;
-  }
 
-  // Check global conference settings
-  const { data: settings } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
-
-  // Check for emergency token
+  // Check for emergency token (no DB call if no token)
   const emergencyToken = request.cookies.get('emergency_token')?.value;
   let hasValidEmergencyAccess = false;
-  
+
   if (emergencyToken && process.env.DISABLE_EMERGENCY_ACCESS !== 'true') {
     const { data: emergencySession } = await supabase
       .from('emergency_sessions')
       .select('expires_at')
       .eq('id', emergencyToken)
       .single();
-      
+
     if (emergencySession && new Date(emergencySession.expires_at) > new Date()) {
       hasValidEmergencyAccess = true;
     }
+  }
+
+  // Only fetch profile + settings when needed (authenticated user on protected paths)
+  let userProfile = null;
+  let settings = null;
+  if (user) {
+    // Batch both queries in parallel to cut latency in half
+    const [profileRes, settingsRes] = await Promise.all([
+      supabase.from('users').select('status, role').eq('id', user.id).maybeSingle(),
+      supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle(),
+    ]);
+    userProfile = profileRes.data;
+    settings = settingsRes.data;
+  } else {
+    // For unauthenticated users, only fetch settings if needed for maintenance check
+    const { data } = await supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle();
+    settings = data;
   }
 
   const path = request.nextUrl.pathname;

@@ -98,7 +98,7 @@ export function NotificationBell({ userId }: { userId: string }) {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-card border border-border-emphasized bg-bg-card shadow-2xl"
+              className="fixed right-2 sm:absolute sm:right-0 z-50 mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-sm overflow-hidden rounded-card border border-border-emphasized bg-bg-card shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-border-subtle bg-bg-raised p-4">
                 <h3 className="text-xs font-black uppercase tracking-widest text-text-primary">Notifications</h3>

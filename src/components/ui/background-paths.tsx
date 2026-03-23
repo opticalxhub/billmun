@@ -55,7 +55,7 @@
  }: { 
      title?: string; 
  }) { 
-     const words = title.split(" "); 
+     void title; 
  
      return ( 
          <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-white dark:bg-neutral-950"> 

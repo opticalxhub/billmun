@@ -4,13 +4,14 @@ import React, { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
-import { X, FileText, Users, Filter, Search, Download, Trash2, Eye, ShieldCheck, Clock, AlertCircle } from "lucide-react";
+import { X, FileText, Users, Search, Clock } from "lucide-react";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 export default function DocumentsDashPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [committees, setCommittees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Filters
@@ -28,16 +29,22 @@ export default function DocumentsDashPage() {
 
   const load = async () => {
     setLoading(true);
-    const { data: userData } = await supabase.auth.getUser();
-    setCurrentUser(userData.user?.id);
+    setFetchError(false);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      setCurrentUser(userData.user?.id);
 
-    const [{ data: docs }, { data: comms }] = await Promise.all([
-      supabase.from("documents").select("*, users(full_name, email, role), committees(name)").order("uploaded_at", { ascending: false }),
-      supabase.from("committees").select("id, name")
-    ]);
-    
-    setDocuments(docs || []);
-    setCommittees(comms || []);
+      const [{ data: docs }, { data: comms }] = await Promise.all([
+        supabase.from("documents").select("*, users(full_name, email, role), committees(name)").order("uploaded_at", { ascending: false }),
+        supabase.from("committees").select("id, name")
+      ]);
+      
+      setDocuments(docs || []);
+      setCommittees(comms || []);
+    } catch (e) {
+      console.error(e);
+      setFetchError(true);
+    }
     setLoading(false);
   };
 
@@ -91,6 +98,7 @@ export default function DocumentsDashPage() {
   if (loading) {
     return <DashboardLoadingState type="table" />;
   }
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load documents.</p><button onClick={() => load()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-6 font-inter h-full flex flex-col">
@@ -125,7 +133,7 @@ export default function DocumentsDashPage() {
         </div>
       </Card>
 
-      <div className="flex-1 overflow-auto border border-border-subtle rounded-card bg-bg-card">
+      <div className="flex-1 overflow-x-auto overflow-y-auto border border-border-subtle rounded-card bg-bg-card">
         {documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-12 text-center min-h-[400px]">
             <FileText className="w-16 h-16 text-text-dimmed mb-4 opacity-20" />
@@ -194,7 +202,7 @@ export default function DocumentsDashPage() {
       {drawerOpen && selectedDoc && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/60" onClick={closeDrawer} />
-          <div className="relative w-full max-w-[600px] bg-bg-base h-full border-l border-border-subtle shadow-2xl flex flex-col animate-in slide-in-from-right">
+          <div className="relative w-full sm:max-w-[600px] bg-bg-base h-full border-l border-border-subtle shadow-2xl flex flex-col animate-in slide-in-from-right">
             <div className="p-6 border-b border-border-subtle bg-bg-card flex items-center justify-between shrink-0">
               <div>
                 <h2 className="text-xl font-bold text-text-primary">{selectedDoc.title}</h2>

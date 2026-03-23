@@ -4,8 +4,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { LoadingSpinner } from '@/components/loading-spinner';
-import { ArrowLeft, Users, Plus, MessageSquare, FileText, Layout, Copy, RefreshCw, Trash2, Send, Download } from 'lucide-react';
+import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { ArrowLeft, Users, MessageSquare, FileText, Layout } from 'lucide-react';
 import type { DelegateContext } from '../page';
 
 function generateCode() {
@@ -36,7 +36,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   const messagesParentRef = useRef<HTMLDivElement>(null);
 
   // useQuery for Blocs
-  const { data: blocs = [], isLoading: blocsLoading } = useQuery({
+  const { data: blocs = [], isLoading: blocsLoading, isError: blocsError, refetch: refetchBlocs } = useQuery({
     queryKey: ['delegate-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -52,13 +52,22 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
         .in('id', blocIds);
 
       if (!data) return [];
-      
-      const enriched = await Promise.all(data.map(async (b: any) => {
-        const { count } = await supabase.from('bloc_members').select('id', { count: 'exact', head: true }).eq('bloc_id', b.id);
-        const { data: lastMsg } = await supabase.from('bloc_messages').select('content, created_at').eq('bloc_id', b.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        return { ...b, memberCount: count || 0, lastMessage: lastMsg };
+
+      // Batch fetch member counts and last messages to avoid N+1
+      const [memberCounts, lastMessages] = await Promise.all([
+        supabase.from('bloc_members').select('bloc_id').in('bloc_id', blocIds),
+        supabase.from('bloc_messages').select('bloc_id, content, created_at').in('bloc_id', blocIds).order('created_at', { ascending: false }),
+      ]);
+      const countMap: Record<string, number> = {};
+      (memberCounts.data || []).forEach((m: any) => { countMap[m.bloc_id] = (countMap[m.bloc_id] || 0) + 1; });
+      const msgMap: Record<string, any> = {};
+      (lastMessages.data || []).forEach((m: any) => { if (!msgMap[m.bloc_id]) msgMap[m.bloc_id] = m; });
+
+      return data.map((b: any) => ({
+        ...b,
+        memberCount: countMap[b.id] || 0,
+        lastMessage: msgMap[b.id] || null,
       }));
-      return enriched;
     },
     staleTime: 60 * 1000,
   });
@@ -352,6 +361,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   // Main bloc list view
   if (!selectedBloc) {
     if (blocsLoading) return <LoadingSpinner className="py-20" />;
+    if (blocsError) return <QueryErrorState message="Failed to load blocs." onRetry={() => refetchBlocs()} />;
 
     return (
       <div className="space-y-6 animate-fade-in">

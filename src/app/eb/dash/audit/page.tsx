@@ -19,6 +19,7 @@ export default function AuditPage() {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
+    isError,
     refetch
   } = useInfiniteQuery({
     queryKey: ['audit-logs'],
@@ -74,6 +75,7 @@ export default function AuditPage() {
   }, [virtualItems, filtered.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) return <DashboardLoadingState type="overview" />;
+  if (isError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load audit logs.</p><button onClick={() => refetch()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-4">

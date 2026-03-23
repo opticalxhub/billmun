@@ -9,12 +9,9 @@ import {
   ChevronRight, 
   Clock, 
   User, 
-  CheckCircle2, 
-  ExternalLink,
   Loader2,
   X,
   MapPin,
-  Calendar,
   Stethoscope,
   Flame,
   Monitor,
@@ -25,24 +22,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function EBReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
 
   const fetchReports = async () => {
     setLoading(true);
-    let query = supabase
-      .from('issue_reports')
-      .select('*')
-      .order('created_at', { ascending: false });
+    setFetchError(false);
+    try {
+      let query = supabase
+        .from('issue_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (filterStatus !== 'ALL') {
-      query = query.eq('status', filterStatus);
-    }
+      if (filterStatus !== 'ALL') {
+        query = query.eq('status', filterStatus);
+      }
 
-    const { data, error } = await query;
-    if (!error && data) {
-      setReports(data);
+      const { data, error } = await query;
+      if (error) throw error;
+      setReports(data || []);
+    } catch (e) {
+      console.error(e);
+      setFetchError(true);
     }
     setLoading(false);
   };
@@ -70,6 +73,8 @@ export default function EBReportsPage() {
     r.user_details.full_name.toLowerCase().includes(search.toLowerCase()) ||
     r.description.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load reports.</p><button onClick={() => fetchReports()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
   return (
     <div className="space-y-6 animate-fade-in">
