@@ -5,5 +5,6 @@ export default function imageLoader({ src, width, quality }) {
   if (process.env.NODE_ENV === 'development' || src.startsWith('/')) {
     return src
   }
-  return `https://cdn.billmun.com/${src}?w=${width}&q=${quality || 75}&format=webp`
+  const host = process.env.NEXT_PUBLIC_CDN_URL || process.env.NEXT_PUBLIC_APP_URL || ''
+  return `${host}${src.startsWith('/') ? '' : '/'}${src}?w=${width}&q=${quality || 75}&format=webp`
 }

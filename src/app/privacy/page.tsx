@@ -14,14 +14,14 @@ export default function PrivacyPage() {
             <h2 className="font-jotia text-2xl text-text-primary mb-4">1. DEFINITIONS AND INTERPRETATION</h2>
             <p>1.1. In this Privacy Policy, the following definitions apply:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>"Agreement" means this Privacy Policy and the Terms of Service.</li>
-              <li>"BILLMUN", "we", "us", or "our" refers to the BILLMUN organization, its organizers, technology providers, and parent entities.</li>
-              <li>"Data Protection Laws" means all applicable privacy and data protection laws, including but not limited to GDPR, CCPA, and local regulations in the jurisdiction of operation.</li>
-              <li>"User", "you", or "your" refers to any individual accessing the Platform, including Delegates, Advisors, Staff, and Guests.</li>
-              <li>"Personal Data" means any information relating to an identified or identifiable natural person.</li>
-              <li>"Processing" means any operation or set of operations which is performed on Personal Data.</li>
-              <li>"Controller" means the natural or legal person which determines the purposes and means of the processing of Personal Data.</li>
-              <li>"Processor" means a natural or legal person which processes Personal Data on behalf of the Controller.</li>
+              <li>&quot;Agreement&quot; means this Privacy Policy and the Terms of Service.</li>
+              <li>&quot;BILLMUN&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot; refers to the BILLMUN organization, its organizers, technology providers, and parent entities.</li>
+              <li>&quot;Data Protection Laws&quot; means all applicable privacy and data protection laws, including but not limited to GDPR, CCPA, and local regulations in the jurisdiction of operation.</li>
+              <li>&quot;User&quot;, &quot;you&quot;, or &quot;your&quot; refers to any individual accessing the Platform, including Delegates, Advisors, Staff, and Guests.</li>
+              <li>&quot;Personal Data&quot; means any information relating to an identified or identifiable natural person.</li>
+              <li>&quot;Processing&quot; means any operation or set of operations which is performed on Personal Data.</li>
+              <li>&quot;Controller&quot; means the natural or legal person which determines the purposes and means of the processing of Personal Data.</li>
+              <li>&quot;Processor&quot; means a natural or legal person which processes Personal Data on behalf of the Controller.</li>
             </ul>
           </section>
 
@@ -161,8 +161,8 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="font-jotia text-2xl text-text-primary mb-4">12. CHILDREN'S PRIVACY</h2>
-            <p>12.1. Our platform is intended for use by students who may be under the age of 18. We recognize the special importance of protecting children's privacy. If you are a parent or guardian and you are aware that your child has provided us with Personal Data without your consent, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers.</p>
+            <h2 className="font-jotia text-2xl text-text-primary mb-4">12. CHILDREN&apos;S PRIVACY</h2>
+            <p>12.1. Our platform is intended for use by students who may be under the age of 18. We recognize the special importance of protecting children&apos;s privacy. If you are a parent or guardian and you are aware that your child has provided us with Personal Data without your consent, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we take steps to remove that information from our servers.</p>
           </section>
 
           <section>

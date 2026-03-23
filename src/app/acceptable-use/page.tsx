@@ -21,7 +21,7 @@ export default function AcceptableUsePage() {
             <p>2.1. You may not use the BILLMUN platform for any activity that is illegal, harmful, or interferes with the operation of our services. These prohibitions include, but are not limited to:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Illegal Activity:</strong> Using the platform for any fraudulent, malicious, or otherwise illegal purposes, including the transmission of any content that violates the law.</li>
-              <li><strong>Harmful Content:</strong> Uploading, posting, or otherwise transmitting any content that is harmful, threatening, abusive, harassing, tortious, defamatory, vulgar, obscene, libelous, invasive of another's privacy, or otherwise objectionable.</li>
+              <li><strong>Harmful Content:</strong> Uploading, posting, or otherwise transmitting any content that is harmful, threatening, abusive, harassing, tortious, defamatory, vulgar, obscene, libelous, invasive of another&apos;s privacy, or otherwise objectionable.</li>
               <li><strong>Malware and Viruses:</strong> Distributing, uploading, or otherwise making available any software viruses, malware, or other computer code, files, or programs designed to interrupt, destroy, or limit the functionality of any computer software or hardware.</li>
               <li><strong>Attacks on Systems:</strong> Engaging in any activity that disrupts, impairs, or otherwise interferes with the BILLMUN platform, its servers, or networks, including denial-of-service (DoS) attacks.</li>
               <li><strong>Unauthorized Access:</strong> Attempting to gain unauthorized access to any portion of the platform, other accounts, computer systems, or networks connected to any BILLMUN server through hacking, password mining, or any other means.</li>
@@ -46,16 +46,16 @@ export default function AcceptableUsePage() {
             <h2 className="font-jotia text-2xl text-text-primary mb-4">4. NETWORK INTEGRITY AND SECURITY</h2>
             <p>4.1. To maintain the integrity and security of our platform, users must strictly comply with the following:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Automated Systems:</strong> You may not use any automated system, such as "robots," "spiders," or "offline readers," to access the platform in a manner that sends more request messages than a human can reasonably produce.</li>
+              <li><strong>Automated Systems:</strong> You may not use any automated system, such as &quot;robots,&quot; &quot;spiders,&quot; or &quot;offline readers,&quot; to access the platform in a manner that sends more request messages than a human can reasonably produce.</li>
               <li><strong>Scraping and Data Extraction:</strong> Unauthorized harvesting or collection of any data, including user emails, profile information, or conference materials for use outside the BILLMUN ecosystem.</li>
               <li><strong>Network Interference:</strong> Any attempt to inject malicious code, scripts, or instructions into the platform frontend or backend.</li>
-              <li><strong>Credential Sharing:</strong> Sharing your account credentials with any third party, or using another user's credentials to gain access to unauthorized areas of the platform.</li>
+              <li><strong>Credential Sharing:</strong> Sharing your account credentials with any third party, or using another user&apos;s credentials to gain access to unauthorized areas of the platform.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">5. SPAM, ADVERTISING, AND MASS MESSAGING</h2>
-            <p>5.1. The use of BILLMUN's communication tools for any purpose other than MUN-related activity is prohibited. This includes:</p>
+            <p>5.1. The use of BILLMUN&apos;s communication tools for any purpose other than MUN-related activity is prohibited. This includes:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Unsolicited Messages:</strong> Sending spam, chain letters, or pyramidal schemes through any of our messaging interfaces.</li>
               <li><strong>Commercial Advertising:</strong> Promoting products, services, or events not officially sanctioned or hosted by BILLMUN.</li>
@@ -102,7 +102,7 @@ export default function AcceptableUsePage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">11. REPORTING SYSTEM AND WHISTLEBLOWER PROTECTION</h2>
-            <p>11.1. If you encounter any behavior or content that you believe violates this Acceptable Use Policy, please report it immediately to our team at compliance@billmun.com or through the platform's reporting features. We take all reports seriously and will investigate them thoroughly.</p>
+            <p>11.1. If you encounter any behavior or content that you believe violates this Acceptable Use Policy, please report it immediately to our team at compliance@billmun.com or through the platform&apos;s reporting features. We take all reports seriously and will investigate them thoroughly.</p>
             <p>11.2. We provide protection for whistleblowers; reporting a violation in good faith will never result in disciplinary action against the reporter, even if the investigation finds no violation occurred.</p>
           </section>
 

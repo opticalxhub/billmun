@@ -18,7 +18,7 @@ const nextConfig = {
     keepAlive: true,
   },
   // Asset optimization
-  assetPrefix: process.env.NODE_ENV === 'production' ? 'https://cdn.billmun.com' : undefined,
+  assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || undefined,
   // Headers for caching
   async headers() {
     return [

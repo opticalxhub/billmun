@@ -12,7 +12,7 @@ export default function TermsPage() {
         <div className="space-y-12 text-text-secondary leading-relaxed text-sm">
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">1. SCOPE AND LEGAL NATURE OF THE AGREEMENT</h2>
-            <p>1.1. This Master Service Agreement (the "Agreement") is a legally binding contract between you ("the User", "Delegate", "Advisor", "Staff") and the BILLMUN Organization ("BILLMUN"). By accessing the platform, creating an account, or participating in any BILLMUN event, you represent and warrant that you have read, understood, and agreed to be bound by every provision of this Agreement, as well as our Privacy Policy and Acceptable Use Policy.</p>
+            <p>1.1. This Master Service Agreement (the &quot;Agreement&quot;) is a legally binding contract between you (&quot;the User&quot;, &quot;Delegate&quot;, &quot;Advisor&quot;, &quot;Staff&quot;) and the BILLMUN Organization (&quot;BILLMUN&quot;). By accessing the platform, creating an account, or participating in any BILLMUN event, you represent and warrant that you have read, understood, and agreed to be bound by every provision of this Agreement, as well as our Privacy Policy and Acceptable Use Policy.</p>
             <p>1.2. If you are under the age of 18, you represent that your parent or legal guardian has reviewed and agreed to these terms on your behalf. Failure to comply with these terms may result in legal action, account termination, and notification to relevant educational bodies.</p>
           </section>
 
@@ -20,11 +20,11 @@ export default function TermsPage() {
             <h2 className="font-jotia text-2xl text-text-primary mb-4">2. BINDING DEFINITIONS AND INTERPRETATIONS</h2>
             <p>2.1. In this Agreement, the following definitions apply:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>"Platform" means the BILLMUN website, mobile applications, API, and all related technology services.</li>
-              <li>"Conference" means any physical or virtual Model United Nations event hosted, organized, or facilitated by BILLMUN.</li>
-              <li>"User Content" means anything uploaded, posted, or created by a user on the platform.</li>
-              <li>"Intellectual Property Rights" means all patents, copyrights, trademarks, trade secrets, and other proprietary rights worldwide.</li>
-              <li>"Service" refers to the provision of conference management materials, registration, and communication tools.</li>
+              <li>&quot;Platform&quot; means the BILLMUN website, mobile applications, API, and all related technology services.</li>
+              <li>&quot;Conference&quot; means any physical or virtual Model United Nations event hosted, organized, or facilitated by BILLMUN.</li>
+              <li>&quot;User Content&quot; means anything uploaded, posted, or created by a user on the platform.</li>
+              <li>&quot;Intellectual Property Rights&quot; means all patents, copyrights, trademarks, trade secrets, and other proprietary rights worldwide.</li>
+              <li>&quot;Service&quot; refers to the provision of conference management materials, registration, and communication tools.</li>
             </ul>
           </section>
 
@@ -52,7 +52,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">6. INTELLECTUAL PROPERTY RIGHTS AND LICENSING</h2>
             <p>6.1. BILLMUN IP: The Platform and its entire contents, features, and functionality (including but not limited to all information, software, text, displays, images, video, and audio, and the design, selection, and arrangement thereof) are owned by BILLMUN and are protected by international copyright, trademark, and other intellectual property or proprietary rights laws.</p>
-            <p>6.2. TRADEMARK: The "BILLMUN" name, the BILLMUN logo, and all related names, logos, product and service names, designs, and slogans are trademarks of BILLMUN. You must not use such marks without our prior written permission.</p>
+            <p>6.2. TRADEMARK: The &quot;BILLMUN&quot; name, the BILLMUN logo, and all related names, logos, product and service names, designs, and slogans are trademarks of BILLMUN. You must not use such marks without our prior written permission.</p>
             <p>6.3. USER CONTENT LICENSE: By submitting any User Content to the Platform (including position papers, draft resolutions, and communications), you grant BILLMUN a perpetual, irrevocable, worldwide, royalty-free, and non-exclusive license to use, reproduce, modify, adapt, publish, translate, and distribute such content for the purposes of conference management, educational documentation, and promotional materials.</p>
           </section>
 
@@ -64,14 +64,14 @@ export default function TermsPage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">8. DISCLAIMER OF WARRANTIES AND LIMITATION OF LIABILITY</h2>
-            <p>8.1. AS-IS SERVICE: THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. BILLMUN DISCLAIMS ALL WARRANTIES, INCLUDING ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+            <p>8.1. AS-IS SERVICE: THE SERVICE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. BILLMUN DISCLAIMS ALL WARRANTIES, INCLUDING ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
             <p>8.2. NO GUARANTEES: BILLMUN DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE, OR THAT ANY DEFECTS WILL BE CORRECTED. WE ARE NOT LIABLE FOR ANY DATA LOSS, HARDWARE DAMAGE, OR OTHER TECHNICAL ISSUES RESULTING FROM YOUR USE OF THE PLATFORM.</p>
             <p>8.3. LIABILITY CAP: IN NO EVENT WILL BILLMUN, ITS ORGANIZERS, OR AFFILIATES BE LIABLE FOR DAMAGES OF ANY KIND, UNDER ANY LEGAL THEORY, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE, INCLUDING ANY DIRECT, INDIRECT, INCIDENTAL, CONSEQUENTIAL, SPECIAL, PUNITIVE, OR EXEMPLARY DAMAGES. OUR AGGREGATE LIABILITY FOR ALL CLAIMS RELATING TO THE SERVICE WILL NOT EXCEED THE TOTAL AMOUNT PAID BY YOU TO BILLMUN IN THE TWELVE MONTHS PRECEDING THE CLAIM.</p>
           </section>
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">9. INDEMNIFICATION AND LEGAL DEFENSE</h2>
-            <p>9.1. You agree to defend, indemnify, and hold harmless BILLMUN, its organizers, staff, and contractors from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to your violation of these Terms of Service or your use of the Platform, including but not limited to your User Content and any use of the platform's content other than as expressly authorized in these Terms of Service.</p>
+            <p>9.1. You agree to defend, indemnify, and hold harmless BILLMUN, its organizers, staff, and contractors from and against any claims, liabilities, damages, judgments, awards, losses, costs, expenses, or fees (including reasonable attorneys&apos; fees) arising out of or relating to your violation of these Terms of Service or your use of the Platform, including but not limited to your User Content and any use of the platform&apos;s content other than as expressly authorized in these Terms of Service.</p>
           </section>
 
           <section>
@@ -84,7 +84,7 @@ export default function TermsPage() {
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">11. GOVERNING LAW AND MANDATORY ARBITRATION</h2>
             <p>11.1. Governing Law: This Agreement and any dispute or claim arising out of or in connection with it will be governed by and construed in accordance with the laws of the jurisdiction of the BILLMUN primary headquarters.</p>
-            <p>11.2. MANDATORY BINDING ARBITRATION: ANY DISPUTE RELATING IN ANY WAY TO THESE TERMS OR THE SERVICE WILL BE SUBMITTED TO CONFIDENTIAL ARBITRATION IN THE GOVERNING JURISDICTION. THE ARBITRATOR'S AWARD WILL BE FINAL AND BINDING AND MAY BE ENTERED AS A JUDGMENT IN ANY COURT OF COMPETENT JURISDICTION.</p>
+            <p>11.2. MANDATORY BINDING ARBITRATION: ANY DISPUTE RELATING IN ANY WAY TO THESE TERMS OR THE SERVICE WILL BE SUBMITTED TO CONFIDENTIAL ARBITRATION IN THE GOVERNING JURISDICTION. THE ARBITRATOR&apos;S AWARD WILL BE FINAL AND BINDING AND MAY BE ENTERED AS A JUDGMENT IN ANY COURT OF COMPETENT JURISDICTION.</p>
             <p>11.3. NO CLASS ACTION: YOU AND BILLMUN AGREE THAT ANY PROCEEDING TO RESOLVE OR LITIGATE ANY DISPUTE WILL BE CONDUCTED SOLELY ON AN INDIVIDUAL BASIS. NEITHER YOU NOR BILLMUN WILL SEEK TO HAVE ANY DISPUTE HEARD AS A CLASS ACTION OR REPRESENTATIVE PROCEEDING.</p>
           </section>
 
