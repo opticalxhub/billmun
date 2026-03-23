@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       } catch {
         /* ignore */
       }
-      void runOnUserApproved(authData.user.id, authData.user.id);
+      await runOnUserApproved(authData.user.id, authData.user.id);
     }
 
     // 3. Auto-assign committee assignment if preferred_committee is provided (for ADMIN/CHAIR)

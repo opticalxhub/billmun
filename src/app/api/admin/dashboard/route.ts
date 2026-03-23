@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAdminContext } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { context, error, status } = await getAdminContext();
   if (!context) {
     return NextResponse.json({ error }, { status: status || 500 });
   }
 
   const { adminUserId, committee_id, committeeName } = context;
+  const q = req.nextUrl.searchParams.get('q') || '';
 
   if (!committee_id) {
     return NextResponse.json({
@@ -17,6 +18,16 @@ export async function GET() {
       error: "No committee assignment found. Please contact the Executive Board to be assigned to a committee.",
       noAssignment: true
     });
+  }
+
+  let delegatesQuery = supabaseAdmin
+    .from("committee_assignments")
+    .select("user_id, country, users(id, full_name, email, phone_number, role, status)")
+    .eq("committee_id", committee_id);
+
+  if (q.length >= 2) {
+    // Note: Use .or with the relationship syntax to filter the joined users table or country
+    delegatesQuery = delegatesQuery.or(`country.ilike.%${q}%,users.full_name.ilike.%${q}%`);
   }
 
   const [
@@ -35,6 +46,7 @@ export async function GET() {
     { data: adminTasks },
     { count: openIncidents },
     { count: pendingAdminTasks },
+    { data: conferenceSettings },
   ] = await Promise.all([
       supabaseAdmin
         .from("committee_assignments")
@@ -47,10 +59,7 @@ export async function GET() {
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      supabaseAdmin
-        .from("committee_assignments")
-        .select("user_id, country, users(id, full_name, email, phone_number, role, status)")
-        .eq("committee_id", committee_id),
+      delegatesQuery,
       supabaseAdmin
         .from("delegate_presence_statuses")
         .select("*")
@@ -119,6 +128,11 @@ export async function GET() {
         .select("id", { count: "exact", head: true })
         .eq("committee_id", committee_id)
         .eq("status", "TODO"),
+      supabaseAdmin
+        .from("conference_settings")
+        .select("whatsapp_group_link")
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const chairUserRaw = (chairAssignments || []).find(
@@ -127,14 +141,18 @@ export async function GET() {
   const chairUser = Array.isArray(chairUserRaw) ? chairUserRaw[0] : chairUserRaw;
 
   const delegateRows = (delegates || [])
-    .filter((d: any) => d?.users?.role === "DELEGATE" && d?.users?.status === "APPROVED")
+    .filter((d: any) => {
+      const u = Array.isArray(d.users) ? d.users[0] : d.users;
+      return u?.role === "DELEGATE" && u?.status === "APPROVED";
+    })
     .map((d: any) => {
+      const u = Array.isArray(d.users) ? d.users[0] : d.users;
       const statusRow = (statuses || []).find((s: any) => s.user_id === d.user_id);
       return {
         user_id: d.user_id,
-        full_name: d.users?.full_name || "Unknown",
-        email: d.users?.email || null,
-        phone_number: d.users?.phone_number || null,
+        full_name: u?.full_name || "Unknown",
+        email: u?.email || null,
+        phone_number: u?.phone_number || null,
         country: d.country || null,
         physical_status: statusRow?.current_status || "Present In Session",
         status_changed_at: statusRow?.last_changed_at || null,
@@ -205,6 +223,7 @@ export async function GET() {
       open_incidents: openIncidents ?? 0,
       pending_admin_tasks: pendingAdminTasks ?? 0,
       committee_resources_count: (resources || []).length,
+      whatsapp_group_link: conferenceSettings?.whatsapp_group_link || null,
     },
     delegates: delegateRows,
     status_summary: statusSummary,
@@ -216,5 +235,6 @@ export async function GET() {
     resources: resources || [],
     votes: voteRecords || [],
     admin_tasks: adminTasks || [],
+    conference: conferenceSettings || null,
   });
 }

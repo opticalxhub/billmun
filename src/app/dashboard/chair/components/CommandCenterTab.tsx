@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Input, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_OPTIONS = [
   { value: 'IN_SESSION', label: 'In Session', color: 'bg-text-primary/70' },
@@ -23,58 +24,69 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
   const [statusModal, setStatusModal] = useState<StatusModal>({ open: false, status: '' });
   const [modalFields, setModalFields] = useState({ topic: '', speakingTime: 120, duration: 10, purpose: '', break_type: 'SHORT', summary: '' });
   const [saving, setSaving] = useState(false);
-  const [speakers, setSpeakers] = useState<any[]>([]);
   const [announcementOpen, setAnnouncementOpen] = useState(false);
   const [announcement, setAnnouncement] = useState({ title: '', body: '' });
-  const [presentCount, setPresentCount] = useState(0);
-  const [adminTasks, setAdminTasks] = useState<any[]>([]);
   const [taskForm, setTaskForm] = useState({ title: "", description: "", priority: "MEDIUM" });
 
-  const sessionStatus = ctx.session?.status || 'No Data Available';
+  const { data: speakers = [], refetch: refetchSpeakers } = useQuery({
+    queryKey: ['chair-speakers', ctx.committee?.id],
+    enabled: !!ctx.committee?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('speakers_list')
+        .select('*, delegate:delegate_id(full_name)')
+        .eq('committee_id', ctx.committee.id)
+        .in('status', ['QUEUED', 'SPEAKING'])
+        .order('position', { ascending: true })
+        .limit(4);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30 * 1000,
+  });
 
-  useEffect(() => {
-    if (ctx.committee?.id) {
-      loadSpeakers();
-      loadRollCallCount();
-      loadAdminTasks();
-    }
-  }, [ctx.committee?.id]);
-
-  const loadSpeakers = async () => {
-    const { data } = await supabase
-      .from('speakers_list')
-      .select('*, delegate:delegate_id(full_name)')
-      .eq('committee_id', ctx.committee.id)
-      .in('status', ['QUEUED', 'SPEAKING'])
-      .order('position', { ascending: true })
-      .limit(4);
-    setSpeakers(data || []);
-  };
-
-  const loadRollCallCount = async () => {
-    // Get latest roll call
-    const { data: rc } = await supabase
-      .from('roll_call_records')
-      .select('id')
-      .eq('committee_id', ctx.committee.id)
-      .order('started_at', { ascending: false })
-      .limit(1)
-      .single();
-    if (rc) {
+  const { data: presentCount = 0, refetch: refetchRollCall } = useQuery({
+    queryKey: ['chair-rollcall-count', ctx.committee?.id],
+    enabled: !!ctx.committee?.id,
+    queryFn: async () => {
+      const { data: rc } = await supabase
+        .from('roll_call_records')
+        .select('id')
+        .eq('committee_id', ctx.committee.id)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (!rc) return 0;
       const { count } = await supabase
         .from('roll_call_entries')
         .select('id', { count: 'exact', head: true })
         .eq('roll_call_id', rc.id)
         .neq('status', 'ABSENT');
-      setPresentCount(count || 0);
-    }
-  };
+      return count || 0;
+    },
+    staleTime: 60 * 1000,
+  });
 
-  const loadAdminTasks = async () => {
-    const res = await fetch("/api/chair/admin-tasks", { cache: "no-store" });
-    const json = await res.json();
-    setAdminTasks(json?.tasks || []);
-  };
+  const { data: adminTasks = [], refetch: refetchAdminTasks } = useQuery({
+    queryKey: ['chair-admin-tasks', ctx.committee?.id],
+    enabled: !!ctx.committee?.id,
+    queryFn: async () => {
+      const res = await fetch("/api/chair/admin-tasks", { cache: "no-store" });
+      const json = await res.json();
+      return json?.tasks || [];
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const sessionStatus = ctx.session?.status || 'No Data Available';
+
+  useEffect(() => {
+    if (ctx.committee?.id) {
+      refetchSpeakers();
+      refetchRollCall();
+      refetchAdminTasks();
+    }
+  }, [ctx.committee?.id, refetchSpeakers, refetchRollCall, refetchAdminTasks]);
 
   const handleStatusChange = (newStatus: string) => {
     if (newStatus === 'MODERATED_CAUCUS' || newStatus === 'UNMODERATED_CAUCUS' || newStatus === 'ON_BREAK' || newStatus === 'ADJOURNED') {
@@ -152,24 +164,48 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
 
   const handleAnnounce = async () => {
     if (!announcement.title || !announcement.body) return;
-    await supabase.from('announcements').insert({
-      title: announcement.title,
-      body: announcement.body,
-      author_id: ctx.user.id,
-      is_pinned: true,
-      target_roles: ['DELEGATE'],
-    });
-    // Log event
-    await supabase.from('session_events').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      event_type: 'ANNOUNCEMENT',
-      title: announcement.title,
-      description: announcement.body,
-      created_by: ctx.user.id,
-    });
-    setAnnouncement({ title: '', body: '' });
-    setAnnouncementOpen(false);
+    setSaving(true);
+    try {
+      const { data: annData, error: annErr } = await supabase.from('announcements').insert({
+        title: announcement.title,
+        body: announcement.body,
+        author_id: ctx.user.id,
+        is_pinned: true,
+        target_roles: ['DELEGATE'],
+        committee_id: ctx.committee.id,
+      }).select().single();
+
+      if (!annErr && annData) {
+        // Trigger notification automation
+        await fetch('/api/eb/announcements/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'notify_all',
+            title: announcement.title,
+            message: announcement.body,
+            committee_id: ctx.committee.id,
+            target_roles: ['DELEGATE']
+          })
+        });
+      }
+
+      // Log event
+      await supabase.from('session_events').insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        event_type: 'ANNOUNCEMENT',
+        title: announcement.title,
+        description: announcement.body,
+        created_by: ctx.user.id,
+      });
+      setAnnouncement({ title: '', body: '' });
+      setAnnouncementOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to post announcement');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const statusCfg = STATUS_OPTIONS.find(s => s.value === sessionStatus) || STATUS_OPTIONS[4];
@@ -187,7 +223,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
       }),
     });
     setTaskForm({ title: "", description: "", priority: "MEDIUM" });
-    loadAdminTasks();
+    refetchAdminTasks();
   };
 
   return (
@@ -258,7 +294,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
               <div className="space-y-3 p-4 bg-bg-raised rounded-card border border-border-subtle">
                 <Input placeholder="Title" value={announcement.title} onChange={e => setAnnouncement(p => ({ ...p, title: e.target.value }))} />
                 <Textarea rows={3} placeholder="Announcement body..." value={announcement.body} onChange={e => setAnnouncement(p => ({ ...p, body: e.target.value }))} />
-                <Button onClick={handleAnnounce} className="w-full">Post Announcement</Button>
+                <Button onClick={handleAnnounce} loading={saving} className="w-full">Post Announcement</Button>
               </div>
             )}
           </Card>
@@ -274,7 +310,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
                 <option value="HIGH">High</option>
                 <option value="CRITICAL">Critical</option>
               </select>
-              <Button onClick={createAdminTask}>Create Task</Button>
+              <Button onClick={createAdminTask} loading={saving}>Create Task</Button>
             </div>
             <div className="space-y-2">
               {adminTasks.slice(0, 6).map((task) => (

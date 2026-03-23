@@ -174,8 +174,8 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
   }, [ratings, speakingStats]);
 
   const sortedDelegates = useMemo(() => [...ctx.delegates].sort((a, b) => {
-    const aId = a.id;
-    const bId = b.id;
+    const aId = a.user_id;
+    const bId = b.user_id;
     return getScore(bId) - getScore(aId);
   }), [ctx.delegates, getScore]);
 
@@ -208,7 +208,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {sortedDelegates.map((d, i) => {
-                const dId = d.id;
+                const dId = d.user_id;
                 const r = ratings[dId] || { argumentation_quality: 0, diplomacy: 0, preparation: 0, private_notes: '' };
                 const s = speakingStats[dId] || { count: 0, time: 0 };
                 const score = getScore(dId);
@@ -245,7 +245,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
         {/* Mobile Cards */}
         <div className="md:hidden space-y-2">
           {sortedDelegates.map((d, i) => {
-            const dId = d.id;
+            const dId = d.user_id;
             const r = ratings[dId] || { argumentation_quality: 0, diplomacy: 0, preparation: 0, private_notes: '' };
             const s = speakingStats[dId] || { time: 0, count: 0 };
             const expanded = expandedDelegate === dId;
@@ -296,7 +296,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
       {expandedDelegate && (
         <div className="hidden md:block">
           <Card>
-            <SectionLabel>Private Notes — {ctx.delegates.find(d => d.id === expandedDelegate)?.full_name}</SectionLabel>
+            <SectionLabel>Private Notes — {ctx.delegates.find(d => d.user_id === expandedDelegate)?.full_name}</SectionLabel>
             <Textarea
               rows={3}
               value={ratings[expandedDelegate]?.private_notes || ''}
@@ -325,8 +325,8 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
           <div className="space-y-3 p-4 bg-bg-raised rounded-card border border-border-subtle">
             <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={nomineeId} onChange={e => setNomineeId(e.target.value)}>
               <option value="">Select delegate...</option>
-              {ctx.delegates.filter(d => !nominees.some(n => n.delegate_id === d.id)).map(d => (
-                <option key={d.id} value={d.id}>{d.full_name} — {d.country}</option>
+              {ctx.delegates.filter(d => !nominees.some(n => n.delegate_id === d.user_id)).map(d => (
+                <option key={d.user_id} value={d.user_id}>{d.full_name} — {d.country}</option>
               ))}
             </select>
             <Textarea rows={2} value={justification} onChange={e => setJustification(e.target.value)} placeholder="Written justification..." />

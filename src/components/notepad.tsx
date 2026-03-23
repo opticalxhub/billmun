@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel } from '@/components/ui';
 import { Save, CheckCircle, FileText } from 'lucide-react';
+import { LoadingSpinner } from './loading-spinner';
 
 interface NotepadProps {
   dashboardKey: string;
@@ -70,7 +71,13 @@ export function Notepad({ dashboardKey, userId, className = "" }: NotepadProps) 
     }, 2000);
   };
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <Card className={`flex items-center justify-center min-h-[200px] ${className}`}>
+        <LoadingSpinner size="sm" />
+      </Card>
+    );
+  }
 
   return (
     <Card className={`flex flex-col h-full overflow-hidden ${className}`}>

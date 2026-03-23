@@ -28,10 +28,19 @@ const EDITABLE_FIELDS_LIST = [
 export default function RegistrationsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterCommittee, setFilterCommittee] = useState("ALL");
   const parentRef = useRef<HTMLDivElement>(null);
+
+  // Handle search debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // useQuery for Committees (needed for filters)
   const { data: committees = [] } = useQuery({
@@ -55,14 +64,14 @@ export default function RegistrationsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: registrationData = { users: [], totalCount: 0 }, isLoading, refetch } = useQuery({
-    queryKey: ['eb-registrations', filterStatus, filterRole, filterCommittee, search],
+  const { data: registrationData = { users: [], totalCount: 0 }, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ['eb-registrations', filterStatus, filterRole, filterCommittee, debouncedSearch],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterStatus !== "ALL") params.set('status', filterStatus);
       if (filterRole !== "ALL") params.set('role', filterRole);
       if (filterCommittee !== "ALL") params.set('committee_id', filterCommittee);
-      if (search) params.set('q', search);
+      if (debouncedSearch.trim().length >= 2) params.set('q', debouncedSearch.trim());
 
       const res = await fetch(`/api/eb/registrations?${params.toString()}`);
       if (!res.ok) {
@@ -275,7 +284,10 @@ export default function RegistrationsPage() {
 
       <Card className="flex flex-col gap-4 p-4 border border-border-subtle bg-bg-card shrink-0">
         <div className="flex flex-wrap gap-3 items-center">
-          <Input placeholder="Search name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full md:w-64" />
+          <div className="relative w-full md:w-64">
+            <Input placeholder="Search name or email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            {isFetching && <div className="absolute right-3 top-1/2 -translate-y-1/2"><Loader2 className="w-4 h-4 animate-spin text-text-dimmed" /></div>}
+          </div>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="ALL">All Statuses</option>
             <option value="PENDING">Pending</option>

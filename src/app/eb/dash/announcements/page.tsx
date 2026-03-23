@@ -19,7 +19,7 @@ export default function AnnouncementsPage() {
     try {
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, users(full_name)')
+        .select('*, author:author_id(full_name)')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -41,6 +41,18 @@ export default function AnnouncementsPage() {
         author_id: user?.id
       });
       if (error) throw error;
+
+      // Trigger notification automation
+      await fetch('/api/eb/announcements/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'notify_all',
+          title: newAnnouncement.title,
+          message: newAnnouncement.body
+        })
+      });
+
       setIsModalOpen(false);
       setNewAnnouncement({ title: '', body: '', is_pinned: false });
       fetchAnnouncements();
@@ -102,7 +114,7 @@ export default function AnnouncementsPage() {
                 <h3 className="font-jotia-bold text-2xl text-text-primary mb-3 uppercase tracking-tight">{ann.title}</h3>
                 <p className="text-text-secondary leading-relaxed mb-6 max-w-3xl">{ann.body}</p>
                 <div className="flex items-center gap-2 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                  <span>Posted by {ann.users?.full_name || 'System'}</span>
+                  <span>Posted by {ann.author?.full_name || 'System'}</span>
                 </div>
               </div>
               <button 

@@ -13,10 +13,11 @@ import {
   DashboardTabBar,
 } from "@/components/dashboard-shell";
 import { Notepad } from "@/components/notepad";
+import WhatsAppTab from "@/components/whatsapp-tab";
 
-type TabName = "Overview" | "Badge Control" | "Incident Reports" | "Delegate Tracker" | "Access Zones" | "Communication";
+type TabName = "Overview" | "Badge Control" | "Incident Reports" | "Delegate Tracker" | "Access Zones" | "Communication" | "WhatsApp";
  
-const TABS: TabName[] = ["Overview", "Badge Control", "Incident Reports", "Delegate Tracker", "Access Zones", "Communication"];
+const TABS: TabName[] = ["Overview", "Badge Control", "Incident Reports", "Delegate Tracker", "Access Zones", "Communication", "WhatsApp"];
 
 export default function SecurityDashboard() {
   const queryClient = useQueryClient();
@@ -37,8 +38,17 @@ export default function SecurityDashboard() {
   const [zoneForm, setZoneForm] = useState({ name: "", description: "", capacity: 0, roles: [] as string[], status: "OPEN" });
 
   const [delegateSearch, setDelegateSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [moveUserId, setMoveUserId] = useState("");
   const [moveZoneId, setMoveZoneId] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(delegateSearch);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [delegateSearch]);
 
   const parentRefBadge = useRef<HTMLDivElement>(null);
   const parentRefFeed = useRef<HTMLDivElement>(null);
@@ -109,9 +119,13 @@ export default function SecurityDashboard() {
 
   const delegates = data?.delegates || [];
   const filteredDelegates = (() => {
-    const q = delegateSearch.trim().toLowerCase();
-    if (!q) return delegates;
-    return delegates.filter((d: any) => `${d.full_name} ${d.email} ${d.committee_assignments?.[0]?.country || ''}`.toLowerCase().includes(q));
+    const q = debouncedSearch.trim().toLowerCase();
+    if (q.length < 2) return delegates;
+    return delegates.filter((d: any) => 
+      d.full_name.toLowerCase().includes(q) || 
+      d.email.toLowerCase().includes(q) || 
+      (d.committee_assignments?.[0]?.country || '').toLowerCase().includes(q)
+    );
   })();
 
   const badgeVirtualizer = useVirtualizer({
@@ -134,7 +148,12 @@ export default function SecurityDashboard() {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <DashboardHeader title="Security Dashboard" subtitle="Physical security operations and incident control" />
+      <DashboardHeader 
+        title="Security Dashboard" 
+        subtitle="Physical security operations and incident control" 
+        committeeName="Security"
+        user={data?.user}
+      />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6 relative">
         <div className="xl:col-span-8">
@@ -535,6 +554,10 @@ export default function SecurityDashboard() {
                 </div>
               </Card>
             </div>
+          )}
+
+          {activeTab === "WhatsApp" && (
+            <WhatsAppTab />
           )}
           </DashboardAnimatedTabPanel>
         </div>

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const { data: users, error } = await supabaseAdmin
       .from('users')
       .select('id, full_name, email, role')
-      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%`)
+      .ilike('full_name', `%${q}%`)
       .limit(20);
 
     if (error) throw error;

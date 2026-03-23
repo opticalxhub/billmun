@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardAnimatedTabPanel, DashboardHeader, DashboardLoadingState, DashboardTabBar } from '@/components/dashboard-shell';
 import { Notepad } from '@/components/notepad';
+import WhatsAppTab from '@/components/whatsapp-tab';
 
-type TabName = 'Overview' | 'Coverage Planning' | 'Upload Media' | 'Press Releases' | 'Media Gallery' | 'Press Guidelines' | 'My Stats';
-const TABS: TabName[] = ['Overview', 'Coverage Planning', 'Upload Media', 'Press Releases', 'Media Gallery', 'Press Guidelines', 'My Stats'];
+type TabName = 'Overview' | 'Coverage Planning' | 'Upload Media' | 'Press Releases' | 'Media Gallery' | 'Press Guidelines' | 'My Stats' | 'WhatsApp';
+const TABS: TabName[] = ['Overview', 'Coverage Planning', 'Upload Media', 'Press Releases', 'Media Gallery', 'Press Guidelines', 'My Stats', 'WhatsApp'];
 
 export default function PressDashboard() {
   const router = useRouter();
@@ -29,6 +30,18 @@ export default function PressDashboard() {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
+      // Emergency Override Check
+      if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
+        return {
+          id: 'emergency-actor',
+          email: 'emergency@billmun.org',
+          full_name: 'Engineer (Emergency)',
+          role: 'EXECUTIVE_BOARD',
+          status: 'APPROVED',
+          has_completed_onboarding: true
+        };
+      }
+
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
       const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).single();
@@ -163,7 +176,12 @@ export default function PressDashboard() {
 
   return (
     <div className="min-h-screen bg-bg-base">
-      <DashboardHeader title="Media Dashboard" subtitle="Coverage planning, uploads, publishing, and analytics" />
+      <DashboardHeader 
+        title="Media & Press Control" 
+        subtitle="Conference-wide reporting and media management" 
+        committeeName="Press Corps"
+        user={user}
+      />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-8">
@@ -306,6 +324,10 @@ export default function PressDashboard() {
                 <Card><SectionLabel>Approved Media</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id && m.status === 'APPROVED').length}</p></Card>
                 <Card><SectionLabel>Published PRs</SectionLabel><p className="text-3xl font-bold">{pressReleases.filter((r) => r.author_id === user.id && r.status === 'PUBLISHED').length}</p></Card>
               </div>
+            )}
+
+            {activeTab === 'WhatsApp' && (
+              <WhatsAppTab />
             )}
           </DashboardAnimatedTabPanel>
         </div>

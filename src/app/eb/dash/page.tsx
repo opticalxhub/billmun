@@ -16,6 +16,9 @@ import CommunicationsPage from "./communications/page";
 import SettingsPage from "./settings/page";
 import EBAuditLogPage from "./audit/page";
 import EBInternalWorkspacePage from "./internal-workspace/page";
+import EBWhatsAppPage from "./whatsapp/page";
+import EBReportsPage from "./reports/page";
+import EBSchedulePage from "./schedule/page";
 
 function EBDashInner() {
   const searchParams = useSearchParams();
@@ -45,6 +48,9 @@ function EBDashInner() {
       case 'settings': return <SettingsPage />;
       case 'audit': return <EBAuditLogPage />;
       case 'internal-workspace': return <EBInternalWorkspacePage />;
+      case 'whatsapp': return <EBWhatsAppPage />;
+      case 'reports': return <EBReportsPage />;
+      case 'schedule': return <EBSchedulePage />;
       default: return <EBDashOverview />;
     }
   };

@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  if (action === "update_status") {
-    const id = body?.id as string;
+  if (action === "update_admin_task_status") {
+    const id = body?.task_id as string;
     const statusValue = body?.status as string;
     if (!id || !statusValue) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     const { data: existing } = await supabaseAdmin

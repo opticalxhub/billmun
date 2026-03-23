@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         /* ignore */
       }
       await logAudit(`Approved user ${targetUser.email}`);
-      void runOnUserApproved(user_id, actorId);
+      await runOnUserApproved(user_id, actorId);
       return NextResponse.json({ ok: true });
     }
 
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
         .update({ status: "REJECTED", updated_at: new Date().toISOString() })
         .eq("id", user_id);
       await logAudit(`Rejected user ${targetUser.email}`);
-      void runOnUserRejected(user_id, targetUser.email, targetUser.full_name, reason);
+      await runOnUserRejected(user_id, targetUser.email, targetUser.full_name, reason);
       return NextResponse.json({ ok: true });
     }
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         .update({ status: "SUSPENDED", updated_at: new Date().toISOString() })
         .eq("id", user_id);
       await logAudit(`Suspended user ${targetUser.email} for: ${reason}`);
-      void runOnUserSuspended(user_id, reason);
+      await runOnUserSuspended(user_id, reason);
       return NextResponse.json({ ok: true });
     }
 
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", user_id);
       await logAudit(`Reinstated user ${targetUser.email}`);
-      void runOnUserApproved(user_id, actorId);
+      await runOnUserApproved(user_id, actorId);
       return NextResponse.json({ ok: true });
     }
 
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         .update({ role, updated_at: new Date().toISOString() })
         .eq("id", user_id);
 
-      void runOnRoleChange(user_id, oldRole, role, actorId);
+      await runOnRoleChange(user_id, oldRole, role, actorId);
 
       if (["CHAIR", "CO_CHAIR", "ADMIN"].includes(role) && committee_id) {
         const { data: existing } = await supabaseAdmin
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
             assigned_by_id: actorId,
           });
         }
-        void runOnCommitteeAssigned(user_id, committee_id, actorId);
+        await runOnCommitteeAssigned(user_id, committee_id, actorId);
       }
 
       await logAudit(`Changed user ${targetUser.email} role to ${role}`);
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
       if (existing) {
         if (existing.committee_id && existing.committee_id !== committee_id) {
-          void runOnCommitteeAssignmentRemoved(user_id, existing.committee_id as string);
+          await runOnCommitteeAssignmentRemoved(user_id, existing.committee_id as string);
         }
         await supabaseAdmin
           .from("committee_assignments")
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
           assigned_by_id: actorId,
         });
       }
-      void runOnCommitteeAssigned(user_id, committee_id, actorId);
+      await runOnCommitteeAssigned(user_id, committee_id, actorId);
       await logAudit(`Assigned user ${targetUser.email} to committee ${committee_id}`);
       return NextResponse.json({ ok: true });
     }
@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
       await supabaseAdmin.from("committee_assignments").delete().eq("user_id", user_id);
       if (row?.committee_id) {
-        void runOnCommitteeAssignmentRemoved(user_id, row.committee_id as string);
+        await runOnCommitteeAssignmentRemoved(user_id, row.committee_id as string);
       }
       await logAudit(`Removed committee assignment for user ${targetUser.email}`);
       return NextResponse.json({ ok: true });
@@ -295,7 +295,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (cleanData.role && cleanData.role !== oldRole) {
-        void runOnRoleChange(user_id, oldRole, cleanData.role, actorId);
+        await runOnRoleChange(user_id, oldRole, cleanData.role, actorId);
       }
 
       for (const field of Object.keys(cleanData)) {
@@ -335,15 +335,15 @@ export async function POST(req: NextRequest) {
         } catch {
           /* ignore */
         }
-        void runOnUserApproved(user_id, actorId);
+        await runOnUserApproved(user_id, actorId);
       }
       if (cleanData.status === "REJECTED" && prevStatus !== "REJECTED") {
         const email = cleanData.email ?? targetUser.email;
         const name = cleanData.full_name ?? targetUser.full_name;
-        void runOnUserRejected(user_id, email, name, undefined);
+        await runOnUserRejected(user_id, email, name, undefined);
       }
       if (cleanData.status === "SUSPENDED" && prevStatus !== "SUSPENDED") {
-        void runOnUserSuspended(user_id, undefined);
+        await runOnUserSuspended(user_id, undefined);
       }
 
       await logAudit(`Updated user ${targetUser.email} data: ${Object.keys(cleanData).join(", ")}`, {

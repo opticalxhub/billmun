@@ -17,7 +17,18 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  const { text, committee_id } = body;
+  const { text, committee_id, type, content } = body;
+
+  // Handle specialized analysis types
+  if (type === 'BLOC_RELEVANCE' || type === 'DELEGATE_PERFORMANCE') {
+    const prompt = type === 'BLOC_RELEVANCE' 
+      ? `Analyze this MUN bloc resolution relevance:\nTopic: ${content.topic}\nStance: ${content.stance}\nCommittee Topic: ${content.committee_topic}\nProvide a concise analysis of how relevant and helpful this is for the committee.`
+      : `Analyze this MUN delegate performance:\nDelegate: ${content.delegate}\nCountry: ${content.country}\nStats: Asked ${content.stats.pois_asked} POIs, Answered ${content.stats.pois_answered} POIs, Opening Speech: ${content.stats.opening_speech_words} words in ${content.stats.opening_speech_minutes} mins.\nScore: ${content.stats.performance_score}%\nProvide a constructive, 2-3 sentence performance review.`;
+
+    const result = await runChairAi("speech_evaluator", prompt);
+    return NextResponse.json({ analysis: result.summary });
+  }
+
   if (!text || typeof text !== "string") return NextResponse.json({ error: "Text is required" }, { status: 400 });
 
   if (committee_id && context.committee_id && committee_id !== context.committee_id && !context.emergency) {

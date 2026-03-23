@@ -22,7 +22,7 @@ export default function BlocManager(props: { user?: any; committeeAssignment?: a
     return document.cookie.includes("emergency_expires=");
   }, []);
 
-  const committeeId = committeeAssignment?.committeeId ?? committeeAssignment?.committee_id;
+  const committeeId = committeeAssignment?.committee_id;
   const userId = user?.id;
 
   const [loading, setLoading] = useState(true);
@@ -252,7 +252,7 @@ export default function BlocManager(props: { user?: any; committeeAssignment?: a
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-xs text-text-dimmed">
-                  Joined: {b.joinedAt ? new Date(b.joinedAt).toLocaleDateString() : "—"}
+                  Joined: {b.joined_at ? new Date(b.joined_at).toLocaleDateString() : "—"}
                 </div>
                 <div className="text-xs text-text-tertiary">
                   Committee: {b.committee_id ? String(b.committee_id).slice(0, 8) : "—"}

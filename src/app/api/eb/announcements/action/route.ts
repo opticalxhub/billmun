@@ -19,26 +19,31 @@ export async function POST(req: NextRequest) {
 
     if (!action) return NextResponse.json({ error: "Missing action" }, { status: 400 });
 
-    if (action === "create") {
-      if (!title || !content) return NextResponse.json({ error: "Missing title or body" }, { status: 400 });
-      const { data: created, error } = await supabaseAdmin
-        .from("announcements")
-        .insert({
-          title,
-          body: content,
-          is_pinned: !!is_pinned,
-          target_roles: target_roles || [],
-          committee_id: committee_id === "ALL" ? null : committee_id,
-          scheduled_for: scheduled_for || null,
-          author_id: ebUserId,
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-      void runOnAnnouncementCreated(
-        created.id as string,
+    if (action === "create" || action === "notify_all") {
+      let createdId = id;
+      if (action === "create") {
+        if (!title || !content) return NextResponse.json({ error: "Missing title or body" }, { status: 400 });
+        const { data: created, error } = await supabaseAdmin
+          .from("announcements")
+          .insert({
+            title,
+            body: content,
+            is_pinned: !!is_pinned,
+            target_roles: target_roles || [],
+            committee_id: committee_id === "ALL" ? null : committee_id,
+            scheduled_for: scheduled_for || null,
+            author_id: ebUserId,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        createdId = created.id;
+      }
+
+      await runOnAnnouncementCreated(
+        createdId as string,
         title,
-        content,
+        content || body.message,
         (target_roles || []) as string[],
         committee_id === "ALL" ? null : committee_id,
       );

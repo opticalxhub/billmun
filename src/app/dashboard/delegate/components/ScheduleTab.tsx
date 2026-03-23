@@ -52,6 +52,22 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
     staleTime: 30 * 1000,
   });
 
+  // useQuery for Committee Schedule
+  const { data: committeeSchedule = [], isLoading: committeeScheduleLoading } = useQuery({
+    queryKey: ['committee-schedule', ctx.committee?.id],
+    enabled: !!ctx.committee?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('committee_schedules')
+        .select('*')
+        .eq('committee_id', ctx.committee.id)
+        .order('start_time', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
   const conferenceDate = useMemo(() => 
     settings?.conference_date ? new Date(settings.conference_date) : new Date('2026-03-27T04:00:00Z'),
   [settings]);
@@ -192,6 +208,37 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
           </div>
         )}
       </div>
+
+      {/* Committee Schedule */}
+      {ctx.committee?.id && (
+        <div>
+          <h2 className="font-jotia-bold text-xl text-text-primary mb-4">{ctx.committee.name} Schedule</h2>
+          {committeeSchedule.length === 0 ? (
+            <div className="bg-bg-card border border-border-subtle rounded-card p-8 text-center">
+              <p className="text-text-dimmed font-jotia text-sm">No committee-specific sessions scheduled yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {committeeSchedule.map(ev => (
+                <div key={ev.id} className="bg-bg-card border border-border-emphasized/30 rounded-card p-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+                    <div className="shrink-0">
+                      <p className="font-jotia text-text-primary text-sm font-medium">
+                        {new Date(ev.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(ev.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-jotia-bold text-text-primary text-sm">{ev.event_name}</p>
+                      {ev.location && <p className="font-jotia text-text-dimmed text-xs">{ev.location}</p>}
+                      {ev.description && <p className="font-jotia text-text-dimmed text-xs mt-1">{ev.description}</p>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Personal Tasks */}
       <div>

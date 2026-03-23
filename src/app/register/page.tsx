@@ -201,7 +201,7 @@ export default function RegisterPage() {
           {/* Brand Logo */}
           <div className="flex justify-center mb-10">
             <Link href="/" className="flex items-center gap-4">
-              <img src="/billmun.png" alt="BILLMUN Logo" className="w-36 h-auto" mx-auto />
+              <img src="/billmun.png" alt="BILLMUN Logo" className="w-36 h-auto dark:invert" />
               <span className="font-jotia text-2xl text-text-primary tracking-widest uppercase">
                  Registration
               </span>

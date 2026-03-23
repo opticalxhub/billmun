@@ -67,5 +67,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Real-time notifications for DMs
+  if (channel.type === "DM") {
+    const { data: members } = await supabaseAdmin
+      .from("channel_members")
+      .select("user_id")
+      .eq("channel_id", channelId)
+      .neq("user_id", context.userId);
+
+    if (members?.length) {
+      const { data: sender } = await supabaseAdmin
+        .from("users")
+        .select("full_name")
+        .eq("id", context.userId)
+        .single();
+
+      const notifs = members.map(m => ({
+        user_id: m.user_id,
+        title: `New DM from ${sender?.full_name || 'User'}`,
+        message: content.length > 60 ? content.substring(0, 57) + "..." : content,
+        type: "MESSAGE",
+        link: `/messages?channel=${channelId}`
+      }));
+      await supabaseAdmin.from("notifications").insert(notifs);
+    }
+  }
+
   return NextResponse.json({ message: inserted });
 }

@@ -16,7 +16,8 @@ export default function SettingsPage() {
     maintenance_mode: false,
     ai_analysis_enabled: true,
     max_file_upload_mb: 10,
-    emergency_contact_phone: '+966 5X XXX XXXX'
+    emergency_contact_phone: '+966 5X XXX XXXX',
+    whatsapp_group_link: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,6 +119,15 @@ export default function SettingsPage() {
               <Input 
                 value={settings.conference_location}
                 onChange={(e) => setSettings({...settings, conference_location: e.target.value})}
+                className="bg-bg-raised"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">WhatsApp Group Link</label>
+              <Input 
+                placeholder="https://chat.whatsapp.com/..."
+                value={settings.whatsapp_group_link || ''}
+                onChange={(e) => setSettings({...settings, whatsapp_group_link: e.target.value})}
                 className="bg-bg-raised"
               />
             </div>

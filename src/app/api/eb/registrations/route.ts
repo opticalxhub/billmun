@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (filterRole !== "ALL") query = query.eq('role', filterRole);
     
     if (search) {
-      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+      query = query.ilike('full_name', `%${search}%`);
     }
 
     const { data, error: qErr, count } = await query.order("created_at", { ascending: false }).limit(50);

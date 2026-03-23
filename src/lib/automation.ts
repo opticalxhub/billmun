@@ -4,6 +4,8 @@
  */
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendApprovalEmail, sendRejectionEmail } from "@/lib/email";
+import { extractTextFromDocumentUrl } from "./document-text";
+import { analyzePositionPaper } from "./ai";
 
 const EB_ROLES = ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"] as const;
 
@@ -220,6 +222,23 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
       }
     }
 
+    if (user.role === "DELEGATE" || user.role === "CHAIR" || user.role === "CO_CHAIR" || user.role === "ADMIN") {
+      const { data: existingPres } = await supabaseAdmin
+        .from("delegate_presence_statuses")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!existingPres) {
+        await supabaseAdmin.from("delegate_presence_statuses").insert({
+          user_id: userId,
+          committee_id: committeeId || "00000000-0000-0000-0000-000000000000",
+          current_status: "Present In Session",
+          last_changed_by: actorId,
+          last_changed_at: new Date().toISOString(),
+        });
+      }
+    }
+
     const { data: existingBadge } = await supabaseAdmin
       .from("security_badges")
       .select("id")
@@ -402,12 +421,77 @@ export async function runOnDocumentUploaded(
   actorId: string | null,
 ): Promise<void> {
   await safeRun("runOnDocumentUploaded", async () => {
+    // 1. Log initial status
     await supabaseAdmin.from("document_status_history").insert({
       document_id: documentId,
       status: "PENDING",
       changed_by_id: actorId || ownerUserId,
-      note: null,
+      note: "Document submitted and queued for AI verification.",
     });
+
+    // 2. Fetch document details
+    const { data: doc } = await supabaseAdmin
+      .from("documents")
+      .select("*")
+      .eq("id", documentId)
+      .single();
+
+    if (doc) {
+      // 3. Run Anti-AI Checker
+      try {
+        const text = await extractTextFromDocumentUrl(doc.file_url, doc.mime_type);
+        const analysis = await analyzePositionPaper(text);
+
+        // Store analysis in ai_feedback table
+        await supabaseAdmin.from("ai_feedback").insert({
+          document_id: documentId,
+          user_id: ownerUserId,
+          input_text: text.substring(0, 10000), // truncate for storage if needed
+          overall_score: analysis.overall_score,
+          argument_strength: analysis.argument_strength,
+          research_depth: analysis.research_depth,
+          policy_alignment: analysis.policy_alignment,
+          writing_clarity: analysis.writing_clarity,
+          format_adherence: analysis.format_adherence,
+          diplomatic_language: analysis.diplomatic_language,
+          persuasiveness: analysis.persuasiveness,
+          ai_detection_score: analysis.ai_detection_score,
+          ai_detection_phrases: analysis.ai_detection_phrases,
+          summary: analysis.summary,
+          strengths: analysis.strengths,
+          weaknesses: analysis.weaknesses,
+          suggestions: analysis.suggestions,
+          annotated_segments: analysis.annotated_segments,
+        });
+
+        // 4. If AI score is high, flag it
+        if (analysis.ai_detection_score >= 80) {
+          await supabaseAdmin.from("document_status_history").insert({
+            document_id: documentId,
+            status: "NEEDS_REVISION",
+            changed_by_id: "00000000-0000-0000-0000-000000000001", // SYS98 njhTEM
+            note: `(AI FLAG) Plagiarism/AI detected in document content.`,
+          });
+
+          await supabaseAdmin.from("documents").update({
+            status: "NEEDS_REVISION",
+            feedback: `AI checker flagged this document as potentially AI-generated (${analysis.ai_detection_score}%). Please revise and ensure originality.`,
+          }).eq("id", documentId);
+
+          // Notify user
+          await supabaseAdmin.from("notifications").insert({
+            user_id: ownerUserId,
+            title: "Document Flagged by AI",
+            message: "Your submitted document was flagged for potential AI generation. Please review and revise.",
+            type: "WARNING",
+            link: "/dashboard/delegate",
+          });
+        }
+      } catch (aiErr) {
+        console.error("AI Verification failed", aiErr);
+        await logAutomationFailure("runOnDocumentUploaded:AI_CHECK", aiErr, { documentId });
+      }
+    }
 
     if (!committeeId) return;
 

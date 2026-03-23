@@ -67,7 +67,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
       setActiveRollCall(data);
       // Initialize all delegates as ABSENT
       const initial: Record<string, string> = {};
-      ctx.delegates.forEach(d => { initial[d.id] = 'ABSENT'; });
+      ctx.delegates.forEach(d => { initial[d.user_id] = 'ABSENT'; });
       setEntries(initial);
       setElapsedTime(0);
       setTimerRunning(true);
@@ -92,6 +92,21 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
       status,
     }));
     await supabase.from('roll_call_entries').insert(inserts);
+
+    // Update delegate physical status
+    await Promise.all(
+      Object.entries(entries).map(([delegateId, status]) => 
+        supabase
+          .from('delegate_presence_statuses')
+          .upsert({
+            user_id: delegateId,
+            committee_id: ctx.committee.id,
+            current_status: status === 'ABSENT' ? 'Absent' : 'Present In Session',
+            last_changed_by: ctx.user.id,
+            last_changed_at: new Date().toISOString()
+          }, { onConflict: 'user_id' })
+      )
+    );
 
     // Mark complete
     await supabase.from('roll_call_records').update({ completed_at: new Date().toISOString() }).eq('id', activeRollCall.id);
@@ -174,7 +189,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
               </thead>
               <tbody className="divide-y divide-border-subtle">
                 {ctx.delegates.map(d => {
-                  const dId = d.id;
+                  const dId = d.user_id;
                   const state = entries[dId] || 'ABSENT';
                   return (
                     <tr key={dId} className="hover:bg-bg-raised/30 cursor-pointer" onClick={() => cycleState(dId)}>
@@ -194,7 +209,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-2">
             {ctx.delegates.map(d => {
-              const dId = d.id;
+              const dId = d.user_id;
               const state = entries[dId] || 'ABSENT';
               return (
                 <div key={dId} className="bg-bg-raised rounded-card border border-border-subtle p-4">

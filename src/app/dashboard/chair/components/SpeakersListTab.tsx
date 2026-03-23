@@ -67,8 +67,21 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
   };
 
   const markSpeaking = async (id: string) => {
+    const speaker = queue.find(q => q.id === id);
+    if (!speaker) return;
+
     await supabase.from('speakers_list').update({ status: 'SPEAKING', started_at: new Date().toISOString() }).eq('id', id);
-    setSpeakingTimer(speakingLimit);
+    
+    // Notify the delegate
+    await supabase.from('notifications').insert({
+      user_id: speaker.delegate_id,
+      title: "It's your turn to speak!",
+      message: `The chair has recognized you. Your speaking time is ${fmt(speaker.speaking_time_limit || speakingLimit)}.`,
+      type: "MESSAGE",
+      link: "/dashboard/delegate"
+    });
+
+    setSpeakingTimer(speaker.speaking_time_limit || speakingLimit);
     setSpeakingRunning(true);
     loadQueue();
   };
@@ -178,7 +191,7 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
           >
             <option value="">Select delegate...</option>
             {ctx.delegates.map(d => (
-              <option key={d.id} value={d.id}>
+              <option key={d.user_id} value={d.user_id}>
                 {d.full_name || 'Unknown'} — {d.country}
               </option>
             ))}
@@ -263,7 +276,7 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {ctx.delegates.map(d => {
-              const dId = d.id;
+              const dId = d.user_id;
               const s = stats[dId] || { time: 0, count: 0 };
               return (
                 <tr key={dId}>

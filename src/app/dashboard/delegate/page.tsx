@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -13,13 +13,16 @@ import BlocsTab from './components/BlocsTab';
 import ResolutionBuilderTab from './components/ResolutionBuilderTab';
 import ScheduleTab from './components/ScheduleTab';
 import ResearchTab from './components/ResearchTab';
+import WhatsAppTab from '@/components/whatsapp-tab';
 import { Notepad } from '@/components/notepad';
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import {
   DashboardAnimatedTabPanel,
   DashboardHeader,
   DashboardLoadingState,
   DashboardTabBar,
 } from '@/components/dashboard-shell';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 const TABS = [
   'Overview',
@@ -31,6 +34,7 @@ const TABS = [
   'Resolution Builder',
   'Schedule',
   'Research',
+  'WhatsApp',
 ] as const;
 
 type TabName = (typeof TABS)[number];
@@ -51,11 +55,23 @@ export default function DelegateDashboard() {
   const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
+      // Emergency Override Check
+      if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
+        return {
+          id: 'emergency-actor',
+          email: 'emergency@billmun.org',
+          full_name: 'Engineer (Emergency)',
+          role: 'EXECUTIVE_BOARD',
+          status: 'APPROVED',
+          has_completed_onboarding: true
+        };
+      }
+
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status')
+        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at')
         .eq('id', authUser.id)
         .single();
       if (error) throw error;
@@ -118,7 +134,7 @@ export default function DelegateDashboard() {
     if (!assignment?.committee_id) return;
     
     const channel = supabase
-      .channel(`dashboard-${user?.id || 'anonymous'}`)
+      .channel(`delegate-session-${assignment.committee_id}`)
       .on(
         'postgres_changes',
         {
@@ -128,6 +144,7 @@ export default function DelegateDashboard() {
           filter: `committee_id=eq.${assignment.committee_id}`,
         },
         () => {
+          // Use background refetch to avoid full page loading circle flicker
           refetchSession();
         }
       )
@@ -136,15 +153,29 @@ export default function DelegateDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [assignment?.committee_id, user?.id, refetchSession]);
+  }, [assignment?.committee_id, refetchSession]); // Removed user?.id to prevent re-subscribing on every user update
 
-  const loading = userLoading || (user && !assignment && assignmentLoading);
+  // Determine if we should show the full-page loader
+  // Only show it on initial load of user OR if we're waiting for assignment to finish initial load
+  const isInitialLoading = userLoading || (!!user && assignmentLoading && !assignment);
 
   const refreshData = useCallback(async () => {
     await Promise.all([refetchUser(), refetchAssignment(), refetchSession()]);
   }, [refetchUser, refetchAssignment, refetchSession]);
 
-  if (loading) {
+  // Memoize ctx to prevent unnecessary re-renders of all tabs
+  const ctx: DelegateContext = useMemo(() => {
+    if (!user) return null as any;
+    return {
+      user,
+      assignment,
+      committee,
+      session: committeeSession,
+      refreshData,
+    };
+  }, [user, assignment, committee, committeeSession, refreshData]);
+
+  if (isInitialLoading) {
     return <DashboardLoadingState type="overview" />;
   }
 
@@ -153,35 +184,41 @@ export default function DelegateDashboard() {
     return null;
   }
 
-  const ctx: DelegateContext = {
-    user,
-    assignment,
-    committee,
-    session: committeeSession,
-    refreshData,
+  const renderTabContent = () => {
+    if (!ctx) return null;
+
+    switch (activeTab) {
+      case 'Overview': return <OverviewTab ctx={ctx} onTabChange={(tab) => setActiveTab(tab as TabName)} />;
+      case 'My Committee': return <MyCommitteeTab ctx={ctx} />;
+      case 'Documents': return <DocumentsTab ctx={ctx} />;
+      case 'AI Feedback': return <AIFeedbackTab ctx={ctx} />;
+      case 'Speeches': return <SpeechesTab ctx={ctx} />;
+      case 'Blocs': return <BlocsTab ctx={ctx} />;
+      case 'Resolution Builder': return <ResolutionBuilderTab ctx={ctx} />;
+      case 'Schedule': return <ScheduleTab ctx={ctx} />;
+      case 'Research': return <ResearchTab ctx={ctx} />;
+      case 'WhatsApp': return <WhatsAppTab />;
+      default: return null;
+    }
   };
 
   return (
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader
-        title="Delegate Dashboard"
-        subtitle={committee?.name ? `${committee.name}${assignment?.country ? ` · ${assignment.country}` : ''}` : 'Committee assignment pending'}
+        user={user}
+        title="Delegate Portal"
+        subtitle={committee?.name || "Access your delegate workspace"}
+        committeeName={committee?.name}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+
+      <AnnouncementBanner user={user} committeeId={assignment?.committee_id} />
 
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div className="xl:col-span-8">
           <DashboardAnimatedTabPanel activeKey={activeTab}>
-            {activeTab === 'Overview' && <OverviewTab ctx={ctx} onTabChange={(tab) => setActiveTab(tab as TabName)} />}
-            {activeTab === 'My Committee' && <MyCommitteeTab ctx={ctx} />}
-            {activeTab === 'Documents' && <DocumentsTab ctx={ctx} />}
-            {activeTab === 'AI Feedback' && <AIFeedbackTab ctx={ctx} />}
-            {activeTab === 'Speeches' && <SpeechesTab ctx={ctx} />}
-            {activeTab === 'Blocs' && <BlocsTab ctx={ctx} />}
-            {activeTab === 'Resolution Builder' && <ResolutionBuilderTab ctx={ctx} />}
-            {activeTab === 'Schedule' && <ScheduleTab ctx={ctx} />}
-            {activeTab === 'Research' && <ResearchTab ctx={ctx} />}
+            {renderTabContent()}
           </DashboardAnimatedTabPanel>
         </div>
 

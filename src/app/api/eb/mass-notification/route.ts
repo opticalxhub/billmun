@@ -21,8 +21,12 @@ export async function POST(req: NextRequest) {
     }
 
     let query = supabaseAdmin.from("users").select("id, committee_assignments(committee_id)");
-    if (filters.status && filters.status !== "ALL") query = query.eq("status", filters.status);
-    if (filters.roles && filters.roles.length > 0) query = query.in("role", filters.roles);
+    if (filters.status && filters.status !== "ALL") {
+      query = query.eq("status", filters.status);
+    }
+    if (filters.roles && filters.roles.length > 0) {
+      query = query.in("role", filters.roles);
+    }
 
     const { data: users, error: uErr } = await query;
     if (uErr) {
@@ -31,9 +35,10 @@ export async function POST(req: NextRequest) {
     }
     let matchedUsers = users || [];
     
-    if (filters.committeeId && filters.committeeId !== "ALL") {
-      matchedUsers = matchedUsers.filter((u: { committee_assignments?: { committee_id: string }[] }) => 
-        u.committee_assignments?.some(ca => ca.committee_id === filters.committeeId)
+    if (filters.committee_id && filters.committee_id !== "ALL") {
+      matchedUsers = matchedUsers.filter((u: any) => 
+        (Array.isArray(u.committee_assignments) ? u.committee_assignments : [u.committee_assignments])
+          .some((ca: any) => ca?.committee_id === filters.committee_id)
       );
     }
 

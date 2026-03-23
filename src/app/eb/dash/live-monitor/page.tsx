@@ -140,7 +140,9 @@ export default function LiveMonitorPage() {
 
   const filtered = useMemo(() => {
     return rows.filter(r => {
-      const matchSearch = r.full_name.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = search.trim().length >= 2 
+        ? r.full_name.toLowerCase().includes(search.toLowerCase()) || r.email.toLowerCase().includes(search.toLowerCase())
+        : true;
       const matchRole = filterRole === "ALL" || r.role === filterRole;
       const matchCommittee = filterCommittee === "ALL" || (r.committee_assignments?.[0]?.committees?.id === filterCommittee);
       const matchOnline = !filterOnline || onlineUsers.has(r.id);

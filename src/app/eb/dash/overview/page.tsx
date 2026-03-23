@@ -16,7 +16,7 @@ export default function EBDashOverview() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser && !document.cookie.includes('emergency_expires=')) throw new Error('No session');
       if (!authUser) return { id: 'emergency', role: 'EXECUTIVE_BOARD' };
-      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).single();
+      const { data } = await supabase.from('users').select('id, email, full_name, role, status, created_at, updated_at').eq('id', authUser.id).single();
       return data;
     },
   });

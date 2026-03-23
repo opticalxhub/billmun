@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
-import { Button } from '@/components/button';
+import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 import { X, ExternalLink } from "lucide-react";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -15,7 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
-  const [documents, setDocuments] = useState<any[]>([]);
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<any>(null);
   const [reviewStatus, setReviewStatus] = useState('PENDING');
   const [feedback, setFeedback] = useState('');
@@ -23,18 +25,26 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [consolidating, setConsolidating] = useState(false);
 
-  useEffect(() => { loadDocuments(); }, [ctx.committee?.id]);
-
   const loadDocuments = async () => {
     if (!ctx.committee?.id) return;
-    const { data } = await supabase
-      .from('documents')
-      .select('*, user:user_id(full_name, email)')
-      .eq('committee_id', ctx.committee.id)
-      .order('uploaded_at', { ascending: false })
-      .limit(50);
-    setDocuments(data || []);
+    queryClient.invalidateQueries({ queryKey: ['chair-documents', ctx.committee.id] });
   };
+
+  const { data: documents = [], isLoading } = useQuery({
+    queryKey: ['chair-documents', ctx.committee?.id],
+    enabled: !!ctx.committee?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*, user:user_id(full_name, email)')
+        .eq('committee_id', ctx.committee.id)
+        .order('uploaded_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30 * 1000,
+  });
 
   const openReview = (doc: any) => {
     setSelected(doc);
@@ -146,10 +156,19 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
 
   const uploadChairDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !ctx.committee?.id || !ctx.user?.id) return;
+    if (!file) return;
+    
+    // Safety check for committee ID (especially for 911/Emergency users)
+    const committeeId = ctx.committee?.id;
+    if (!committeeId) {
+      alert("Error: No committee ID found. If you are using emergency access, please ensure you are assigned to a committee context first.");
+      return;
+    }
+    
+    if (!ctx.user?.id) return;
     setSaving(true);
     try {
-      const fileName = `chair/${ctx.committee.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const fileName = `chair/${committeeId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, file, {
         upsert: false,
       });
@@ -158,7 +177,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
 
       const { error: insertError } = await supabase.from("documents").insert({
         user_id: ctx.user.id,
-        committee_id: ctx.committee.id,
+        committee_id: committeeId,
         type: "SPEECH",
         title: file.name,
         file_url: urlData.publicUrl,
@@ -180,16 +199,16 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-jotia-bold text-2xl text-text-primary">Documents</h2>
+          <h2 className="font-jotia-bold text-2xl text-text-primary uppercase tracking-tight">Documents</h2>
           <p className="text-text-dimmed text-sm">{documents.length} submissions for {ctx.committee?.name || 'committee'}</p>
         </div>
         <div className="flex gap-3">
           <label className="inline-flex h-10 items-center justify-center rounded-button px-4 text-sm font-bold uppercase tracking-widest text-text-primary border border-border-subtle hover:bg-bg-raised transition-colors cursor-pointer relative overflow-hidden">
-            {saving ? 'Uploading...' : 'Upload Resource'}
+            {saving ? <LoadingSpinner size="sm" /> : 'Upload Resource'}
             <input type="file" className="hidden" onChange={uploadChairDocument} disabled={saving} />
           </label>
           {selectedIds.size >= 2 && (
-            <Button onClick={consolidate} disabled={consolidating}>{consolidating ? 'Consolidating...' : `Consolidate Selected (${selectedIds.size})`}</Button>
+            <Button onClick={consolidate} disabled={consolidating}>{consolidating ? <LoadingSpinner size="sm" /> : `Consolidate Selected (${selectedIds.size})`}</Button>
           )}
         </div>
       </div>
@@ -318,8 +337,8 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Feedback</label>
                   <Textarea rows={4} value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Write feedback for the delegate..." />
                 </div>
-                <Button onClick={() => void submitReview()} loading={saving} className="w-full min-h-[48px]">
-                  Submit Review
+                <Button onClick={() => void submitReview()} disabled={saving} className="w-full min-h-[48px]">
+                  {saving ? <LoadingSpinner size="sm" /> : 'Submit Review'}
                 </Button>
               </div>
             </Card>

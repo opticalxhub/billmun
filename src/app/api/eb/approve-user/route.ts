@@ -55,14 +55,25 @@ export async function POST(request: NextRequest) {
     }
 
     if (approve) {
-      void runOnUserApproved(userId, approverId);
+      await runOnUserApproved(userId, approverId);
     } else {
-      void runOnUserRejected(
+      await runOnUserRejected(
         userId,
         targetUser.email,
         targetUser.full_name,
-        undefined,
+        body.reason,
       );
+    }
+
+    // If the user is approved, ensure their Supabase auth user is email-confirmed.
+    if (approve) {
+      try {
+        await (supabaseAdmin as any).auth.admin.updateUserById(userId, {
+          email_confirm: true,
+        });
+      } catch (confirmErr: any) {
+        console.error('Failed to confirm user email on approval:', confirmErr?.message ?? confirmErr);
+      }
     }
 
     // Audit log
@@ -76,17 +87,6 @@ export async function POST(request: NextRequest) {
       });
     } catch (auditErr) {
       console.error('Audit logging failed:', auditErr);
-    }
-
-    // If the user is approved, ensure their Supabase auth user is email-confirmed.
-    if (approve) {
-      try {
-        await (supabaseAdmin as any).auth.admin.updateUserById(userId, {
-          email_confirm: true,
-        });
-      } catch (confirmErr: any) {
-        console.error('Failed to confirm user email on approval:', confirmErr?.message ?? confirmErr);
-      }
     }
 
     return NextResponse.json({ success: true });

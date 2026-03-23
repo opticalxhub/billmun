@@ -102,8 +102,7 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
         country,
         users (
           id,
-          full_name,
-          session_status
+          full_name
         )
       `)
       .eq('committee_id', committee_id);
@@ -115,21 +114,31 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
     }
 
     const userIds = assignments.map((a: any) => a.user_id).filter(Boolean);
-    const { data: docs } = userIds.length
-      ? await supabase
-          .from('documents')
-          .select('user_id')
-          .eq('committee_id', committee_id)
-          .in('user_id', userIds)
-          .eq('type', 'POSITION_PAPER')
-      : { data: [] as any[] };
+    const [
+      { data: docs },
+      { data: presences }
+    ] = await Promise.all([
+      supabase
+        .from('documents')
+        .select('user_id')
+        .eq('committee_id', committee_id)
+        .in('user_id', userIds)
+        .eq('type', 'POSITION_PAPER'),
+      supabase
+        .from('delegate_presence_statuses')
+        .select('user_id, current_status')
+        .eq('committee_id', committee_id)
+        .in('user_id', userIds)
+    ]);
 
     const submittedSet = new Set((docs || []).map((d: any) => d.user_id));
+    const presenceMap = new Map((presences || []).map(p => [p.user_id, p.current_status]));
 
     setRoster(
       (assignments as any[]).map((a) => ({
         ...a,
         paper_submitted: submittedSet.has(a.user_id),
+        physical_status: presenceMap.get(a.user_id) || 'Unknown'
       }))
     );
     setRosterOpen(true);
@@ -234,13 +243,13 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
                     <div className="flex items-center gap-2">
                       <div
                         className={`w-2 h-2 rounded-full ${
-                          member.users?.session_status === 'PRESENT'
-                            ? 'bg-text-primary/70'
+                          member.physical_status === 'Present In Session'
+                            ? 'bg-status-approved-text'
                             : 'bg-text-tertiary/70'
                         }`}
                       />
                       <span className="text-xs text-text-secondary">
-                        {member.users?.session_status || 'UNKNOWN'}
+                        {member.physical_status}
                       </span>
                     </div>
                   </td>

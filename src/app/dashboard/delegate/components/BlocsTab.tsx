@@ -4,6 +4,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { LoadingSpinner } from '@/components/loading-spinner';
+import { ArrowLeft, Users, Plus, MessageSquare, FileText, Layout, Copy, RefreshCw, Trash2, Send, Download } from 'lucide-react';
 import type { DelegateContext } from '../page';
 
 function generateCode() {
@@ -34,7 +36,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   const messagesParentRef = useRef<HTMLDivElement>(null);
 
   // useQuery for Blocs
-  const { data: blocs = [] } = useQuery({
+  const { data: blocs = [], isLoading: blocsLoading } = useQuery({
     queryKey: ['delegate-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -62,33 +64,36 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Bloc Members
-  const { data: members = [] } = useQuery({
+  const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ['bloc-members', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
       const { data } = await supabase.from('bloc_members').select('*, users:user_id(id, full_name, email, role)').eq('bloc_id', selectedBloc.id);
       return data || [];
     },
+    staleTime: 60 * 1000,
   });
 
   // useQuery for Bloc Docs
-  const { data: blocDocs = [] } = useQuery({
+  const { data: blocDocs = [], isLoading: blocDocsLoading } = useQuery({
     queryKey: ['bloc-docs', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
       const { data } = await supabase.from('bloc_documents').select('*, users:uploader_id(full_name)').eq('bloc_id', selectedBloc.id).order('uploaded_at', { ascending: false });
       return data || [];
     },
+    staleTime: 60 * 1000,
   });
 
   // useQuery for Bloc Messages
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['bloc-messages', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
       const { data } = await supabase.from('bloc_messages').select('*, users:user_id(full_name)').eq('bloc_id', selectedBloc.id).order('created_at', { ascending: true }).limit(100);
       return data || [];
     },
+    staleTime: 30 * 1000,
   });
 
   const virtualizer = useVirtualizer({
@@ -346,6 +351,8 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
 
   // Main bloc list view
   if (!selectedBloc) {
+    if (blocsLoading) return <LoadingSpinner className="py-20" />;
+
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="flex items-center justify-between">
@@ -432,16 +439,33 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
 
   // Bloc workspace view
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => setSelectedBloc(null)} className="text-text-dimmed hover:text-text-primary font-jotia text-sm min-h-[44px] min-w-[44px] flex items-center">&larr; Back</button>
-        <h2 className="font-jotia-bold text-xl text-text-primary">{selectedBloc.name}</h2>
+    <div className="space-y-4 animate-fade-in h-full flex flex-col">
+      <div className="flex items-center gap-3 shrink-0">
+        <button 
+          onClick={() => setSelectedBloc(null)} 
+          className="text-text-dimmed hover:text-text-primary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center border border-border-subtle rounded-lg bg-bg-raised/50"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
+        <h2 className="font-jotia-bold text-xl text-text-primary uppercase tracking-tight">{selectedBloc.name}</h2>
       </div>
 
       {/* Bloc Tabs */}
-      <div className="flex border-b border-border-subtle overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+      <div className="flex border-b border-border-subtle overflow-x-auto shrink-0" style={{ scrollbarWidth: 'none' }}>
         {(['members', 'documents', 'strategy', 'messages'] as const).map(t => (
-          <button key={t} onClick={() => setBlocTab(t)} className={`whitespace-nowrap px-4 py-3 text-sm font-jotia border-b-2 min-h-[44px] capitalize ${blocTab === t ? 'border-text-primary text-text-primary' : 'border-transparent text-text-dimmed hover:text-text-secondary'}`}>
+          <button 
+            key={t} 
+            onClick={() => setBlocTab(t)} 
+            className={`whitespace-nowrap px-6 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all min-h-[44px] flex items-center gap-2 ${
+              blocTab === t 
+                ? 'border-primary text-primary bg-primary/5' 
+                : 'border-transparent text-text-dimmed hover:text-text-secondary hover:bg-bg-raised/50'
+            }`}
+          >
+            {t === 'members' && <Users className="w-3.5 h-3.5" />}
+            {t === 'documents' && <FileText className="w-3.5 h-3.5" />}
+            {t === 'strategy' && <Layout className="w-3.5 h-3.5" />}
+            {t === 'messages' && <MessageSquare className="w-3.5 h-3.5" />}
             {t}
           </button>
         ))}
@@ -450,62 +474,68 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       {/* Members Tab */}
       {blocTab === 'members' && (
         <div className="space-y-4">
-          <div className="hidden md:block bg-bg-card border border-border-subtle rounded-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-border-subtle bg-bg-raised">
-                <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Name</th>
-                <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Joined</th>
-                {isCreator && <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Actions</th>}
-              </tr></thead>
-              <tbody>
-                {members.map(m => {
-                  const isOnline = m.user_id && onlineUsers.has(m.user_id);
-                  return (
-                  <tr key={m.id} className="border-b border-border-subtle/50">
-                    <td className="px-4 py-3 font-jotia text-text-primary flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_5px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
-                      {m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
-                    </td>
-                    <td className="px-4 py-3 font-jotia text-text-dimmed text-xs">{new Date(m.joined_at).toLocaleDateString()}</td>
-                    {isCreator && (
-                      <td className="px-4 py-3">
-                        {m.user_id !== ctx.user.id && (
-                          <div className="flex gap-2">
-                            <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[28px]">Remove</button>
-                            <button onClick={() => transferLeadership(m.user_id)} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px]">Transfer Leadership</button>
-                          </div>
+          {membersLoading ? (
+            <LoadingSpinner className="py-12" />
+          ) : (
+            <>
+              <div className="hidden md:block bg-bg-card border border-border-subtle rounded-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b border-border-subtle bg-bg-raised">
+                    <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Name</th>
+                    <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Joined</th>
+                    {isCreator && <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Actions</th>}
+                  </tr></thead>
+                  <tbody>
+                    {members.map(m => {
+                      const isOnline = m.user_id && onlineUsers.has(m.user_id);
+                      return (
+                      <tr key={m.id} className="border-b border-border-subtle/50">
+                        <td className="px-4 py-3 font-jotia text-text-primary flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_5px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
+                          {m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
+                        </td>
+                        <td className="px-4 py-3 font-jotia text-text-dimmed text-xs">{new Date(m.joined_at).toLocaleDateString()}</td>
+                        {isCreator && (
+                          <td className="px-4 py-3">
+                            {m.user_id !== ctx.user.id && (
+                              <div className="flex gap-2">
+                                <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[28px]">Remove</button>
+                                <button onClick={() => transferLeadership(m.user_id)} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px]">Transfer Leadership</button>
+                              </div>
+                            )}
+                          </td>
                         )}
-                      </td>
-                    )}
-                  </tr>
-                )})}
-              </tbody>
-            </table>
-          </div>
-          <div className="md:hidden space-y-2">
-            {members.map(m => (
-              <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-jotia text-text-primary text-sm">{m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
-                    <p className="font-jotia text-text-tertiary text-xs">{new Date(m.joined_at).toLocaleDateString()}</p>
+                      </tr>
+                    )})}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden space-y-2">
+                {members.map(m => (
+                  <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-jotia text-text-primary text-sm">{m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
+                        <p className="font-jotia text-text-tertiary text-xs">{new Date(m.joined_at).toLocaleDateString()}</p>
+                      </div>
+                      {isCreator && m.user_id !== ctx.user.id && (
+                        <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[44px] px-2">Remove</button>
+                      )}
+                    </div>
                   </div>
-                  {isCreator && m.user_id !== ctx.user.id && (
-                    <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[44px] px-2">Remove</button>
-                  )}
+                ))}
+              </div>
+              {/* Invite Code */}
+              <div className="bg-bg-card border border-border-subtle rounded-card p-4">
+                <p className="text-text-dimmed font-jotia text-xs uppercase tracking-wider mb-2">Invite Code</p>
+                <div className="flex items-center gap-3">
+                  <span className="font-jotia-bold text-xl text-text-primary tracking-widest">{inviteCode}</span>
+                  <button onClick={() => navigator.clipboard.writeText(inviteCode)} className="text-xs text-text-dimmed hover:text-text-primary px-2 py-1 min-h-[28px]">Copy</button>
+                  {isCreator && <button onClick={regenerateCode} className="text-xs text-text-dimmed hover:text-text-primary px-2 py-1 min-h-[28px]">Regenerate</button>}
                 </div>
               </div>
-            ))}
-          </div>
-          {/* Invite Code */}
-          <div className="bg-bg-card border border-border-subtle rounded-card p-4">
-            <p className="text-text-dimmed font-jotia text-xs uppercase tracking-wider mb-2">Invite Code</p>
-            <div className="flex items-center gap-3">
-              <span className="font-jotia-bold text-xl text-text-primary tracking-widest">{inviteCode}</span>
-              <button onClick={() => navigator.clipboard.writeText(inviteCode)} className="text-xs text-text-dimmed hover:text-text-primary px-2 py-1 min-h-[28px]">Copy</button>
-              {isCreator && <button onClick={regenerateCode} className="text-xs text-text-dimmed hover:text-text-primary px-2 py-1 min-h-[28px]">Regenerate</button>}
-            </div>
-          </div>
+            </>
+          )}
         </div>
       )}
 
@@ -516,7 +546,9 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
             Upload File
             <input type="file" className="hidden" onChange={e => { if (e.target.files?.[0]) uploadBlocDoc(e.target.files[0]); }} />
           </label>
-          {blocDocs.length === 0 ? (
+          {blocDocsLoading ? (
+            <LoadingSpinner className="py-12" />
+          ) : blocDocs.length === 0 ? (
             <p className="text-text-dimmed font-jotia text-sm py-8 text-center">No shared files yet.</p>
           ) : (
             <div className="space-y-2">
@@ -572,40 +604,46 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       <div className="flex-1 overflow-hidden relative">
         {blocTab === 'messages' && (
           <div className="h-full flex flex-col p-4">
-            <div ref={messagesParentRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                {virtualMessages.map((virtualRow) => {
-                  const m = messages[virtualRow.index];
-                  const isMe = m.user_id === ctx.user.id;
-                  return (
-                    <div
-                      key={m.id}
-                      data-index={virtualRow.index}
-                      ref={virtualizer.measureElement}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                      className={`flex flex-col mb-4 ${isMe ? "items-end" : "items-start"}`}
-                    >
-                      <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-raised border border-border-subtle"}`}>
-                        {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.users?.full_name}</p>}
-                        <p className="font-jotia">{m.content}</p>
-                      </div>
-                      <span className="text-[9px] text-text-dimmed mt-1">{new Date(m.created_at).toLocaleTimeString()}</span>
-                    </div>
-                  );
-                })}
-              </div>
-              <div ref={messagesEndRef} />
-            </div>
-            <div className="mt-4 flex gap-2 pt-2 border-t border-border-subtle">
-              <input value={msgInput} onChange={(e) => setMsgInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Message your bloc..." className="flex-1 bg-bg-raised border border-border-subtle rounded-input px-4 py-2 text-sm outline-none focus:border-text-primary" />
-              <button onClick={sendMessage} className="px-4 py-2 bg-text-primary text-bg-base rounded-button text-sm font-jotia-bold">Send</button>
-            </div>
+            {messagesLoading ? (
+              <LoadingSpinner className="py-12" />
+            ) : (
+              <>
+                <div ref={messagesParentRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                    {virtualMessages.map((virtualRow) => {
+                      const m = messages[virtualRow.index];
+                      const isMe = m.user_id === ctx.user.id;
+                      return (
+                        <div
+                          key={m.id}
+                          data-index={virtualRow.index}
+                          ref={virtualizer.measureElement}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                          className={`flex flex-col mb-4 ${isMe ? "items-end" : "items-start"}`}
+                        >
+                          <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-raised border border-border-subtle"}`}>
+                            {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.users?.full_name}</p>}
+                            <p className="font-jotia">{m.content}</p>
+                          </div>
+                          <span className="text-[9px] text-text-dimmed mt-1">{new Date(m.created_at).toLocaleTimeString()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="mt-4 flex gap-2 pt-2 border-t border-border-subtle">
+                  <input value={msgInput} onChange={(e) => setMsgInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} placeholder="Message your bloc..." className="flex-1 bg-bg-raised border border-border-subtle rounded-input px-4 py-2 text-sm outline-none focus:border-text-primary" />
+                  <button onClick={sendMessage} className="px-4 py-2 bg-text-primary text-bg-base rounded-button text-sm font-jotia-bold">Send</button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

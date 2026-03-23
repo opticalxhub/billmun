@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
-import { Button } from '@/components/button';
+import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 
 const TYPES = [
@@ -85,7 +86,8 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
     });
 
     // Log event
-    const delegateName = ctx.delegates.find(d => d.id === delegateId)?.full_name || 'Unknown';
+    const delegate = ctx.delegates.find(d => d.user_id === delegateId);
+    const delegateName = delegate?.full_name || 'Unknown';
     const typeLabel = TYPES.find(t => t.value === type)?.label || type;
     await supabase.from('session_events').insert({
       committee_id: ctx.committee.id,
@@ -103,6 +105,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
       created_by: ctx.user.id,
     });
 
+    setDelegateId('');
     setDescription('');
     setVotesFor(0);
     setVotesAgainst(0);
@@ -129,7 +132,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
             <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={delegateId} onChange={e => setDelegateId(e.target.value)}>
               <option value="">Select delegate...</option>
               {ctx.delegates.map(d => (
-                <option key={d.id} value={d.id}>
+                <option key={d.user_id} value={d.user_id}>
                   {d.full_name || 'Unknown'} — {d.country}
                 </option>
               ))}
@@ -162,7 +165,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
             </div>
           )}
         </div>
-        <Button onClick={submit} disabled={saving} className="mt-4 w-full min-h-[48px]">{saving ? 'Saving...' : 'Log Entry'}</Button>
+        <Button onClick={submit} disabled={saving} className="mt-4 w-full min-h-[48px]">{saving ? <LoadingSpinner size="sm" /> : 'Log Entry'}</Button>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -49,7 +49,7 @@ export default function EmergencyPage() {
         <img
           src="/billmun.png"
           alt="BILLMUN"
-          className="mx-auto mb-8 opacity-50"
+          className="mx-auto mb-8 opacity-50 dark:invert"
           style={{ width: '400px', height: 'auto' }}
         />
       </div>

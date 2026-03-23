@@ -40,7 +40,8 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
         supabase.from('bloc_members').select('id', { count: 'exact', head: true }).eq('user_id', ctx.user.id),
       ]);
       const today = new Date().toISOString().split('T')[0];
-      const aiToday = ctx.user.ai_analyses_reset_date === today ? (ctx.user.ai_analyses_today || 0) : 0;
+      const resetDate = ctx.user.ai_analyses_reset_date ? new Date(ctx.user.ai_analyses_reset_date).toISOString().split('T')[0] : null;
+      const aiToday = resetDate === today ? (ctx.user.ai_analyses_today || 0) : 0;
       return {
         documents: docs.count || 0,
         aiToday,
@@ -75,13 +76,26 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
     queryFn: async () => {
       const { data, error } = await supabase
         .from('committee_assignments')
-        .select('*, users(full_name, id, status, documents(id))')
+        .select('id, user_id, country, users(full_name, id, status)')
         .eq('committee_id', ctx.committee.id)
         .limit(100);
       if (error) throw error;
-      return (data || []).map((r: any) => ({
+
+      const approvedAssignments = (data || []).filter((r: any) => r.users?.status === 'APPROVED');
+      const userIds = approvedAssignments.map((r: any) => r.user_id).filter(Boolean);
+      
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('user_id')
+        .in('user_id', userIds)
+        .eq('committee_id', ctx.committee.id)
+        .eq('type', 'POSITION_PAPER');
+      
+      const paperUserIds = new Set((docs || []).map(d => d.user_id));
+
+      return approvedAssignments.map((r: any) => ({
         ...r,
-        has_paper: r.users?.documents?.length > 0
+        has_paper: paperUserIds.has(r.user_id)
       }));
     },
     staleTime: 2 * 60 * 1000,
@@ -145,7 +159,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
     return () => clearInterval(interval);
   }, [conferenceDate]);
 
-  if (settingsLoading || statsLoading || activityLoading || chairLoading) {
+  if ((ctx.committee?.id && (settingsLoading || statsLoading || activityLoading || chairLoading))) {
     return <LoadingSpinner className="py-20" />;
   }
 

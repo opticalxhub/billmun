@@ -1,9 +1,11 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingSpinner } from "./loading-spinner";
-import { LogOut } from "lucide-react";
+import { LogOut, Bell, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { NotificationBell } from "./notification-bell";
+import { ReportIssueModal } from "./report-issue-modal";
 
 export function DashboardLoadingState({ type = "default" }: { type?: "default" | "overview" | "list" | "table" }) {
   if (type === "overview" || type === "list" || type === "table") {
@@ -35,12 +37,46 @@ export function DashboardHeader({
   title,
   subtitle,
   rightContent,
+  committeeName,
+  user: initialUser,
 }: {
   title: string;
   subtitle?: string;
   rightContent?: React.ReactNode;
+  committeeName?: string;
+  user?: any;
 }) {
   const router = useRouter();
+  const [user, setUser] = React.useState<any>(initialUser || null);
+
+  React.useEffect(() => {
+    if (initialUser) {
+      setUser(initialUser);
+      return;
+    }
+
+    // Emergency Override Check
+    if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
+      setUser({
+        id: 'emergency-actor',
+        email: 'emergency@billmun.com',
+        full_name: 'Engineer (Emergency)',
+        role: 'EXECUTIVE_BOARD',
+        status: 'APPROVED',
+        has_completed_onboarding: true
+      });
+      return;
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('users').select('*').eq('id', data.user.id).single().then(({ data: userData }) => {
+          setUser(userData);
+        });
+      }
+    });
+  }, [initialUser]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
@@ -52,15 +88,22 @@ export function DashboardHeader({
         <h1 className="font-jotia text-4xl uppercase tracking-tight text-text-primary">{title}</h1>
         {subtitle ? <p className="mt-2 text-sm text-text-dimmed">{subtitle}</p> : null}
       </div>
-      <div className="flex items-center gap-3">
-        {rightContent}
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-2 px-4 h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          Log Out
-        </button>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
+          {user && <ReportIssueModal user={user} committeeName={committeeName} />}
+          {user && <NotificationBell userId={user.id} />}
+        </div>
+        <div className="h-6 w-px bg-border-subtle mx-2" />
+        <div className="flex items-center gap-3">
+          {rightContent}
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Log Out
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -116,8 +159,9 @@ export function DashboardAnimatedTabPanel({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
+        className="w-full"
       >
-        {children}
+        {children || <div className="py-20 flex justify-center"><LoadingSpinner size="lg" /></div>}
       </motion.div>
     </AnimatePresence>
   );

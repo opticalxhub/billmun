@@ -9,12 +9,17 @@ import RollCallTab from './components/RollCallTab';
 import TimersTab from './components/TimersTab';
 import SpeakersListTab from './components/SpeakersListTab';
 import PointsMotionsTab from './components/PointsMotionsTab';
+import { PointsSystem } from './components/points/PointsSystem';
+import { DelegateStatsSpreadsheet } from './components/points/DelegateStatsSpreadsheet';
 import ChairDocumentsTab from './components/ChairDocumentsTab';
 import DelegatesTab from './components/DelegatesTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import AIToolsTab from './components/AIToolsTab';
 import PreparationTab from './components/PreparationTab';
+import CommitteeScheduleTab from './components/CommitteeScheduleTab';
+import WhatsAppTab from '@/components/whatsapp-tab';
 import { Notepad } from '@/components/notepad';
+import { AnnouncementBanner } from '@/components/announcement-banner';
 import {
   DashboardAnimatedTabPanel,
   DashboardHeader,
@@ -28,11 +33,15 @@ const TABS = [
   'Timers',
   'Speakers List',
   'Points & Motions',
+  'Blocs & Resolutions',
+  'Delegate Stats',
   'Documents',
   'Delegates',
   'Analytics',
   'AI Tools',
   'Preparation',
+  'Committee Schedule',
+  'WhatsApp',
 ] as const;
 
 type TabName = (typeof TABS)[number];
@@ -51,14 +60,26 @@ export default function ChairDashboard() {
   const [activeTab, setActiveTab] = useState<TabName>('Command Center');
 
   // useQuery for User Profile
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
     queryKey: ['user-profile'],
     queryFn: async () => {
+      // Emergency Override Check
+      if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
+        return {
+          id: 'emergency-actor',
+          email: 'emergency@billmun.com',
+          full_name: 'Engineer (Emergency)',
+          role: 'EXECUTIVE_BOARD',
+          status: 'APPROVED',
+          has_completed_onboarding: true
+        };
+      }
+
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
       const { data, error } = await supabase
         .from('users')
-        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status')
+        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at')
         .eq('id', authUser.id)
         .single();
       if (error) throw error;
@@ -118,11 +139,14 @@ export default function ChairDashboard() {
         `)
         .eq('committee_id', committee!.id);
       
-      return (data || []).map((a: any) => ({
-        ...a.user,
-        country: a.country || 'Unknown',
-        seat_number: a.seat_number || '',
-      }));
+      return (data || [])
+        .filter((a: any) => a.user?.status === 'APPROVED')
+        .map((a: any) => ({
+          ...a.user,
+          user_id: a.user_id,
+          country: a.country || 'Unknown',
+          seat_number: a.seat_number || '',
+        }));
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -147,26 +171,58 @@ export default function ChairDashboard() {
   useEffect(() => {
     if (!committee?.id || !user?.id) return;
     
-    const channel = supabase
-      .channel(`dashboard-chair-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'committee_sessions',
-          filter: `committee_id=eq.${committee.id}`,
-        },
-        () => {
-          refetchSession();
-        }
-      )
-      .subscribe();
+    const channels = [
+      supabase
+        .channel(`dashboard-chair-session-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'committee_sessions',
+            filter: `committee_id=eq.${committee.id}`,
+          },
+          () => {
+            refetchSession();
+          }
+        )
+        .subscribe(),
+      supabase
+        .channel(`dashboard-chair-docs-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'documents',
+            filter: `committee_id=eq.${committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['chair-documents', committee.id] });
+          }
+        )
+        .subscribe(),
+      supabase
+        .channel(`dashboard-chair-speakers-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'speakers_list',
+            filter: `committee_id=eq.${committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['chair-speakers', committee.id] });
+          }
+        )
+        .subscribe(),
+    ];
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach(ch => supabase.removeChannel(ch));
     };
-  }, [committee?.id, user?.id, refetchSession]);
+  }, [committee?.id, user?.id, refetchSession, queryClient]);
 
   const loading = userLoading || (user && committeeLoading);
 
@@ -198,10 +254,14 @@ export default function ChairDashboard() {
   return (
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader
-        title="Chair Dashboard"
-        subtitle={committee?.name ? `${committee.name}${committee?.topic ? ` · ${committee.topic}` : ''}` : 'Committee not assigned'}
+        title="Chair Control Panel"
+        subtitle={`Session active for ${ctx.committee.name}`}
+        committeeName={ctx.committee.name}
+        user={user}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+
+      <AnnouncementBanner user={user} committeeId={committee?.id} />
 
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -212,11 +272,15 @@ export default function ChairDashboard() {
             {activeTab === 'Timers' && <TimersTab ctx={ctx} />}
             {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
             {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
+            {activeTab === 'Blocs & Resolutions' && <PointsSystem committee={ctx.committee} />}
+            {activeTab === 'Delegate Stats' && <DelegateStatsSpreadsheet committee={ctx.committee} />}
             {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
             {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
             {activeTab === 'Analytics' && <AnalyticsTab ctx={ctx} />}
             {activeTab === 'AI Tools' && <AIToolsTab ctx={ctx} />}
             {activeTab === 'Preparation' && <PreparationTab ctx={ctx} />}
+            {activeTab === 'Committee Schedule' && <CommitteeScheduleTab committee={ctx.committee} user={ctx.user} />}
+            {activeTab === 'WhatsApp' && <WhatsAppTab />}
           </DashboardAnimatedTabPanel>
         </div>
         

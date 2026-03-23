@@ -10,7 +10,7 @@ export default function RegistrationSuccessPage() {
       <div className="w-full max-w-md text-center">
         <div className="bg-bg-card border border-border-subtle rounded-lg p-10 shadow-lg">
           <div className="flex justify-center mb-8">
-            <Image src="/billmun.png" alt="BILLMUN Logo" width={100} height={100} />
+            <Image src="/billmun.png" alt="BILLMUN Logo" width={100} height={100} className="dark:invert" />
           </div>
           <h1 className="font-jotia text-4xl text-text-primary mb-4">Registration Submitted</h1>
           <p className="text-text-secondary mb-8">

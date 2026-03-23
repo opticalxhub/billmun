@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LoadingSpinner } from '@/components/loading-spinner';
 import type { DelegateContext } from '../page';
 
 export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
+  const queryClient = useQueryClient();
   const [country_notes, setCountryNotes] = useState('');
   const [previous_resolutions, setPreviousResolutions] = useState('');
   const [stances, setStances] = useState<Record<string, string>>({});
@@ -15,42 +18,51 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
   const autosaveCountryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autosaveResRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // useQuery for Research Data
+  const { isLoading: researchLoading } = useQuery({
+    queryKey: ['country-research', ctx.user?.id],
+    enabled: !!ctx.user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('country_research')
+        .select('*')
+        .eq('user_id', ctx.user.id)
+        .single();
+      
+      if (data) {
+        setCountryNotes(data.country_notes || '');
+        setPreviousResolutions(data.previous_resolutions || '');
+      }
+      return data || null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // useQuery for Stances
+  const { isLoading: stancesLoading } = useQuery({
+    queryKey: ['stance-notes', ctx.user?.id],
+    enabled: !!ctx.user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('stance_notes')
+        .select('*')
+        .eq('user_id', ctx.user.id);
+      
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((s: any) => { map[s.sub_topic] = s.stance; });
+        setStances(map);
+      }
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   useEffect(() => {
-    loadResearch();
-    loadSubTopics();
-    loadStances();
-  }, [ctx.user?.id, ctx.committee?.id]);
-
-  const loadResearch = async () => {
-    if (!ctx.user?.id) return;
-    const { data } = await supabase
-      .from('country_research')
-      .select('*')
-      .eq('user_id', ctx.user.id)
-      .single();
-    if (data) {
-      setCountryNotes(data.country_notes);
-      setPreviousResolutions(data.previous_resolutions);
+    if (ctx.committee?.sub_topics) {
+      setSubTopics(ctx.committee.sub_topics || []);
     }
-  };
-
-  const loadSubTopics = async () => {
-    if (!ctx.committee?.sub_topics) { setSubTopics([]); return; }
-    setSubTopics(ctx.committee.sub_topics || []);
-  };
-
-  const loadStances = async () => {
-    if (!ctx.user?.id) return;
-    const { data } = await supabase
-      .from('stance_notes')
-      .select('*')
-      .eq('user_id', ctx.user.id);
-    if (data) {
-      const map: Record<string, string> = {};
-      data.forEach((s: any) => { map[s.sub_topic] = s.stance; });
-      setStances(map);
-    }
-  };
+  }, [ctx.committee?.sub_topics]);
 
   const saveCountryNotes = useCallback(async () => {
     if (!ctx.user?.id) return;
@@ -62,7 +74,8 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     }, { onConflict: 'user_id' });
     setSavedCountry(true);
     setTimeout(() => setSavedCountry(false), 2000);
-  }, [ctx.user?.id, country_notes, previous_resolutions]);
+    queryClient.invalidateQueries({ queryKey: ['country-research', ctx.user.id] });
+  }, [ctx.user?.id, country_notes, previous_resolutions, queryClient]);
 
   const saveResolutions = useCallback(async () => {
     if (!ctx.user?.id) return;
@@ -74,7 +87,8 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     }, { onConflict: 'user_id' });
     setSavedResolutions(true);
     setTimeout(() => setSavedResolutions(false), 2000);
-  }, [ctx.user?.id, country_notes, previous_resolutions]);
+    queryClient.invalidateQueries({ queryKey: ['country-research', ctx.user.id] });
+  }, [ctx.user?.id, country_notes, previous_resolutions, queryClient]);
 
   const saveStance = useCallback(async (topic: string, stance: string) => {
     if (!ctx.user?.id) return;
@@ -86,7 +100,8 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     }, { onConflict: 'user_id,sub_topic' });
     setSavedStances(prev => ({ ...prev, [topic]: true }));
     setTimeout(() => setSavedStances(prev => ({ ...prev, [topic]: false })), 2000);
-  }, [ctx.user?.id]);
+    queryClient.invalidateQueries({ queryKey: ['stance-notes', ctx.user.id] });
+  }, [ctx.user?.id, queryClient]);
 
   // Autosave country notes every 30s
   useEffect(() => {
@@ -101,6 +116,10 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     autosaveResRef.current = setTimeout(saveResolutions, 30000);
     return () => { if (autosaveResRef.current) clearTimeout(autosaveResRef.current); };
   }, [previous_resolutions, saveResolutions]);
+
+  if (researchLoading || stancesLoading) {
+    return <LoadingSpinner className="py-20" />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

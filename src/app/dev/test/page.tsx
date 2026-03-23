@@ -332,6 +332,9 @@ export default function DevTestPage() {
     return (
       <div className="min-h-screen bg-bg-base flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-bg-card p-8 rounded-card border border-border-subtle">
+          <div className="flex justify-center mb-6">
+            <img src="/billmun.png" alt="Logo" className="w-20 h-auto invert" />
+          </div>
           <h1 className="font-jotia-bold text-2xl text-text-primary mb-2">Dev Diagnostics</h1>
           <p className="text-text-dimmed text-sm mb-6">Enter passphrase to access system health tools.</p>
           <form onSubmit={handleSubmit} className="space-y-4">

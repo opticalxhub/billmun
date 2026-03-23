@@ -74,7 +74,7 @@ export default function EBLoginPage() {
           {/* Brand Logo */}
           <div className="mb-16">
             <Link href="/" className="inline-block hover:scale-105 transition-transform duration-300">
-              <Image src="/billmun.png" alt="BILLMUN Logo" width={80} height={80} className="w-20 h-auto" />
+              <Image src="/billmun.png" alt="BILLMUN Logo" width={80} height={80} className="w-20 h-auto dark:invert" />
             </Link>
           </div>
 
@@ -147,7 +147,7 @@ export default function EBLoginPage() {
         </div>
         
         <div className="relative z-10 max-w-lg text-center px-8">
-          <Image src="/billmun.png" alt="BILLMUN Logo Large" width={300} height={300} className="mx-auto mb-12 opacity-80" />
+          <Image src="/billmun.png" alt="BILLMUN Logo Large" width={300} height={300} className="mx-auto mb-12 opacity-80 invert" />
           <h2 className="font-jotia text-4xl mb-4 text-text-primary">Executive Control</h2>
           <p className="text-text-secondary text-lg leading-relaxed">Secure your session to manage committees, review documents, and direct the flow of debate.</p>
         </div>

@@ -5,8 +5,13 @@ import { Card, Input, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { DashboardLoadingState } from '@/components/dashboard-shell';
+import { DashboardLoadingState, DashboardHeader } from '@/components/dashboard-shell';
+import CommitteeScheduleTab from '../chair/components/CommitteeScheduleTab';
 import { supabase } from '@/lib/supabase';
+import WhatsAppTab from '@/components/whatsapp-tab';
+import { AnnouncementBanner } from '@/components/announcement-banner';
+import { LoadingSpinner } from '@/components/loading-spinner';
+
 
 type AdminTab =
   | 'overview'
@@ -17,7 +22,9 @@ type AdminTab =
   | 'resources'
   | 'session-support'
   | 'communication'
-  | 'audit-log';
+  | 'audit-log'
+  | 'committee-schedule'
+  | 'whatsapp';
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -29,6 +36,8 @@ const TABS: { id: AdminTab; label: string }[] = [
   { id: 'session-support', label: 'Session Support' },
   { id: 'communication', label: 'Communication' },
   { id: 'audit-log', label: 'Audit Log' },
+  { id: 'committee-schedule', label: 'Committee Schedule' },
+  { id: 'whatsapp', label: 'WhatsApp' },
 ];
 
 const PHYSICAL_STATUSES = [
@@ -45,6 +54,16 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Handle search debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const parentRefDelegates = useRef<HTMLDivElement>(null);
   const parentRefAudit = useRef<HTMLDivElement>(null);
   const [selectedDelegate, setSelectedDelegate] = useState<any>(null);
@@ -75,15 +94,20 @@ export default function AdminDashboard() {
     abstentions: 0,
   });
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['admin-dashboard'],
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ['admin-dashboard', debouncedSearch.trim().length >= 2 ? debouncedSearch.trim() : ''],
     queryFn: async () => {
-      const res = await fetch('/api/admin/dashboard', { cache: 'no-store' });
+      const params = new URLSearchParams();
+      if (debouncedSearch.trim().length >= 2) {
+        params.set('q', debouncedSearch.trim());
+      }
+      const res = await fetch(`/api/admin/dashboard?${params.toString()}`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to load dashboard data');
       return json;
     },
     staleTime: 60 * 1000,
+    refetchInterval: 30 * 1000,
   });
 
   useEffect(() => {
@@ -117,15 +141,7 @@ export default function AdminDashboard() {
   const votes = useMemo(() => data?.votes || [], [data?.votes]);
   const alerts = useMemo(() => data?.alerts || [], [data?.alerts]);
 
-  const filteredDelegates = useMemo(
-    () =>
-      delegates.filter(
-        (d: any) =>
-          d.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.country?.toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    [delegates, searchTerm],
-  );
+  const filteredDelegates = delegates;
 
   const delegatesVirtualizer = useVirtualizer({
     count: filteredDelegates.length,
@@ -142,33 +158,135 @@ export default function AdminDashboard() {
     overscan: 10,
   });
 
-  // Real-time presence subscription
   useEffect(() => {
     if (data?.noAssignment || !data?.committee?.id) return;
 
-    const channel = supabase
-      .channel('admin-presence')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'delegate_presence_statuses',
-          filter: `committee_id=eq.${data.committee.id}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-        },
-      )
-      .subscribe();
+    const channels = [
+      supabase
+        .channel('admin-presence')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'delegate_presence_statuses',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+      supabase
+        .channel('admin-tasks')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'committee_admin_tasks',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+      supabase
+        .channel('admin-announcements')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'announcements',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+      supabase
+        .channel('admin-resources')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'committee_resources',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+      supabase
+        .channel('admin-documents')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'documents',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+      supabase
+        .channel('admin-attendance')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'attendance_records',
+            filter: `committee_id=eq.${data.committee.id}`,
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+          },
+        )
+        .subscribe(),
+    ];
 
     return () => {
-      supabase.removeChannel(channel);
+      channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [data?.committee?.id, data?.noAssignment, queryClient]);
 
   if (isLoading && !data) {
     return <DashboardLoadingState type="overview" />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-bg-base flex flex-col items-center justify-center p-8 text-center">
+        <div className="max-w-md w-full p-8 border border-border-subtle rounded-card bg-bg-card space-y-6">
+          <div className="w-16 h-16 bg-status-rejected-bg/10 rounded-full flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-status-rejected-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="font-jotia text-2xl uppercase tracking-tight text-text-primary">Dashboard Error</h2>
+            <p className="text-sm text-text-dimmed leading-relaxed">
+              {(error as Error).message}
+            </p>
+          </div>
+          <Button 
+            className="w-full" 
+            onClick={() => window.location.reload()}
+          >
+            Retry Loading
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (data?.noAssignment) {
@@ -219,13 +337,41 @@ export default function AdminDashboard() {
 
   const handleCreateAnnouncement = async () => {
     if (!announcementTitle.trim() || !announcementBody.trim()) return;
-    await postAction({
-      action: 'create_announcement',
-      title: announcementTitle.trim(),
-      body: announcementBody.trim(),
-    });
-    setAnnouncementTitle('');
-    setAnnouncementBody('');
+    try {
+      await postAction({
+        action: 'create_announcement',
+        title: announcementTitle.trim(),
+        body: announcementBody.trim(),
+      });
+      setAnnouncementTitle('');
+      setAnnouncementBody('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to send announcement');
+    }
+  };
+
+  const handleSaveVote = async () => {
+    if (!voteForm.motionType.trim()) return;
+    try {
+      await postAction({
+        action: 'save_vote_record',
+        motion_type: voteForm.motionType.trim(),
+        outcome: voteForm.outcome,
+        votes_for: Number(voteForm.votes_for),
+        votes_against: Number(voteForm.votes_against),
+        abstentions: Number(voteForm.abstentions),
+        recorded_votes: [],
+      });
+      setVoteForm({
+        motionType: '',
+        outcome: 'PASSED',
+        votes_for: 0,
+        votes_against: 0,
+        abstentions: 0,
+      });
+    } catch (err: any) {
+      alert(err.message || 'Failed to save vote record');
+    }
   };
 
   const handleCreateResource = async () => {
@@ -257,18 +403,24 @@ export default function AdminDashboard() {
     try {
       const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const path = `committee-resources/${data.committee.id}/${Date.now()}_${safe}`;
+      
+      // Use supabase client for upload (browser context)
       const { error: upErr } = await supabase.storage.from('documents').upload(path, file, {
         contentType: file.type || 'application/octet-stream',
       });
       if (upErr) throw upErr;
+      
       const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
       const title = resourceTitle.trim() || file.name;
+      
+      // CALL THE API instead of inserting directly to avoid RLS issues
       await postAction({
         action: 'create_resource',
         title,
         description: resourceDescription.trim(),
         file_url: pub.publicUrl,
       });
+      
       setResourceTitle('');
       setResourceDescription('');
       setResourceUrl('');
@@ -279,81 +431,65 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSaveVote = async () => {
-    if (!voteForm.motionType.trim()) return;
-    await postAction({
-      action: 'save_vote_record',
-      motion_type: voteForm.motionType.trim(),
-      outcome: voteForm.outcome,
-      votes_for: Number(voteForm.votes_for),
-      votes_against: Number(voteForm.votes_against),
-      abstentions: Number(voteForm.abstentions),
-      recorded_votes: [],
-    });
-    setVoteForm({
-      motionType: '',
-      outcome: 'PASSED',
-      votes_for: 0,
-      votes_against: 0,
-      abstentions: 0,
-    });
-  };
+
 
   const documentsWaitingOver24h = documentsQueue.filter((doc: any) => {
     const uploaded = new Date(doc.uploaded_at).getTime();
     return Date.now() - uploaded > 24 * 60 * 60 * 1000;
   });
 
-  if (isLoading) return <DashboardLoadingState type="overview" />;
-  if (error) return <div className="p-12 text-center text-status-rejected-text">{(error as Error).message}</div>;
+  if (isLoading && !data) return <DashboardLoadingState type="overview" />;
 
   return (
-    <div className="space-y-8 font-inter p-8 max-w-7xl mx-auto">
-      <div>
-        <h1 className="font-jotia text-4xl mb-2 uppercase tracking-tight">Committee Assistant Dashboard</h1>
-        <p className="text-text-dimmed">
-          Assigned committee: {data?.committee?.name || 'Unassigned'}{data?.chair?.full_name ? ` · Chair: ${data.chair.full_name}` : ''}
-        </p>
-      </div>
+    <div className="min-h-screen bg-bg-base font-inter">
+      <DashboardHeader
+        title="Committee Assistant Dashboard"
+        subtitle={`Assigned committee: ${data?.committee?.name || 'Unassigned'}${data?.chair?.full_name ? ` · Chair: ${data.chair.full_name}` : ''}`}
+        committeeName={data?.committee?.name}
+        user={data?.admin}
+      />
 
-      <div className="pb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-1 border border-border-subtle rounded-card bg-bg-card p-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`h-10 px-3 text-[10px] font-semibold uppercase tracking-widest transition-colors border rounded-input ${
-                activeTab === tab.id
-                  ? 'bg-bg-raised text-text-primary border-border-emphasized'
-                  : 'text-text-secondary hover:text-text-primary border-transparent'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <AnnouncementBanner user={data?.admin} committeeId={data?.committee?.id} />
+
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8">
+        <div className="pb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-1 border border-border-subtle rounded-card bg-bg-card p-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`h-10 px-3 text-[10px] font-semibold uppercase tracking-widest transition-colors border rounded-input ${
+                  activeTab === tab.id
+                    ? 'bg-bg-raised text-text-primary border-border-emphasized'
+                    : 'text-text-secondary hover:text-text-primary border-transparent'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
-            <SectionLabel className="mb-2">Active security incidents</SectionLabel>
+            <SectionLabel className="mb-2">Open incidents</SectionLabel>
             <p
               className={`text-3xl font-jotia-bold ${(data?.overview?.open_incidents ?? 0) > 0 ? 'text-status-rejected-text' : 'text-text-primary'}`}
             >
               {data?.overview?.open_incidents ?? 0}
             </p>
-            <p className="text-sm text-text-dimmed mt-2">Open incidents across the conference (status OPEN).</p>
+            <p className="text-sm text-text-dimmed mt-2">Active security incidents across conference.</p>
           </Card>
           <Card>
-            <SectionLabel className="mb-2">Your pending committee tasks</SectionLabel>
+            <SectionLabel className="mb-2">Pending tasks</SectionLabel>
             <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_admin_tasks ?? 0}</p>
-            <p className="text-sm text-text-dimmed mt-2">Committee admin tasks with status TODO for your committee.</p>
+            <p className="text-sm text-text-dimmed mt-2">Tasks with status TODO for your committee.</p>
           </Card>
           <Card>
-            <SectionLabel className="mb-2">Committee resources</SectionLabel>
+            <SectionLabel className="mb-2">Resources</SectionLabel>
             <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.committee_resources_count ?? 0}</p>
-            <p className="text-sm text-text-dimmed mt-2">Resources published for this committee (including archived in list).</p>
+            <p className="text-sm text-text-dimmed mt-2">Published resources for your delegates.</p>
           </Card>
         </div>
       )}
@@ -361,7 +497,10 @@ export default function AdminDashboard() {
       {activeTab === 'delegate-logistics' && (
         <Card>
           <div className="flex justify-between items-center mb-6 gap-4">
-            <SectionLabel className="mb-0">Delegate Logistics</SectionLabel>
+            <div className="flex items-center gap-3">
+              <SectionLabel className="mb-0">Delegate Logistics</SectionLabel>
+              {isFetching && <LoadingSpinner size="sm" />}
+            </div>
             <div className="w-80">
               <Input placeholder="Search name or country" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
@@ -594,7 +733,9 @@ export default function AdminDashboard() {
               <Textarea value={announcementBody} onChange={(e) => setAnnouncementBody(e.target.value)} />
             </div>
             <div>
-              <Button onClick={handleCreateAnnouncement}>Send</Button>
+              <Button onClick={handleCreateAnnouncement} loading={actionMutation.isPending}>
+                Send
+              </Button>
             </div>
           </div>
           <div className="space-y-2">
@@ -653,7 +794,7 @@ export default function AdminDashboard() {
                 accept=".pdf,.doc,.docx,.xlsx,.xls,image/*,video/*"
                 onChange={(e) => void handleResourceFileSelected(e.target.files?.[0])}
               />
-              <Button loading={resourceBusy} variant="outline" onClick={() => resourceFileInputRef.current?.click()}>
+              <Button loading={actionMutation.isPending} variant="outline" onClick={() => resourceFileInputRef.current?.click()}>
                 Choose file and publish
               </Button>
               <p className="text-xs text-text-dimmed">Uses the title above or the file name. Stored in the same file_url field as URLs.</p>
@@ -710,15 +851,53 @@ export default function AdminDashboard() {
           </Card>
 
           <Card>
-            <SectionLabel>Operations Action Queue</SectionLabel>
+            <div className="flex items-center justify-between mb-3">
+              <SectionLabel className="mb-0">Operations Action Queue</SectionLabel>
+              {isFetching && <LoadingSpinner size="sm" />}
+            </div>
             <p className="text-sm text-text-dimmed mb-3">
               Seating chart has been replaced with a live operations queue from chair-issued tasks.
             </p>
             <div className="space-y-2">
-              {(data?.admin_tasks || []).slice(0, 6).map((task: any) => (
-                <div key={task.id} className="p-3 border border-border-subtle rounded-card bg-bg-raised">
-                  <p className="text-sm text-text-primary font-semibold">{task.title}</p>
-                  <p className="text-xs text-text-dimmed">{task.priority} · {task.status}</p>
+              {(data?.admin_tasks || []).length === 0 && (
+                <div className="p-8 text-center border border-dashed border-border-subtle rounded-card text-sm text-text-dimmed">
+                  No tasks in the queue.
+                </div>
+              )}
+              {(data?.admin_tasks || []).slice(0, 10).map((task: any) => (
+                <div key={task.id} className="p-3 border border-border-subtle rounded-card bg-bg-raised flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm text-text-primary font-semibold truncate">{task.title}</p>
+                    <p className="text-xs text-text-dimmed mt-0.5">
+                      Priority: <span className={`font-bold ${task.priority === 'CRITICAL' || task.priority === 'HIGH' ? 'text-status-rejected-text' : 'text-text-secondary'}`}>{task.priority}</span>
+                      {' · '}
+                      Status: <span className="capitalize">{task.status.toLowerCase().replace('_', ' ')}</span>
+                    </p>
+                    {task.description && <p className="text-xs text-text-dimmed mt-1 line-clamp-2 italic">{task.description}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    {task.status === 'TODO' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-[10px] uppercase px-2"
+                        onClick={() => void postAction({ action: 'update_admin_task_status', task_id: task.id, status: 'IN_PROGRESS' })}
+                        loading={actionMutation.isPending && actionMutation.variables?.task_id === task.id}
+                      >
+                        Start
+                      </Button>
+                    )}
+                    {task.status === 'IN_PROGRESS' && (
+                      <Button
+                        size="sm"
+                        className="h-8 text-[10px] uppercase px-2"
+                        onClick={() => void postAction({ action: 'update_admin_task_status', task_id: task.id, status: 'COMPLETED' })}
+                        loading={actionMutation.isPending && actionMutation.variables?.task_id === task.id}
+                      >
+                        Done
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -809,7 +988,7 @@ export default function AdminDashboard() {
           <Card className="space-y-6">
             <SectionLabel>Shared Notes with Chair</SectionLabel>
             <p className="text-sm text-text-dimmed">
-              Use this area to maintain a live scratchpad between you and the committee chair.
+              Shared live scratchpad between you and the committee chair.
             </p>
             <Textarea
               className="min-h-[150px] font-mono text-sm bg-bg-raised"
@@ -818,44 +997,6 @@ export default function AdminDashboard() {
               onChange={(e) => setSharedNote(e.target.value)}
             />
             <Button onClick={() => postAction({ action: 'update_shared_note', note: sharedNote })}>Save Notes</Button>
-          </Card>
-
-          <Card className="space-y-6">
-            <SectionLabel>Delegate Incidents & Notes</SectionLabel>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-widest text-text-tertiary mb-2">Select Delegate</p>
-                <select
-                  className="w-full h-10 rounded-input border border-border-input bg-bg-raised px-3 text-sm"
-                  onChange={(e) => setSelectedDelegate(delegates.find((d: any) => d.user_id === e.target.value))}
-                >
-                  <option value="">-- Choose Delegate --</option>
-                  {delegates.map((d: any) => (
-                    <option key={d.user_id} value={d.user_id}>
-                      {d.full_name} ({d.country || 'No Country'})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-widest text-text-tertiary mb-2">Note Content</p>
-                <Textarea
-                  placeholder="Enter note or incident details..."
-                  value={assignToChairNote}
-                  onChange={(e) => setAssignToChairNote(e.target.value)}
-                  className="bg-bg-raised h-10"
-                />
-              </div>
-            </div>
-            <Button 
-              disabled={!selectedDelegate || !assignToChairNote}
-              onClick={() => {
-                postAction({ action: 'log_delegate_note', delegate_id: selectedDelegate.user_id, note: assignToChairNote });
-                setAssignToChairNote('');
-              }}
-            >
-              Add Note
-            </Button>
           </Card>
         </div>
       )}
@@ -905,6 +1046,14 @@ export default function AdminDashboard() {
             </div>
           </div>
         </Card>
+      )}
+
+      {activeTab === 'committee-schedule' && data?.committee && (
+        <CommitteeScheduleTab committee={data.committee} user={data.admin} />
+      )}
+
+      {activeTab === 'whatsapp' && (
+        <WhatsAppTab />
       )}
 
       {reviewDoc && (
@@ -991,6 +1140,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

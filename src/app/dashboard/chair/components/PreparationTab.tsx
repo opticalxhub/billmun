@@ -49,7 +49,18 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
     if (data) {
       setChecklist(data.checklist || {});
       setResearchNotes(data.research_notes || []);
-      setCountryPositions(data.country_positions || []);
+      
+      // Initialize country positions from delegates if saved data is empty
+      const savedPositions = data.country_positions || [];
+      if (savedPositions.length > 0) {
+        setCountryPositions(savedPositions);
+      } else {
+        setCountryPositions(ctx.delegates.map(d => ({
+          country: d.country || 'Unknown',
+          stance: '',
+          notes: '',
+        })));
+      }
     } else {
       // Initialize country positions from delegate assignments
       const positions = ctx.delegates.map(d => ({

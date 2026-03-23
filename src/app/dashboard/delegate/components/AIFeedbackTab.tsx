@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { Minus, Plus, AlertTriangle, ShieldCheck, FileText, BrainCircuit, Sparkles, TrendingUp, Info } from 'lucide-react';
 
 const LOADING_MESSAGES = [
   'Reading your argument structure',
@@ -302,7 +303,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
                     <p className="font-jotia text-text-primary text-sm">Score: {a.overall_score}%</p>
                     <p className="font-jotia text-text-tertiary text-xs">{new Date(a.generated_at).toLocaleString()}</p>
                   </div>
-                  <span className="text-text-dimmed text-sm">{expandedAnalysis === a.id ? '−' : '+'}</span>
+                  <span className="text-text-dimmed text-sm">{expandedAnalysis === a.id ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}</span>
                 </button>
                 {expandedAnalysis === a.id && (
                   <div className="bg-bg-raised/50 rounded-b-card p-4 space-y-3 animate-fade-in">

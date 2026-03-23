@@ -56,11 +56,11 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
       const docCounts: Record<string, number> = {};
       docs?.forEach(d => { docCounts[d.user_id] = (docCounts[d.user_id] || 0) + 1; });
 
-      const dels = (assignments || []).filter((a: any) => a.users?.role === "DELEGATE").map((a: any) => ({
+      const els = (assignments || []).filter((a: any) => a.users?.role === "DELEGATE").map((a: any) => ({
         ...a,
         doc_count: docCounts[a.user_id] || 0
       }));
-      setDelegates(dels);
+      setDelegates(els);
 
       const assignedAdminsList = (assignments || []).filter((a: any) => a.users?.role === "ADMIN");
       setAssignedAdmins(assignedAdminsList);
@@ -75,7 +75,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
       const approvedDocs = docs?.filter(d => d.status === "APPROVED").length || 0;
       const totalDocs = docs?.length || 0;
       const approvalRate = totalDocs > 0 ? Math.round((approvedDocs / totalDocs) * 100) : 0;
-      const presentCount = rollCalls?.filter(r => r.status === "PRESENT").length || 0;
+      const presentCount = rollCalls?.filter((r: any) => r.status === "PRESENT").length || 0;
       const totalRolls = rollCalls?.length || 0;
       const attendanceRate = totalRolls > 0 ? Math.round((presentCount / totalRolls) * 100) : 0;
 
