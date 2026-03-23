@@ -87,7 +87,15 @@ export async function middleware(request: NextRequest) {
   // Maintenance mode block (only allow EB and admins through, unless emergency access is active)
   if (settings?.maintenance_mode && !hasValidEmergencyAccess) {
     const isExempt = userProfile && ['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(userProfile.role);
-    if (!isExempt && !path.startsWith('/maintenance') && !path.startsWith('/login') && !path.startsWith('/api/auth')) {
+    if (
+      !isExempt && 
+      !path.startsWith('/maintenance') && 
+      !path.startsWith('/login') && 
+      !path.startsWith('/api/auth') &&
+      !path.startsWith('/privacy') &&
+      !path.startsWith('/terms') &&
+      !path.startsWith('/acceptable-use')
+    ) {
       return NextResponse.redirect(new URL('/maintenance', request.url));
     }
   }
@@ -97,6 +105,9 @@ export async function middleware(request: NextRequest) {
     if (
       !path.startsWith('/login') &&
       !path.startsWith('/register') &&
+      !path.startsWith('/privacy') &&
+      !path.startsWith('/terms') &&
+      !path.startsWith('/acceptable-use') &&
       !path.startsWith('/api') &&
       !path.startsWith('/911') &&
       !path.startsWith('/dev/test') &&
