@@ -32,7 +32,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(department) && (!preferred_committee || preferred_committee === '')) {
-      console.log('Validation failed: department=', department, 'preferred_committee=', preferred_committee);
       return NextResponse.json({ error: 'Committee selection is required for your role' }, { status: 400 });
     }
 
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     if (autoApprove) {
       try {
-        await (supabaseAdmin as { auth: { admin: { updateUserById: (id: string, p: { email_confirm: boolean }) => Promise<unknown> } } }).auth.admin.updateUserById(authData.user.id, {
+        await supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
           email_confirm: true,
         });
       } catch {
@@ -115,7 +114,7 @@ export async function POST(request: NextRequest) {
           committee_id: committee.id
         });
       }
-    } else if (autoApprove && department === 'DELEGATE' && preferred_committee) {
+    } else if (department === 'DELEGATE' && preferred_committee) {
       const pref = preferred_committee.trim();
       const prefU = pref.toUpperCase();
       const { data: committees } = await supabaseAdmin.from('committees').select('id, name, abbreviation');

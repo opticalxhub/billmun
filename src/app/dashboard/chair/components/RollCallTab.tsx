@@ -104,7 +104,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
             current_status: status === 'ABSENT' ? 'Absent' : 'Present In Session',
             last_changed_by: ctx.user.id,
             last_changed_at: new Date().toISOString()
-          }, { onConflict: 'user_id' })
+          }, { onConflict: 'committee_id,user_id' })
       )
     );
 

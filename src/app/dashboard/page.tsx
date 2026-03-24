@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, SectionLabel } from '@/components/ui';
 import { displayRole } from '@/lib/roles';
 import { DashboardHeader, DashboardLoadingState } from '@/components/dashboard-shell';
-import { FadeIn, StaggerContainer, HoverScale } from '@/components/gsap-animations';
+import { FadeIn, HoverScale } from '@/components/gsap-animations';
 
 export default function DashboardHub() {
   const router = useRouter();
@@ -17,8 +17,8 @@ export default function DashboardHub() {
   useEffect(() => {
     const checkUser = async () => {
       // Allow temp backdoor bypass to stay on /dashboard so we can build a central hub later
-        if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
-        setUserProfile({ id: 'emergency-actor', role: 'EXECUTIVE_BOARD', full_name: 'Engineer (Emergency)', status: 'APPROVED' });
+      if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
+        setUserProfile({ id: '00000000-0000-0000-0000-000000000000', role: 'EXECUTIVE_BOARD', full_name: 'Engineer (Emergency)', status: 'APPROVED' });
         setLoading(false);
         return;
       }
@@ -32,7 +32,7 @@ export default function DashboardHub() {
 
       const { data: profile } = await supabase
         .from('users')
-        .select('*')
+        .select('id, email, full_name, role, status, dietary_restrictions, preferred_committee, allocated_country')
         .eq('id', authUserId)
         .single();
 
@@ -51,9 +51,10 @@ export default function DashboardHub() {
       const isEB = ['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(profile.role);
       
       if (!isEB) {
-        if (profile.role === 'CHAIR') router.push('/dashboard/chair');
+        if (profile.role === 'CHAIR' || profile.role === 'CO_CHAIR') router.push('/dashboard/chair');
         else if (profile.role === 'PRESS' || profile.role === 'MEDIA') router.push('/dashboard/press');
         else if (profile.role === 'ADMIN') router.push('/dashboard/admin');
+        else if (profile.role === 'SECURITY') router.push('/dashboard/security');
         else router.push('/dashboard/delegate');
         return;
       }

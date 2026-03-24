@@ -8,7 +8,7 @@ import { DashboardLoadingState } from '@/components/dashboard-shell';
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({
     conference_name: 'BILLMUN 2026',
-    conference_date: '2026-03-27',
+    conference_date: '2026-04-03',
     conference_location: 'Khobar, Saudi Arabia',
     registration_open: true,
     auto_approve_registrations: false,
@@ -58,9 +58,9 @@ export default function SettingsPage() {
 
     try {
       const payload = { ...settings };
-      // Ensure date is ISO
-      if (payload.conference_date && !payload.conference_date.includes('T')) {
-        payload.conference_date = new Date(payload.conference_date).toISOString();
+      // conference_date is a date column — keep as YYYY-MM-DD string
+      if (payload.conference_date && payload.conference_date.includes('T')) {
+        payload.conference_date = payload.conference_date.split('T')[0];
       }
 
       // We use upsert with ID '1'

@@ -236,7 +236,7 @@ export function TextReveal({ children, delay = 0, stagger = 0.05, className = ''
     element.innerHTML = '';
     
     // Wrap each word in a span
-    words.forEach((word, index) => {
+    words.forEach((word) => {
       const span = document.createElement('span');
       span.textContent = word + ' ';
       span.style.display = 'inline-block';

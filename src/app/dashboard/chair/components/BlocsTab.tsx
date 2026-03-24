@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ChairContext } from '../page';
 import { Card, SectionLabel } from '@/components/ui';
-import { Button } from '@/components/button';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
-import { X, Users, MessageSquare, Eye } from 'lucide-react';
+import { Users, MessageSquare, Eye, ArrowLeft } from 'lucide-react';
 
 export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
   const queryClient = useQueryClient();
@@ -149,7 +148,7 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
             onClick={() => setSelectedBloc(null)}
             className="text-text-dimmed hover:text-text-primary"
           >
-            ← Back
+            <ArrowLeft className="w-4 h-4 inline mr-1" /> Back
           </button>
           <div>
             <h2 className="font-jotia-bold text-xl text-text-primary">{selectedBloc.name}</h2>

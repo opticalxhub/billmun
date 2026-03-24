@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import WhatsAppTab from '@/components/whatsapp-tab';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { toast } from 'sonner';
 
 
 type AdminTab =
@@ -77,6 +78,7 @@ export default function AdminDashboard() {
   const [resourceUrl, setResourceUrl] = useState('');
   const [resourceMode, setResourceMode] = useState<'url' | 'file'>('url');
   const [resourceBusy, setResourceBusy] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const resourceFileInputRef = useRef<HTMLInputElement>(null);
 
   const [reviewDoc, setReviewDoc] = useState<any>(null);
@@ -128,8 +130,14 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(json?.error || 'Action failed');
       return json;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      if (data?.success || data?.ok) {
+        toast.success("Action completed");
+      }
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Action failed");
     }
   });
 
@@ -357,7 +365,7 @@ export default function AdminDashboard() {
       setAnnouncementTitle('');
       setAnnouncementBody('');
     } catch (err: any) {
-      alert(err.message || 'Failed to send announcement');
+      toast.error(err.message || 'Failed to send announcement');
     }
   };
 
@@ -381,67 +389,79 @@ export default function AdminDashboard() {
         abstentions: 0,
       });
     } catch (err: any) {
-      alert(err.message || 'Failed to save vote record');
+      toast.error(err.message || 'Failed to save vote record');
     }
   };
 
   const handleCreateResource = async () => {
-    if (!resourceTitle.trim() || !resourceUrl.trim()) return;
+    if (!resourceTitle.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    
     setResourceBusy(true);
     try {
+      let finalUrl = resourceUrl.trim();
+
+      if (resourceMode === 'file') {
+        if (!selectedFile) {
+          toast.error('Please select a file first');
+          setResourceBusy(false);
+          return;
+        }
+
+        const maxMb = 25;
+        if (selectedFile.size > maxMb * 1024 * 1024) {
+          toast.error(`File must be under ${maxMb}MB.`);
+          setResourceBusy(false);
+          return;
+        }
+
+        const safe = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `committee-resources/${data.committee.id}/${Date.now()}_${safe}`;
+        
+        const { error: upErr } = await supabase.storage.from('documents').upload(path, selectedFile, {
+          contentType: selectedFile.type || 'application/octet-stream',
+        });
+        if (upErr) throw upErr;
+        
+        const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
+        finalUrl = pub.publicUrl;
+      }
+
+      if (!finalUrl) {
+        toast.error('Resource URL or file is required');
+        setResourceBusy(false);
+        return;
+      }
+
       await postAction({
         action: 'create_resource',
         title: resourceTitle.trim(),
         description: resourceDescription.trim(),
-        file_url: resourceUrl.trim(),
+        file_url: finalUrl,
       });
+
       setResourceTitle('');
       setResourceDescription('');
       setResourceUrl('');
+      setSelectedFile(null);
+      toast.success('Resource published successfully');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to publish resource');
     } finally {
       setResourceBusy(false);
     }
   };
 
-  const handleResourceFileSelected = async (file: File | undefined) => {
-    if (!file || !data?.committee?.id) return;
-    const maxMb = 25;
-    if (file.size > maxMb * 1024 * 1024) {
-      alert(`File must be under ${maxMb}MB.`);
-      return;
-    }
-    setResourceBusy(true);
-    try {
-      const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const path = `committee-resources/${data.committee.id}/${Date.now()}_${safe}`;
-      
-      // Use supabase client for upload (browser context)
-      const { error: upErr } = await supabase.storage.from('documents').upload(path, file, {
-        contentType: file.type || 'application/octet-stream',
-      });
-      if (upErr) throw upErr;
-      
-      const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
-      const title = resourceTitle.trim() || file.name;
-      
-      // CALL THE API instead of inserting directly to avoid RLS issues
-      await postAction({
-        action: 'create_resource',
-        title,
-        description: resourceDescription.trim(),
-        file_url: pub.publicUrl,
-      });
-      
-      setResourceTitle('');
-      setResourceDescription('');
-      setResourceUrl('');
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Upload failed');
-    } finally {
-      setResourceBusy(false);
+  const handleResourceFileSelected = (file: File | undefined) => {
+    if (file) {
+      setSelectedFile(file);
+      if (!resourceTitle) {
+        setResourceTitle(file.name.split('.')[0].replace(/_/g, ' '));
+      }
     }
   };
-
 
 
   const documentsWaitingOver24h = documentsQueue.filter((doc: any) => {
@@ -481,29 +501,41 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <SectionLabel className="mb-2">Open incidents</SectionLabel>
-            <p
-              className={`text-3xl font-jotia-bold ${(data?.overview?.open_incidents ?? 0) > 0 ? 'text-status-rejected-text' : 'text-text-primary'}`}
-            >
-              {data?.overview?.open_incidents ?? 0}
-            </p>
-            <p className="text-sm text-text-dimmed mt-2">Active security incidents across conference.</p>
-          </Card>
-          <Card>
-            <SectionLabel className="mb-2">Pending tasks</SectionLabel>
-            <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_admin_tasks ?? 0}</p>
-            <p className="text-sm text-text-dimmed mt-2">Tasks with status TODO for your committee.</p>
-          </Card>
-          <Card>
-            <SectionLabel className="mb-2">Resources</SectionLabel>
-            <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.committee_resources_count ?? 0}</p>
-            <p className="text-sm text-text-dimmed mt-2">Published resources for your delegates.</p>
-          </Card>
-        </div>
-      )}
+        {/* Overview Tab Content */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <Card className="hover:border-status-pending-border/50 transition-all cursor-pointer group" onClick={() => setActiveTab('delegate-logistics')}>
+              <div className="flex justify-between items-start mb-2">
+                <SectionLabel className="mb-0">Open incidents</SectionLabel>
+                <div className="p-2 rounded-full bg-status-rejected-bg/10 group-hover:bg-status-rejected-bg/20 transition-colors">
+                  <div className="w-2 h-2 rounded-full bg-status-rejected-text animate-pulse" />
+                </div>
+              </div>
+              <p className={`text-3xl font-jotia-bold ${(data?.overview?.open_incidents ?? 0) > 0 ? 'text-status-rejected-text' : 'text-text-primary'}`}>
+                {data?.overview?.open_incidents ?? 0}
+              </p>
+              <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">Across Conference</p>
+            </Card>
+
+            <Card className="hover:border-border-emphasized transition-all cursor-pointer" onClick={() => setActiveTab('session-support')}>
+              <SectionLabel className="mb-2">Pending tasks</SectionLabel>
+              <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_admin_tasks ?? 0}</p>
+              <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">In your committee</p>
+            </Card>
+
+            <Card className="hover:border-border-emphasized transition-all cursor-pointer" onClick={() => setActiveTab('resources')}>
+              <SectionLabel className="mb-2">Resources</SectionLabel>
+              <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.committee_resources_count ?? 0}</p>
+              <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">Published for delegates</p>
+            </Card>
+
+            <Card className="hover:border-border-emphasized transition-all cursor-pointer" onClick={() => setActiveTab('documents')}>
+              <SectionLabel className="mb-2">Doc Queue</SectionLabel>
+              <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_document_reviews ?? 0}</p>
+              <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">Waiting for review</p>
+            </Card>
+          </div>
+        )}
 
       {activeTab === 'delegate-logistics' && (
         <Card>
@@ -561,8 +593,9 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4">
                           <select
                             value={delegate.physical_status}
+                            disabled={actionMutation.isPending && (actionMutation.variables as any)?.user_id === delegate.user_id}
                             onChange={(e) => updateDelegateStatus(delegate.user_id, e.target.value)}
-                            className="h-9 w-full rounded-input border border-border-input bg-bg-raised px-2 text-sm"
+                            className="h-9 w-full rounded-input border border-border-input bg-bg-raised px-2 text-sm disabled:opacity-50"
                           >
                             {PHYSICAL_STATUSES.map((statusLabel) => (
                               <option key={statusLabel} value={statusLabel}>
@@ -610,43 +643,57 @@ export default function AdminDashboard() {
           </div>
         </Card>
       )}
-
       {activeTab === 'attendance' && (
-        <Card>
-          <SectionLabel>Attendance</SectionLabel>
-          <div className="overflow-x-auto">
+        <Card className="animate-fade-in shadow-xl shadow-black/20">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <SectionLabel className="mb-1">Live Committee Roll Call</SectionLabel>
+              <p className="text-[11px] text-text-dimmed font-medium uppercase tracking-widest">Official attendance history from Chairs</p>
+            </div>
+            {isFetching && <LoadingSpinner size="sm" />}
+          </div>
+          
+          <div className="overflow-x-auto border border-border-subtle rounded-card bg-bg-card">
             <table className="w-full text-left">
-              <thead className="border-b border-border-subtle">
-                <tr className="text-[11px] uppercase tracking-widest text-text-tertiary">
-                  <th className="py-3">Delegate</th>
-                  <th className="py-3">Session Start</th>
-                  <th className="py-3">Session End</th>
-                  <th className="py-3">Status</th>
-                  <th className="py-3">Correct</th>
+              <thead className="bg-bg-raised">
+                <tr className="text-[10px] uppercase tracking-widest text-text-tertiary">
+                  <th className="py-3 px-4 font-bold border-b border-border-subtle">Session Time</th>
+                  <th className="py-3 px-4 font-bold border-b border-border-subtle">Presence</th>
+                  <th className="py-3 px-4 font-bold border-b border-border-subtle">Quorum</th>
+                  <th className="py-3 px-4 font-bold border-b border-border-subtle">Status</th>
                 </tr>
               </thead>
-              <tbody>
-                {attendance.map((row: any) => (
-                  <tr key={row.id} className="border-b border-border-subtle">
-                    <td className="py-3 text-sm text-text-primary">{delegates.find((d: any) => d.user_id === row.user_id)?.full_name || row.user_id}</td>
-                    <td className="py-3 text-sm text-text-secondary">{new Date(row.session_start).toLocaleString()}</td>
-                    <td className="py-3 text-sm text-text-secondary">{row.session_end ? new Date(row.session_end).toLocaleString() : '-'}</td>
-                    <td className="py-3 text-sm">{row.status}</td>
-                    <td className="py-3">
-                      <div className="flex gap-2">
-                        {['PRESENT', 'LATE', 'ABSENT'].map((s) => (
-                          <button
-                            key={s}
-                            className="text-[10px] uppercase tracking-wider px-2 py-1 border border-border-subtle rounded"
-                            onClick={() => handleAttendanceCorrection(row.id, s)}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
+              <tbody className="divide-y divide-border-subtle">
+                {(data?.roll_call_history || []).length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-16 text-center text-text-dimmed text-sm italic">
+                      No roll call records found.
                     </td>
                   </tr>
-                ))}
+                )}
+                {(data?.roll_call_history || []).map((h: any) => {
+                  const presentCount = (h.entries || []).filter((e: any) => e.status !== 'ABSENT').length;
+                  const totalCount = (h.entries || []).length;
+                  const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+                  return (
+                    <tr key={h.id} className="hover:bg-bg-raised/50 transition-colors">
+                      <td className="py-4 px-4 text-xs font-mono text-text-primary">
+                        {new Date(h.started_at).toLocaleString()}
+                      </td>
+                      <td className="py-4 px-4 text-xs font-semibold text-text-secondary">
+                        {presentCount}/{totalCount} Present ({pct}%)
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight border ${pct >= 50 ? 'bg-status-approved-bg/10 text-status-approved-text border-status-approved-border/30' : 'bg-status-rejected-bg/10 text-status-rejected-text border-status-rejected-border/30'}`}>
+                          {pct >= 50 ? 'Established' : 'Below Threshold'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-[10px] text-text-tertiary">
+                        {h.completed_at ? 'Completed' : <span className="text-status-warning-text animate-pulse">Active Now</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -744,8 +791,12 @@ export default function AdminDashboard() {
               <Textarea value={announcementBody} onChange={(e) => setAnnouncementBody(e.target.value)} />
             </div>
             <div>
-              <Button onClick={handleCreateAnnouncement} loading={actionMutation.isPending}>
-                Send
+              <Button 
+                onClick={handleCreateAnnouncement} 
+                loading={actionMutation.isPending}
+                disabled={!announcementTitle.trim() || !announcementBody.trim()}
+              >
+                Send Announcement
               </Button>
             </div>
           </div>
@@ -803,11 +854,24 @@ export default function AdminDashboard() {
                 type="file"
                 className="hidden"
                 accept=".pdf,.doc,.docx,.xlsx,.xls,image/*,video/*"
-                onChange={(e) => void handleResourceFileSelected(e.target.files?.[0])}
+                onChange={(e) => handleResourceFileSelected(e.target.files?.[0])}
               />
-              <Button loading={actionMutation.isPending} variant="outline" onClick={() => resourceFileInputRef.current?.click()}>
-                Choose file and publish
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => resourceFileInputRef.current?.click()}
+                  className="flex-1"
+                >
+                  {selectedFile ? `File: ${selectedFile.name}` : "Choose file"}
+                </Button>
+                <Button 
+                  loading={resourceBusy} 
+                  onClick={() => void handleCreateResource()}
+                  disabled={!selectedFile}
+                >
+                  Publish resource
+                </Button>
+              </div>
               <p className="text-xs text-text-dimmed">Uses the title above or the file name. Stored in the same file_url field as URLs.</p>
             </div>
           )}
@@ -827,14 +891,17 @@ export default function AdminDashboard() {
                   <a className="text-xs underline" href={resource.file_url} target="_blank" rel="noreferrer">
                     Open
                   </a>
-                  <button
-                    className="text-xs px-2 py-1 border border-border-subtle rounded"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[10px] px-2 py-0"
                     onClick={async () => {
                       await postAction({ action: 'archive_resource', resource_id: resource.id, archived: !resource.archived });
                     }}
+                    loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'archive_resource' && (actionMutation.variables as any)?.resource_id === resource.id}
                   >
                     {resource.archived ? 'Unarchive' : 'Archive'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -893,7 +960,7 @@ export default function AdminDashboard() {
                         variant="outline"
                         className="h-8 text-[10px] uppercase px-2"
                         onClick={() => void postAction({ action: 'update_admin_task_status', task_id: task.id, status: 'IN_PROGRESS' })}
-                        loading={actionMutation.isPending && actionMutation.variables?.task_id === task.id}
+                        loading={actionMutation.isPending && (actionMutation.variables as any)?.task_id === task.id}
                       >
                         Start
                       </Button>
@@ -903,7 +970,7 @@ export default function AdminDashboard() {
                         size="sm"
                         className="h-8 text-[10px] uppercase px-2"
                         onClick={() => void postAction({ action: 'update_admin_task_status', task_id: task.id, status: 'COMPLETED' })}
-                        loading={actionMutation.isPending && actionMutation.variables?.task_id === task.id}
+                        loading={actionMutation.isPending && (actionMutation.variables as any)?.task_id === task.id}
                       >
                         Done
                       </Button>
@@ -951,42 +1018,12 @@ export default function AdminDashboard() {
               />
             </div>
             <div className="mt-3">
-              <Button onClick={handleSaveVote}>Save Vote Record</Button>
+              <Button onClick={handleSaveVote} loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'save_vote_record'}>Save Vote Record</Button>
             </div>
             <div className="mt-4 space-y-2">
               {votes.slice(0, 8).map((vote: any) => (
                 <div key={vote.id} className="p-3 border border-border-subtle rounded-card text-sm">
                   {vote.motion_type} · {vote.outcome} · {vote.votes_for}/{vote.votes_against}/{vote.abstentions}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <SectionLabel>Chair-Issued Admin Tasks</SectionLabel>
-            <div className="space-y-2">
-              {(data?.admin_tasks || []).length === 0 && (
-                <p className="text-sm text-text-dimmed">No tasks from chair yet.</p>
-              )}
-              {(data?.admin_tasks || []).map((task: any) => (
-                <div key={task.id} className="p-3 border border-border-subtle rounded-card bg-bg-raised">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-text-primary font-semibold">{task.title}</p>
-                      <p className="text-xs text-text-dimmed">{task.priority} · {task.status}</p>
-                    </div>
-                    <select
-                      className="h-9 rounded-input border border-border-input bg-bg-card px-2 text-xs"
-                      value={task.status}
-                      onChange={(e) => postAction({ action: 'update_admin_task_status', task_id: task.id, status: e.target.value })}
-                    >
-                      <option value="TODO">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="DONE">Done</option>
-                      <option value="BLOCKED">Blocked</option>
-                    </select>
-                  </div>
-                  {task.description ? <p className="text-xs text-text-secondary mt-2">{task.description}</p> : null}
                 </div>
               ))}
             </div>
@@ -1007,7 +1044,7 @@ export default function AdminDashboard() {
               value={sharedNote}
               onChange={(e) => setSharedNote(e.target.value)}
             />
-            <Button onClick={() => postAction({ action: 'update_shared_note', note: sharedNote })}>Save Notes</Button>
+            <Button onClick={() => postAction({ action: 'update_shared_note', note: sharedNote })} loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'update_shared_note'}>Save Notes</Button>
           </Card>
         </div>
       )}
@@ -1039,7 +1076,7 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-sm font-bold text-text-primary">{log.action}</p>
                         <p className="text-xs text-text-dimmed mt-1">
-                          Actor: {log.actor?.full_name || 'System'} • Target: {log.target_type}
+                          Actor: {log.actor?.full_name || 'System'} &middot; Target: {log.target_type}
                         </p>
                       </div>
                       <span className="text-[10px] text-text-tertiary font-mono">
@@ -1066,13 +1103,14 @@ export default function AdminDashboard() {
       {activeTab === 'whatsapp' && (
         <WhatsAppTab />
       )}
+      </div>
 
-      {reviewDoc && (
+    {reviewDoc && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-4xl bg-bg-card border border-border-subtle rounded-card p-6">
             <div className="flex justify-between items-start mb-4">
               <h2 className="font-jotia text-2xl uppercase tracking-tight">{reviewDoc.title}</h2>
-              <button onClick={() => setReviewDoc(null)} className="text-text-dimmed hover:text-text-primary">Close</button>
+              <button onClick={() => setReviewDoc(null)} className="text-text-dimmed hover:text-text-primary text-2xl leading-none">&times;</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="h-80 border border-border-subtle rounded-card overflow-hidden bg-bg-raised">
@@ -1098,8 +1136,10 @@ export default function AdminDashboard() {
                   onChange={(e) => setAssignToChairNote(e.target.value)}
                   placeholder="Optional note for Assign to Chair"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
+                    className="flex-1"
+                    loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'review_document'}
                     onClick={async () => {
                       await postAction({
                         action: 'review_document',
@@ -1111,17 +1151,22 @@ export default function AdminDashboard() {
                       setReviewFeedback('');
                     }}
                   >
-                    Submit Review
+                    Complete Review
                   </Button>
-                  <Button
+                  <Button variant="outline" onClick={() => setReviewDoc(null)}>Cancel</Button>
+                </div>
+                <Button
                     variant="outline"
+                    className="w-full"
                     onClick={async () => {
                       await postAction({
                         action: 'assign_document_to_chair',
                         document_id: reviewDoc.id,
                         note: assignToChairNote || null,
                       });
+                      setReviewDoc(null);
                     }}
+                    loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'assign_document_to_chair' && (actionMutation.variables as any)?.document_id === reviewDoc.id}
                   >
                     Assign to Chair
                   </Button>
@@ -1129,7 +1174,6 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
       )}
 
       {selectedDelegate && (
@@ -1137,7 +1181,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-2xl bg-bg-card border border-border-subtle rounded-card p-6">
             <div className="flex justify-between items-start mb-4">
               <h2 className="font-jotia text-2xl uppercase tracking-tight">{selectedDelegate.full_name} · Status History</h2>
-              <button onClick={() => setSelectedDelegate(null)} className="text-text-dimmed hover:text-text-primary">Close</button>
+              <button onClick={() => setSelectedDelegate(null)} className="text-text-dimmed hover:text-text-primary text-2xl leading-none">&times;</button>
             </div>
             <div className="max-h-96 overflow-y-auto space-y-2">
               {selectedHistory.map((h: any) => (
@@ -1151,7 +1195,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -318,7 +318,7 @@ export default function CommunicationsPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-text-primary">{e.subject}</p>
-                      <p className="text-[10px] text-text-dimmed uppercase font-bold tracking-widest">Sent by {e.sender?.full_name} • {new Date(e.sent_at).toLocaleString()}</p>
+                      <p className="text-[10px] text-text-dimmed uppercase font-bold tracking-widest">Sent by {e.sender?.full_name} &middot; {new Date(e.sent_at).toLocaleString()}</p>
                     </div>
                   </div>
                   <Badge variant="default">{e.recipient_count} Recipients</Badge>

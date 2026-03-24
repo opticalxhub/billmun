@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardAnimatedTabPanel, DashboardHeader, DashboardLoadingState, DashboardTabBar } from '@/components/dashboard-shell';
 import { Notepad } from '@/components/notepad';
 import WhatsAppTab from '@/components/whatsapp-tab';
+import { toast } from 'sonner';
 
 type TabName = 'Overview' | 'Coverage Planning' | 'Upload Media' | 'Press Releases' | 'Media Gallery' | 'Press Guidelines' | 'My Stats' | 'WhatsApp';
 const TABS: TabName[] = ['Overview', 'Coverage Planning', 'Upload Media', 'Press Releases', 'Media Gallery', 'Press Guidelines', 'My Stats', 'WhatsApp'];
@@ -99,15 +100,15 @@ export default function PressDashboard() {
       setMediaEvent('');
       setUploadProgress(0);
       queryClient.invalidateQueries({ queryKey: ['press-dashboard'] });
-      alert('Media uploaded successfully and is pending EB approval.');
+      toast.success('Media uploaded successfully and is pending EB approval.');
     }
   });
 
   const handleUpload = async () => {
     if (!file || !user) return;
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/quicktime'];
-    if (!allowed.includes(file.type)) { alert('Unsupported file type'); return; }
-    if (file.size > 500 * 1024 * 1024) { alert('File too large. Max 500MB.'); return; }
+    if (!allowed.includes(file.type)) { toast.error('Unsupported file type'); return; }
+    if (file.size > 500 * 1024 * 1024) { toast.error('File too large. Max 500MB.'); return; }
     
     setUploading(true);
     setUploadProgress(0);
@@ -139,7 +140,7 @@ export default function PressDashboard() {
       await uploadMediaMutation.mutateAsync({ file, url });
     } catch (err) {
       console.error(err);
-      alert('Upload failed');
+      toast.error('Upload failed');
     } finally {
       setUploading(false);
     }

@@ -119,7 +119,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault?.();
     console.log('handleSubmit called');
-    setErrors({});
     setLoading(true);
 
     if (!validateForm()) {
@@ -127,11 +126,13 @@ export default function RegisterPage() {
       // Navigate to the first step that has errors so the user can see them
       const step1Fields = ['full_name', 'email', 'password', 'confirm_password', 'preferred_committee', 'allocated_country'];
       const step2Fields = ['date_of_birth', 'grade', 'phone_number'];
-      // Re-run validation to get fresh errors
+
+      // validateForm() already set the errors — read the latest from a fresh check
       const newErrors: Record<string, string> = {};
       if (!formData.full_name) newErrors.full_name = 'Full name is required';
       if (!formData.email) newErrors.email = 'Email is required';
       if (!formData.password) newErrors.password = 'Password is required';
+      if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
       if (formData.password !== formData.confirm_password) newErrors.confirm_password = 'Passwords do not match';
       if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
       if (!formData.grade) newErrors.grade = 'Grade is required';
@@ -143,17 +144,19 @@ export default function RegisterPage() {
       if (!formData.emergency_contact_name) newErrors.emergency_contact_name = 'Emergency contact name is required';
       if (!formData.emergency_contact_relation) newErrors.emergency_contact_relation = 'Emergency contact relation is required';
       if (!formData.emergency_contact_phone) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
-      setErrors(newErrors);
+
+      // Build a user-visible summary of what's missing
+      const missingFields = Object.values(newErrors);
+      setErrors({ ...newErrors, submit: `Please fix ${missingFields.length} field(s): ${missingFields.slice(0, 3).join(', ')}${missingFields.length > 3 ? '...' : ''}` });
 
       if (step1Fields.some(f => newErrors[f])) {
         setCurrentStep(1);
       } else if (step2Fields.some(f => newErrors[f])) {
         setCurrentStep(2);
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-
-    setLoading(true);
 
     try {
       const res = await fetch('/api/auth/register', {
@@ -363,12 +366,12 @@ export default function RegisterPage() {
                     </FormGroup>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {errors.submit && (
-                  <div className="p-4 bg-status-rejected-bg border border-status-rejected-border rounded-md">
-                    <ErrorMessage>{errors.submit}</ErrorMessage>
-                  </div>
-                )}
+            {errors.submit && (
+              <div className="p-4 bg-status-rejected-bg border border-status-rejected-border rounded-md">
+                <ErrorMessage>{errors.submit}</ErrorMessage>
               </div>
             )}
 

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { toast } from 'sonner';
 import { ArrowLeft, Users, MessageSquare, FileText, Layout } from 'lucide-react';
 import type { DelegateContext } from '../page';
 
@@ -179,7 +180,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       queryClient.invalidateQueries({ queryKey: ['delegate-blocs'] });
       supabase.from('audit_logs').insert({ actor_id: ctx.user.id, action: `Joined bloc: ${bloc.name}`, target_type: 'Bloc', target_id: bloc.id });
     },
-    onError: (err: any) => alert(err.message.includes('duplicate') ? 'You are already a member.' : err.message)
+    onError: (err: any) => toast.error(err.message.includes('duplicate') ? 'You are already a member.' : err.message)
   });
 
   const handleJoin = () => {

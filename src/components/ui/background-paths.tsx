@@ -1,7 +1,8 @@
 "use client"; 
  
  import { motion } from "framer-motion"; 
- import { Button } from "@/components/ui/button"; 
+ import { Button } from "@/components/ui/button";
+ import { ArrowRight } from "lucide-react"; 
  
  function FloatingPaths({ position }: { position: number }) { 
      const paths = Array.from({ length: 36 }, (_, i) => ({ 
@@ -91,7 +92,7 @@
                                  className="ml-3 opacity-70 group-hover:opacity-100 group-hover:translate-x-1.5 
                                  transition-all duration-300" 
                              > 
-                                 → 
+                                 <ArrowRight className="w-4 h-4" /> 
                              </span> 
                          </Button> 
                      </div> 

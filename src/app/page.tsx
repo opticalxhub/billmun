@@ -14,23 +14,8 @@ export default function LandingPage() {
   const [isLoadingCountdown, setIsLoadingCountdown] = useState(true);
 
   // Instant fallback date for immediate display
-  const fallbackDate = useMemo(() => new Date('2026-03-27T09:00:00+03:00'), []);
+  const fallbackDate = useMemo(() => new Date('2026-04-03T09:00:00+03:00'), []);
   const displayDate = conferenceDate || fallbackDate;
-
-  // Calculate countdown instantly with fallback date
-  const calculateTimeLeft = useMemo(() => {
-    const now = new Date().getTime();
-    const distance = displayDate.getTime() - now;
-
-    if (distance < 0) return null;
-    
-    return {
-      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((distance % (1000 * 60)) / 1000),
-    };
-  }, [displayDate]);
 
   useEffect(() => {
     async function fetchData() {
@@ -41,28 +26,20 @@ export default function LandingPage() {
       // Fetch conference settings
       const { data: sData } = await supabase.from('conference_settings').select('conference_date').single();
       if (sData?.conference_date) {
-        setConferenceDate(new Date(sData.conference_date));
+        setConferenceDate(new Date(`${sData.conference_date}T09:00:00+03:00`));
       }
-      // Stop loading countdown once data is fetched
       setIsLoadingCountdown(false);
     }
     fetchData();
   }, []);
 
-  // Initialize countdown instantly with fallback
+  // Countdown interval — starts immediately with fallback, updates when DB date arrives
   useEffect(() => {
-    setTimeLeft(calculateTimeLeft);
-  }, [calculateTimeLeft]);
-
-  useEffect(() => {
-    if (!conferenceDate) return;
-
-    const interval = setInterval(() => {
+    const tick = () => {
       const now = new Date().getTime();
-      const distance = conferenceDate.getTime() - now;
+      const distance = displayDate.getTime() - now;
 
       if (distance < 0) {
-        clearInterval(interval);
         setTimeLeft(null);
       } else {
         setTimeLeft({
@@ -72,10 +49,11 @@ export default function LandingPage() {
           seconds: Math.floor((distance % (1000 * 60)) / 1000),
         });
       }
-    }, 1000);
-
+    };
+    tick(); // Immediate first tick
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [conferenceDate]);
+  }, [displayDate]);
 
   return (
     <div className="min-h-screen bg-bg-base text-text-primary font-sans flex flex-col">
@@ -107,7 +85,7 @@ export default function LandingPage() {
             </p>
             <div className="flex items-center gap-3 sm:gap-6 mt-1">
               <span className="font-jotia text-xs sm:text-sm text-text-secondary uppercase tracking-[0.2em]">
-                27-28th March
+                3-4th April
               </span>
               <span className="w-1 h-1 rounded-full bg-border-strong" />
               <span className="font-jotia text-xs sm:text-sm text-text-secondary uppercase tracking-[0.1em]">

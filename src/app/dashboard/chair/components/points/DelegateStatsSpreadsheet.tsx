@@ -259,7 +259,7 @@ export function DelegateStatsSpreadsheet({ committee }: { committee: any }) {
                     <td className="p-4 max-w-xs">
                       {stat.ai_performance_review ? (
                         <div className="text-xs text-text-secondary line-clamp-3 bg-primary/5 p-2 rounded border border-primary/10 italic">
-                          "&ldquo;{stat.ai_performance_review}&rdquo;"
+                          &ldquo;{stat.ai_performance_review}&rdquo;
                         </div>
                       ) : (
                         <span className="text-xs text-text-dimmed italic">No review yet</span>

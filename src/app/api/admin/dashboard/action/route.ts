@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Forbidden: delegate not in assigned committee" }, { status: 403 });
       }
 
-      await supabaseAdmin
+      const { error: upsertError } = await supabaseAdmin
         .from("delegate_presence_statuses")
         .upsert({
           user_id: user_id,
@@ -56,9 +56,14 @@ export async function POST(request: NextRequest) {
           current_status: physical_status,
           last_changed_at: new Date().toISOString(),
           last_changed_by: adminUserId,
-        });
+        }, { onConflict: 'committee_id,user_id' });
+
+      if (upsertError) {
+        console.error("Upsert status error:", upsertError);
+        return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      }
       
-      await supabaseAdmin
+      const { error: historyError } = await supabaseAdmin
         .from("delegate_presence_history")
         .insert({
           user_id: user_id,
@@ -66,6 +71,8 @@ export async function POST(request: NextRequest) {
           status: physical_status,
           changed_by: adminUserId,
         });
+
+      if (historyError) console.warn("Failed to log history:", historyError);
 
       if (["Lavatory Break", "Medical Break", "Missing"].includes(physical_status)) {
         const { data: securityUsers } = await supabaseAdmin.from("users").select("id").eq("role", "SECURITY");
@@ -76,13 +83,26 @@ export async function POST(request: NextRequest) {
               title: "Delegate status alert",
               message: `Delegate marked as ${physical_status}.`,
               type: "WARNING",
-              link: "/dashboard/admin",
-            })),
+              link: "/dashboard/security",
+            }))
           );
         }
       }
 
-      return NextResponse.json({ success: true });
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "UPDATE_DELEGATE_STATUS",
+          target_type: "DELEGATE_STATUS",
+          target_id: user_id,
+          metadata: {
+            committee_id: committee_id,
+            status: physical_status,
+          }
+        });
+      } catch { /* ignore */ }
+
+      return NextResponse.json({ ok: true, success: true });
     }
 
     if (action === "get_delegate_status_history") {
@@ -172,6 +192,21 @@ export async function POST(request: NextRequest) {
         .eq("id", document_id);
 
       void runOnDocumentStatusChanged(document_id, doc.user_id, status, feedback, adminUserId);
+      
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "REVIEW_DOCUMENT",
+          target_type: "DOCUMENT",
+          target_id: document_id,
+          metadata: {
+            committee_id: committee_id,
+            status: status,
+            feedback: feedback,
+          }
+        });
+      } catch { /* ignore */ }
+
       return NextResponse.json({ success: true });
     }
 
@@ -241,6 +276,19 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "CREATE_ANNOUNCEMENT",
+          target_type: "ANNOUNCEMENT",
+          target_id: created?.id,
+          metadata: {
+            committee_id: committee_id,
+            title: title.trim(),
+          }
+        });
+      } catch { /* ignore */ }
+
       return NextResponse.json({ success: true, announcement: created });
     }
 
@@ -258,6 +306,17 @@ export async function POST(request: NextRequest) {
         file_url: file_url.trim(),
         uploaded_by: adminUserId,
       });
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "CREATE_RESOURCE",
+          target_type: "COMMITTEE_RESOURCE",
+          metadata: {
+            committee_id: committee_id,
+            title: title.trim(),
+          }
+        });
+      } catch { /* ignore */ }
       return NextResponse.json({ success: true });
     }
 
@@ -293,6 +352,18 @@ export async function POST(request: NextRequest) {
         note_text: note_text,
         updated_at: new Date().toISOString(),
       });
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "UPDATE_SHARED_NOTE",
+          target_type: "COMMITTEE",
+          target_id: committee_id,
+          metadata: {
+            committee_id: committee_id,
+            note_preview: note_text.substring(0, 50),
+          }
+        });
+      } catch { /* ignore */ }
       return NextResponse.json({ success: true });
     }
 
@@ -316,6 +387,19 @@ export async function POST(request: NextRequest) {
         recorded_votes: recorded_votes,
         recorded_by: adminUserId,
       });
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "SAVE_VOTE_RECORD",
+          target_type: "VOTE_RECORD",
+          metadata: {
+            committee_id: committee_id,
+            motion_type,
+            outcome,
+            result: `${votes_for}/${votes_against}/${abstentions}`
+          }
+        });
+      } catch { /* ignore */ }
       return NextResponse.json({ success: true });
     }
 

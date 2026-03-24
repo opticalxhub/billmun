@@ -8,6 +8,7 @@ import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 import { X, ExternalLink } from "lucide-react";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const STATUS_STYLES: Record<string, string> = {
   SUBMITTED: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -84,7 +85,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
       setSelected(null);
       await loadDocuments();
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : "Review failed");
+      toast.error(e instanceof Error ? e.message : "Review failed");
     } finally {
       setSaving(false);
     }
@@ -158,14 +159,17 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
   const uploadChairDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
-    // Safety check for committee ID (especially for 911/Emergency users)
+
     const committeeId = ctx.committee?.id;
     if (!committeeId) {
-      alert("Error: No committee ID found. If you are using emergency access, please ensure you are assigned to a committee context first.");
+      toast.error("No committee ID found. If using developer access, ensure you are assigned to a committee first.");
       return;
     }
-    
+
+    // Default to 'OTHER' or 'SPEECH' but ideally we would ask.
+    // Let's at least change from hardcoded "SPEECH" to something more sensible or just default to OTHER if it's a "resource".
+    const type = "OTHER";
+
     if (!ctx.user?.id) return;
     setSaving(true);
     try {
@@ -179,7 +183,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
       const { error: insertError } = await supabase.from("documents").insert({
         user_id: ctx.user.id,
         committee_id: committeeId,
-        type: "SPEECH",
+        type: type as any,
         title: file.name,
         file_url: urlData.publicUrl,
         file_size: file.size,
@@ -187,10 +191,10 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
         status: "APPROVED",
       });
       if (insertError) throw insertError;
-      alert("Document uploaded successfully.");
+      toast.success("Document uploaded successfully.");
       await loadDocuments();
     } catch (err: any) {
-      alert("Upload failed: " + err.message);
+      toast.error("Upload failed: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -213,7 +217,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
             <input type="file" className="hidden" onChange={uploadChairDocument} disabled={saving} />
           </label>
           {selectedIds.size >= 2 && (
-            <Button onClick={consolidate} disabled={consolidating}>{consolidating ? <LoadingSpinner size="sm" /> : `Consolidate Selected (${selectedIds.size})`}</Button>
+            <Button onClick={consolidate} loading={consolidating}>{`Consolidate Selected (${selectedIds.size})`}</Button>
           )}
         </div>
       </div>
@@ -318,9 +322,9 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                     <div className="bg-bg-raised rounded-card border border-border-subtle overflow-hidden" style={{ height: '300px' }}>
                       <iframe src={selected.file_url} className="w-full h-full bg-bg-base" title="Document preview" />
                     </div>
-                    <a 
-                      href={selected.file_url} 
-                      target="_blank" 
+                    <a
+                      href={selected.file_url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 w-full p-2 text-xs font-bold text-text-primary border border-border-subtle rounded-md hover:bg-bg-raised transition-all"
                     >
@@ -343,8 +347,8 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Feedback</label>
                   <Textarea rows={4} value={feedback} onChange={e => setFeedback(e.target.value)} placeholder="Write feedback for the delegate..." />
                 </div>
-                <Button onClick={() => void submitReview()} disabled={saving} className="w-full min-h-[48px]">
-                  {saving ? <LoadingSpinner size="sm" /> : 'Submit Review'}
+                <Button onClick={() => void submitReview()} loading={saving} className="w-full min-h-[48px]">
+                  Submit Review
                 </Button>
               </div>
             </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -58,8 +58,8 @@ export default function DelegateDashboard() {
       // Emergency Override Check
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
-          id: 'emergency-actor',
-          email: 'emergency@billmun.org',
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'emergency@billmun.online',
           full_name: 'Engineer (Emergency)',
           role: 'EXECUTIVE_BOARD',
           status: 'APPROVED',
@@ -126,12 +126,18 @@ export default function DelegateDashboard() {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    staleTime: 30 * 1000, // Shorter stale time for session status
+    staleTime: 5 * 60 * 1000, // Increased stale time to reduce unnecessary refetches
+    refetchOnWindowFocus: false, // Prevent refetches on tab switches
   });
+
+  // Stable ref for refetchSession to avoid stale closures in subscription
+  const refetchSessionRef = useRef(refetchSession);
+  refetchSessionRef.current = refetchSession;
 
   // Real-time committee session subscription
   useEffect(() => {
     if (!assignment?.committee_id) return;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     
     const channel = supabase
       .channel(`delegate-session-${assignment.committee_id}`)
@@ -144,16 +150,18 @@ export default function DelegateDashboard() {
           filter: `committee_id=eq.${assignment.committee_id}`,
         },
         () => {
-          // Use background refetch with longer delay to prevent infinite refresh
-          setTimeout(() => refetchSession(), 1000);
+          // Debounce: only refetch once per 2s window to prevent cascading refreshes
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => refetchSessionRef.current(), 2000);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [assignment?.committee_id]); // Removed user?.id and refetchSession to prevent re-subscribing on every update
+  }, [assignment?.committee_id]);
 
   // Determine if we should show the full-page loader
   // Only show it on initial load of user OR if we're waiting for assignment to finish initial load

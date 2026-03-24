@@ -312,7 +312,7 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
                     <p className="font-semibold text-sm">{s.title || "Regular Session"}</p>
                     <p className="text-xs text-text-dimmed">
                       Started: {new Date(s.started_at).toLocaleString()}
-                      {s.ended_at && ` • Ended: ${new Date(s.ended_at).toLocaleString()}`}
+                      {s.ended_at && ` \u00b7 Ended: ${new Date(s.ended_at).toLocaleString()}`}
                     </p>
                   </div>
                   <Badge variant={s.status === "ACTIVE" ? "approved" : "default"}>{s.status}</Badge>

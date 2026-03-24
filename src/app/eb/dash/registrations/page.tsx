@@ -194,7 +194,7 @@ export default function RegistrationsPage() {
         const { data: refreshedUser } = await supabase
           .from("users")
           .select(
-            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments(id, committee_id, country, seat_number, committees(id, name))`,
+            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments!committee_assignments_user_id_fkey(id, committee_id, country, seat_number, committees(id, name))`,
           )
           .eq("id", selectedUser.id)
           .single();
@@ -233,7 +233,7 @@ export default function RegistrationsPage() {
         const { data: refreshedUser } = await supabase
           .from("users")
           .select(
-            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments(id, committee_id, country, seat_number, committees(id, name))`,
+            `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments!committee_assignments_user_id_fkey(id, committee_id, country, seat_number, committees(id, name))`,
           )
           .eq("id", selectedUser.id)
           .single();
@@ -405,8 +405,7 @@ export default function RegistrationsPage() {
                 <div className="flex flex-wrap gap-2">
                   {selectedUser.status === "PENDING" && (
                     <>
-                      <Button onClick={() => void runAction("approve")} disabled={submitting}>
-                        {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                      <Button onClick={() => void runAction("approve")} loading={submitting}>
                         Approve User
                       </Button>
                       <Button variant="outline" onClick={() => setShowRejectModal(true)} disabled={submitting}>
@@ -425,8 +424,7 @@ export default function RegistrationsPage() {
                     </Button>
                   )}
                   {selectedUser.status === "SUSPENDED" && (
-                    <Button onClick={() => void runAction("reinstate")} disabled={submitting}>
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                    <Button onClick={() => void runAction("reinstate")} loading={submitting}>
                       Reinstate User
                     </Button>
                   )}
@@ -451,15 +449,15 @@ export default function RegistrationsPage() {
                     <Input placeholder="Seat" className="w-20" value={assignForm.seat_number} onChange={(e) => setAssignForm({...assignForm, seat_number: e.target.value})} />
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      disabled={!assignForm.committee_id || submitting}
-                      onClick={() => void runAction("assign_committee", assignForm)}
-                    >
-                      {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-1" /> : null}
-                      Save Assignment
-                    </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        disabled={!assignForm.committee_id}
+                        loading={submitting}
+                        onClick={() => void runAction("assign_committee", assignForm)}
+                      >
+                        Save Assignment
+                      </Button>
                     {selectedUser.committee_assignments?.length > 0 && (
                       <Button size="sm" variant="outline" disabled={submitting} onClick={() => void runAction("remove_assignment")}>
                         Remove
@@ -556,8 +554,7 @@ export default function RegistrationsPage() {
                     </div>
                   </div>
                   <p className="text-xs text-text-dimmed">Registered: {selectedUser.created_at ? new Date(String(selectedUser.created_at)).toLocaleString() : "—"}</p>
-                  <Button disabled={saveProfileLoading || submitting} onClick={() => void saveProfile()} className="w-full">
-                    {saveProfileLoading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                  <Button loading={saveProfileLoading || submitting} onClick={() => void saveProfile()} className="w-full">
                     Save profile changes
                   </Button>
                 </div>
@@ -577,8 +574,8 @@ export default function RegistrationsPage() {
                         {rows.slice(0, 8).map((h) => (
                           <div key={h.id} className="flex justify-between gap-2 py-1 border-t border-border-subtle first:border-0">
                             <span className="text-text-dimmed shrink-0">{new Date(h.changed_at).toLocaleString()}</span>
-                            <span className="text-text-secondary truncate" title={`${h.old_value} → ${h.new_value}`}>
-                              {h.old_value || "∅"} → {h.new_value || "∅"}
+                            <span className="text-text-secondary truncate" title={`${h.old_value} -> ${h.new_value}`}>
+                              {h.old_value || "(empty)"} {'->'} {h.new_value || "(empty)"}
                             </span>
                             <button type="button" className="text-status-warning-text shrink-0 underline" disabled={submitting} onClick={() => void revertField(h.id)}>
                               Revert
@@ -625,7 +622,7 @@ export default function RegistrationsPage() {
                     <div key={log.id} className="relative pl-4">
                       <div className="absolute w-2 h-2 rounded-full bg-border-emphasized -left-[5px] top-1.5" />
                       <p className="text-sm">{log.action}</p>
-                      <p className="text-xs text-text-dimmed">{log.actor?.full_name || 'System'} • {new Date(log.performed_at).toLocaleString()}</p>
+                      <p className="text-xs text-text-dimmed">{log.actor?.full_name || 'System'} &middot; {new Date(log.performed_at).toLocaleString()}</p>
                     </div>
                   ))}
                   {auditHistory.length === 0 && <p className="text-sm text-text-dimmed ml-4">No audit logs found.</p>}

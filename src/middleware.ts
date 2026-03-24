@@ -150,7 +150,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (path.startsWith('/dashboard/chair') && !isChair && !isEB && !hasValidEmergencyAccess) {
+    if (path.startsWith('/dashboard/chair') && !isChair && !isAdmin && !isEB && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 

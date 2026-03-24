@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { toast } from 'sonner';
 import { Minus, Plus } from 'lucide-react';
 
 const LOADING_MESSAGES = [
@@ -85,10 +86,10 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   }
 
   const runAnalysis = async () => {
-    if (usedToday >= 10) { alert('You have reached your daily limit of 10 analyses.'); return; }
+    if (usedToday >= 10) { toast.error('You have reached your daily limit of 10 analyses.'); return; }
 
     if (selectedDocId === 'paste' && !pasteText.trim()) {
-      alert('Please paste text to analyze.');
+      toast.error('Please paste text to analyze.');
       return;
     }
     if (selectedDocId !== 'paste') {
@@ -132,7 +133,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
       queryClient.invalidateQueries({ queryKey: ['delegate-ai-analyses', ctx.user?.id] });
       queryClient.invalidateQueries({ queryKey: ['user-profile'] });
     } catch (err: any) {
-      alert(err.message || 'Analysis failed');
+      toast.error(err.message || 'Analysis failed');
     } finally {
       clearInterval(msgInterval);
       clearInterval(progressInterval);

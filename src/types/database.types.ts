@@ -91,7 +91,7 @@ export type Database = {
           user_id: string;
           committee_id?: string;
           parent_document_id?: string;
-          type: 'POSITION_PAPER' | 'SPEECH' | 'RESOLUTION';
+          type: 'POSITION_PAPER' | 'SPEECH' | 'RESOLUTION' | 'COUNTRY_PROFILE' | 'OTHER';
           title: string;
           file_url: string;
           file_size: number;

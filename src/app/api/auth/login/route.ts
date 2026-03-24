@@ -40,6 +40,13 @@ export async function POST(request: NextRequest) {
       .eq('email', emailNorm)
       .maybeSingle();
 
+    if (profileRow?.password_hash) {
+      const match = await bcrypt.compare(password, profileRow.password_hash);
+      if (!match) {
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+      }
+    }
+
     if (profileRow) {
       if (profileRow.status === 'PENDING') {
         return NextResponse.json({ error: 'Your account is pending approval. Please wait for approval.' }, { status: 403 });
@@ -49,13 +56,6 @@ export async function POST(request: NextRequest) {
       }
       if (profileRow.status === 'SUSPENDED') {
         return NextResponse.json({ error: 'Your account has been suspended. Contact support.' }, { status: 403 });
-      }
-    }
-
-    if (profileRow?.password_hash) {
-      const match = await bcrypt.compare(password, profileRow.password_hash);
-      if (!match) {
-        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
       }
     }
 

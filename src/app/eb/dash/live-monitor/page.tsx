@@ -335,7 +335,7 @@ export default function LiveMonitorPage() {
                     <div key={log.id} className="relative pl-4">
                       <div className="absolute w-2 h-2 rounded-full bg-border-emphasized -left-[5px] top-1.5" />
                       <p className="text-sm">{log.action}</p>
-                      <p className="text-xs text-text-dimmed">{log.actor?.full_name || 'System'} • {new Date(log.performed_at).toLocaleString()}</p>
+                      <p className="text-xs text-text-dimmed">{log.actor?.full_name || 'System'} &middot; {new Date(log.performed_at).toLocaleString()}</p>
                     </div>
                   ))}
                   {auditHistory.length === 0 && <p className="text-sm text-text-dimmed ml-4">No audit logs found.</p>}

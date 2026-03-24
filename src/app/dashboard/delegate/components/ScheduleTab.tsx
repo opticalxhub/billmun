@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { X } from 'lucide-react';
 
 export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const queryClient = useQueryClient();
@@ -69,7 +70,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   const conferenceDate = useMemo(() => 
-    settings?.conference_date ? new Date(settings.conference_date) : new Date('2026-03-27T04:00:00Z'),
+    settings?.conference_date ? new Date(`${settings.conference_date}T09:00:00+03:00`) : new Date('2026-04-03T09:00:00+03:00'),
   [settings]);
 
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -292,7 +293,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
                 disabled={deleteTaskMutation.isPending}
                 className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
               >
-                ×
+                <X className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -308,7 +309,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
               <div className="flex-1 min-w-0">
                 <p className="font-jotia text-text-dimmed text-sm line-through">{task.title}</p>
               </div>
-              <button onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending} className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">×</button>
+              <button onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending} className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"><X className="w-4 h-4" /></button>
             </div>
           ))}
           {(tasks || []).length === 0 && !addingTask && (

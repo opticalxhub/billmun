@@ -1,20 +1,19 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { toast } from 'sonner';
 
 export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
-  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [notes, setNotes] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // useQuery for Speeches
   const { data: speeches, isLoading: speechesLoading, isError: speechesError, refetch: refetchSpeeches } = useQuery({
@@ -47,8 +46,8 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
       if (error) throw error;
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      alert('Failed to save speech');
+    } catch {
+      toast.error('Failed to save speech');
       setSaving(false);
     }
   };
@@ -62,7 +61,7 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
       word_count: 0,
     }).select().single();
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
     if (data) { 

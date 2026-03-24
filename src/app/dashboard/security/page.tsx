@@ -344,9 +344,18 @@ export default function SecurityDashboard() {
                       Notify Executive Board
                     </label>
                     <Button 
-                      className="w-full"
-                      disabled={submitting || !incidentForm.location || !incidentForm.desc} 
-                      onClick={() => runAction({ ...incidentForm, action: "create_incident", immediate_action: incidentForm.action })}
+                      className="w-full" 
+                      loading={submitting}
+                      disabled={!incidentForm.desc || !incidentForm.location || submitting} 
+                      onClick={() => runAction({ 
+                        action: "create_incident", 
+                        type: incidentForm.type,
+                        location: incidentForm.location,
+                        description: incidentForm.desc,
+                        severity: incidentForm.severity,
+                        immediate_action: incidentForm.action,
+                        notifyEb: incidentForm.notifyEb
+                      })}
                     >
                       Submit Report
                     </Button>
@@ -384,10 +393,17 @@ export default function SecurityDashboard() {
                               <option value="ESCALATED">Escalated</option>
                             </select>
                             {i.status !== "RESOLVED" && (
-                              <Button size="sm" variant="outline" onClick={() => {
-                                const note = prompt("Enter resolution note:");
-                                if (note) runAction({ action: "resolve_incident", id: i.id, note });
-                              }}>Resolve</Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                loading={submitting}
+                                onClick={() => {
+                                  const note = prompt("Enter resolution note:");
+                                  if (note) runAction({ action: "resolve_incident", id: i.id, note });
+                                }}
+                              >
+                                Resolve
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -429,8 +445,23 @@ export default function SecurityDashboard() {
                       {(data?.zones || []).map((z: any) => <option key={z.id} value={z.id}>{z.name}</option>)}
                     </select>
                     <div className="flex gap-2">
-                      <Button className="flex-1" disabled={!moveUserId || !moveZoneId || submitting} onClick={() => runAction({ action: "move_delegate", user_id: moveUserId, zone_id: moveZoneId })}>Move</Button>
-                      <Button variant="outline" className="flex-1 border-status-rejected-border text-status-rejected-text" disabled={!moveUserId || submitting} onClick={() => runAction({ action: "mark_missing", user_id: moveUserId })}>Mark Missing</Button>
+                      <Button 
+                        className="flex-1" 
+                        loading={submitting}
+                        disabled={!moveUserId || !moveZoneId || submitting} 
+                        onClick={() => runAction({ action: "move_delegate", user_id: moveUserId, zone_id: moveZoneId })}
+                      >
+                        Move
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 border-status-rejected-border text-status-rejected-text" 
+                        loading={submitting}
+                        disabled={!moveUserId || submitting} 
+                        onClick={() => runAction({ action: "mark_missing", user_id: moveUserId })}
+                      >
+                        Mark Missing
+                      </Button>
                     </div>
                   </div>
                 </Card>

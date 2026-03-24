@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   // Upload to Supabase Storage
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const { data, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from('media')
     .upload(fileName, file, {
       cacheControl: '3600',

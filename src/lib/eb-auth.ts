@@ -35,6 +35,14 @@ export async function getEBContext(): Promise<{ context?: EBContext; error?: str
             role: ebActor.role,
           },
         };
+      } else {
+        // Fallback for fresh databases without any EB users
+        return {
+          context: {
+            ebUserId: "00000000-0000-0000-0000-000000000000",
+            role: "EXECUTIVE_BOARD",
+          },
+        };
       }
     }
   }

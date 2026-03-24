@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, SectionLabel } from '@/components/ui';
+import { Card } from '@/components/ui';
 import { Button } from '@/components/button';
-import { ChevronDown, ChevronRight, Home, Users, Shield, Camera, Settings, FileText, MessageSquare, CheckCircle, AlertTriangle, Info, ExternalLink, Clock, Globe, Lock, Award, TrendingUp, Target, Zap, BookOpen, UserCheck, Radio, Mail } from 'lucide-react';
+import { ChevronDown, ChevronRight, Home, Users, Shield, Camera, Settings, MessageSquare, CheckCircle, AlertTriangle, Info, Award, BookOpen } from 'lucide-react';
 
 const sections = [
   {
@@ -76,7 +76,7 @@ const sections = [
         details: [
           'Upload position papers in PDF format (maximum 25MB)',
           'Use AI analysis to check for formatting, content quality, and diplomatic language',
-          'Track document status: Submitted → Under Review → Approved/Revision Requested',
+          'Track document status: Submitted, Under Review, Approved, or Revision Requested',
           'Respond to feedback and revise documents as requested by chairs',
           'Download approved documents for reference during committee sessions',
           'Access AI-generated suggestions for improving document quality'
@@ -662,10 +662,7 @@ const sections = [
 
 export default function DocumentationPage() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [isHydrated, setIsHydrated] = useState(false);
-
   useEffect(() => {
-    setIsHydrated(true);
     setExpandedSections(new Set(['overview']));
   }, []);
 

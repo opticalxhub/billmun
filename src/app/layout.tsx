@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import OnboardingManager from "@/components/onboarding/OnboardingManager";
 import { Providers } from "@/components/providers";
+import { Toaster } from "sonner";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -117,6 +118,18 @@ export default function RootLayout({
         <Providers>
           {children}
           <OnboardingManager />
+          <Toaster
+            theme="dark"
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: 'var(--bg-raised)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-jotia), serif',
+              },
+            }}
+          />
         </Providers>
       </body>
     </html>

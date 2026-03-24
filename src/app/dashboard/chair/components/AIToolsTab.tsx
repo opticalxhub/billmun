@@ -249,7 +249,7 @@ export default function AIToolsTab({ ctx }: { ctx: ChairContext }) {
                 <div className="pt-4 mt-4 border-t border-border-subtle">
                   <p className="text-[10px] text-text-dimmed uppercase font-bold mb-2">Executive Summary</p>
                   <p className="text-xs text-text-secondary italic leading-relaxed">
-                    "{result.summary}"
+                    &quot;{result.summary}&quot;
                   </p>
                 </div>
               </div>

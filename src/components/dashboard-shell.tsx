@@ -1,7 +1,7 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoadingSpinner } from "./loading-spinner";
-import { LogOut } from "lucide-react";
+import { LogOut, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "./notification-bell";
@@ -38,7 +38,7 @@ export function DashboardHeader({
   subtitle,
   rightContent,
   committeeName,
-  user: initialUser,
+  user,
 }: {
   title: string;
   subtitle?: string;
@@ -47,35 +47,6 @@ export function DashboardHeader({
   user?: any;
 }) {
   const router = useRouter();
-  const [user, setUser] = React.useState<any>(initialUser || null);
-
-  React.useEffect(() => {
-    if (initialUser) {
-      setUser(initialUser);
-      return;
-    }
-
-    // Emergency Override Check
-    if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
-      setUser({
-        id: 'emergency-actor',
-        email: 'emergency@billmun.com',
-        full_name: 'Engineer (Emergency)',
-        role: 'EXECUTIVE_BOARD',
-        status: 'APPROVED',
-        has_completed_onboarding: true
-      });
-      return;
-    }
-
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('users').select('*').eq('id', data.user.id).single().then(({ data: userData }) => {
-          setUser(userData);
-        });
-      }
-    });
-  }, [initialUser]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -144,6 +115,45 @@ export function DashboardTabBar<T extends string>({
   );
 }
 
+class TabErrorBoundary extends React.Component<
+  { activeKey: string; children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { activeKey: string; children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidUpdate(prevProps: { activeKey: string }) {
+    if (prevProps.activeKey !== this.props.activeKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <AlertTriangle className="w-10 h-10 text-status-rejected-text" />
+          <p className="text-text-primary font-jotia text-sm">Something went wrong loading this tab.</p>
+          <p className="text-text-dimmed font-jotia text-xs max-w-md text-center">{this.state.error?.message}</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-bg-raised border border-border-subtle rounded-button text-text-primary hover:bg-bg-hover transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function DashboardAnimatedTabPanel({
   activeKey,
   children,
@@ -152,17 +162,19 @@ export function DashboardAnimatedTabPanel({
   children: React.ReactNode;
 }) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={activeKey}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className="w-full"
-      >
-        {children || <div className="py-20 flex justify-center"><LoadingSpinner size="lg" /></div>}
-      </motion.div>
-    </AnimatePresence>
+    <TabErrorBoundary activeKey={activeKey}>
+      <AnimatePresence mode="popLayout">
+        <motion.div
+          key={activeKey}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          className="w-full"
+        >
+          {children || <div className="py-20 flex justify-center"><LoadingSpinner size="lg" /></div>}
+        </motion.div>
+      </AnimatePresence>
+    </TabErrorBoundary>
   );
 }

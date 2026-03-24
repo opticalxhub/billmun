@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import RollCallTab from './components/RollCallTab';
 import TimersTab from './components/TimersTab';
 import SpeakersListTab from './components/SpeakersListTab';
 import PointsMotionsTab from './components/PointsMotionsTab';
-import { PointsSystem } from './components/points/PointsSystem';
+// PointsSystem available if needed
 import { DelegateStatsSpreadsheet } from './components/points/DelegateStatsSpreadsheet';
 import ChairDocumentsTab from './components/ChairDocumentsTab';
 import DelegatesTab from './components/DelegatesTab';
@@ -120,7 +120,7 @@ export default function ChairDashboard() {
   });
 
   // useQuery for Delegates
-  const { data: delegates = [], isLoading: delegatesLoading } = useQuery({
+  const { data: delegates = [] } = useQuery({
     queryKey: ['committee-delegates', committee?.id],
     enabled: !!committee?.id,
     queryFn: async () => {
@@ -165,12 +165,22 @@ export default function ChairDashboard() {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
+
+  // Stable refs for callbacks used in real-time subscriptions
+  const refetchSessionRef = useRef(refetchSession);
+  refetchSessionRef.current = refetchSession;
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
 
   // Real-time committee session subscription
   useEffect(() => {
     if (!committee?.id || !user?.id) return;
+    let sessionDebounce: ReturnType<typeof setTimeout> | null = null;
+    let docsDebounce: ReturnType<typeof setTimeout> | null = null;
+    let speakersDebounce: ReturnType<typeof setTimeout> | null = null;
     
     const channels = [
       supabase
@@ -184,7 +194,8 @@ export default function ChairDashboard() {
             filter: `committee_id=eq.${committee.id}`,
           },
           () => {
-            refetchSession();
+            if (sessionDebounce) clearTimeout(sessionDebounce);
+            sessionDebounce = setTimeout(() => refetchSessionRef.current(), 2000);
           }
         )
         .subscribe(),
@@ -199,7 +210,8 @@ export default function ChairDashboard() {
             filter: `committee_id=eq.${committee.id}`,
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['chair-documents', committee.id] });
+            if (docsDebounce) clearTimeout(docsDebounce);
+            docsDebounce = setTimeout(() => queryClientRef.current.invalidateQueries({ queryKey: ['chair-documents', committee.id] }), 2000);
           }
         )
         .subscribe(),
@@ -214,16 +226,20 @@ export default function ChairDashboard() {
             filter: `committee_id=eq.${committee.id}`,
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['chair-speakers', committee.id] });
+            if (speakersDebounce) clearTimeout(speakersDebounce);
+            speakersDebounce = setTimeout(() => queryClientRef.current.invalidateQueries({ queryKey: ['chair-speakers', committee.id] }), 2000);
           }
         )
         .subscribe(),
     ];
 
     return () => {
+      if (sessionDebounce) clearTimeout(sessionDebounce);
+      if (docsDebounce) clearTimeout(docsDebounce);
+      if (speakersDebounce) clearTimeout(speakersDebounce);
       channels.forEach(ch => supabase.removeChannel(ch));
     };
-  }, [committee?.id, user?.id, refetchSession, queryClient]);
+  }, [committee?.id, user?.id]);
 
   const loading = userLoading || (user && committeeLoading);
 

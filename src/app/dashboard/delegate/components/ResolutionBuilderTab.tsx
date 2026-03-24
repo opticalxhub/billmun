@@ -5,6 +5,9 @@ import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
+import { X, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { Textarea } from '@/components/ui';
 
 const PREAMBULATORY_PHRASES = [
   'Affirming', 'Alarmed by', 'Approving', 'Aware of', 'Believing', 'Cognizant of', 'Confident',
@@ -50,9 +53,11 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const [exporting, setExporting] = useState<"" | "pdf" | "docx">("");
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedBlocId, setSelectedBlocId] = useState("");
-  const [, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [isManual, setIsManual] = useState(false);
+  const [manualContent, setManualContent] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // useQuery for Resolutions
   const { data: resolutions, isLoading: resolutionsLoading, isError: resolutionsError, refetch: refetchResolutions } = useQuery({
@@ -67,7 +72,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   });
 
   // useQuery for User Blocs
-  const { data: userBlocs, isLoading: blocsLoading, isError: blocsError, refetch: refetchUserBlocs } = useQuery({
+  const { data: userBlocs, isLoading: blocsLoading, isError: blocsError } = useQuery({
     queryKey: ['user-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -101,6 +106,8 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     setTitle(res.title || '');
     setTopic(res.topic || '');
     setCoSponsors(res.co_sponsors || []);
+    setIsManual(res.is_manual || false);
+    setManualContent(res.manual_content || '');
   };
 
   const handleExport = async (format: "pdf" | "docx") => {
@@ -139,7 +146,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
       co_sponsors: [],
     }).select().single();
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
     if (data) { 
@@ -194,7 +201,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     }).select().single();
 
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
@@ -238,11 +245,11 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
         body: JSON.stringify({ resolution_id: selectedId, bloc_id: selectedBlocId }),
       });
       if (!res.ok) throw new Error('Share failed');
-      alert('Shared successfully to the bloc channel!');
+      toast.success('Shared successfully to the bloc channel!');
       setShowShareModal(false);
       setSelectedBlocId("");
     } catch (e: any) {
-      alert(e.message || 'Failed to share');
+      toast.error(e.message || 'Failed to share');
     } finally {
       setSharing(false);
     }
@@ -302,6 +309,30 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                 <input value={title} onChange={e => setTitle(e.target.value)} onBlur={saveResolution} placeholder="Resolution Title" className="w-full bg-transparent border-b border-border-subtle pb-2 font-jotia-bold text-xl text-text-primary focus:outline-none focus:border-text-primary" />
                 <input value={topic} onChange={e => setTopic(e.target.value)} onBlur={saveResolution} placeholder="Topic / Question of" className="w-full bg-bg-raised border border-border-input rounded-input px-3 h-10 font-jotia text-sm text-text-primary" />
 
+                <div className="flex gap-4 p-1 bg-bg-raised rounded-button border border-border-subtle w-max">
+                  <button 
+                    onClick={() => { setIsManual(false); setTimeout(saveResolution, 0); }}
+                    className={`px-4 py-1.5 text-xs font-jotia-bold rounded-button transition-all ${!isManual ? 'bg-text-primary text-bg-base' : 'text-text-dimmed hover:text-text-primary'}`}
+                  >
+                    Builder Mode
+                  </button>
+                  <button 
+                    onClick={() => { 
+                      setIsManual(true); 
+                      if (!manualContent) {
+                        const committeeName = ctx.committee?.name || 'Committee Name';
+                        const forumAbbr = ctx.committee?.abbreviation || 'N/A';
+                        const sponsors = coSponsors.length > 0 ? coSponsors.join(', ') : '...';
+                        setManualContent(`${committeeName}\n\nForum: ${forumAbbr}\nQuestion of: ${topic || '...'}\nSponsors: ${sponsors}\n\nThe ${committeeName},\n\n(Write your preambulatory and operative clauses here manually...)`);
+                      }
+                      setTimeout(saveResolution, 0);
+                    }}
+                    className={`px-4 py-1.5 text-xs font-jotia-bold rounded-button transition-all ${isManual ? 'bg-text-primary text-bg-base' : 'text-text-dimmed hover:text-text-primary'}`}
+                  >
+                    Manual Mode
+                  </button>
+                </div>
+
                 {/* Co-Sponsors */}
                 <div>
                   <label className="block text-text-dimmed font-jotia text-xs uppercase tracking-wider mb-2">Co-Sponsors</label>
@@ -309,7 +340,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                     {coSponsors.map(s => (
                       <span key={s} className="inline-flex items-center gap-1 bg-bg-raised border border-border-subtle rounded-full px-3 py-1 text-xs font-jotia text-text-primary">
                         {s}
-                        <button onClick={() => removeSponsor(s)} className="text-text-dimmed hover:text-text-primary ml-1">×</button>
+                        <button onClick={() => removeSponsor(s)} className="text-text-dimmed hover:text-text-primary ml-1"><X className="w-3 h-3" /></button>
                       </span>
                     ))}
                   </div>
@@ -320,69 +351,85 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                 </div>
               </div>
 
-              {/* Preambulatory Clauses */}
-              <div className="bg-bg-card border border-border-subtle rounded-card p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-jotia-bold text-sm text-text-primary uppercase tracking-wider">Preambulatory Clauses</h3>
-                  <button onClick={() => { setAddingType('PREAMBULATORY'); setAddingParent(null); }} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px] px-2">+ Add</button>
+              {isManual ? (
+                <div className="bg-bg-card border border-border-subtle rounded-card p-6">
+                   <h3 className="font-jotia-bold text-sm text-text-primary uppercase tracking-wider mb-4">Manual Resolution Text</h3>
+                   <Textarea
+                     value={manualContent}
+                     onChange={(e) => setManualContent(e.target.value)}
+                     onBlur={saveResolution}
+                     rows={20}
+                     className="font-mono text-sm leading-relaxed"
+                     placeholder="Type your resolution here..."
+                   />
                 </div>
-                {preamClauses.length === 0 && <p className="text-text-dimmed font-jotia text-sm">No preambulatory clauses yet.</p>}
-                <div className="space-y-2">
-                  {preamClauses.map((c, i) => (
-                    <div key={c.id} className="bg-bg-raised rounded-card p-3 group">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-jotia text-text-primary text-sm"><em className="underline">{c.opening_phrase}</em> {c.content}{i < preamClauses.length - 1 ? ',' : ''}</p>
-                        <div className="hidden group-hover:flex gap-1 shrink-0">
-                          <button onClick={() => moveClause(c.id, -1)} className="text-xs text-text-dimmed px-1">↑</button>
-                          <button onClick={() => moveClause(c.id, 1)} className="text-xs text-text-dimmed px-1">↓</button>
-                          <button onClick={() => deleteClause(c.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text px-1">×</button>
-                        </div>
-                      </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Preambulatory Clauses */}
+                  <div className="bg-bg-card border border-border-subtle rounded-card p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-jotia-bold text-sm text-text-primary uppercase tracking-wider">Preambulatory Clauses</h3>
+                      <button onClick={() => { setAddingType('PREAMBULATORY'); setAddingParent(null); }} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px] px-2">+ Add</button>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Operative Clauses */}
-              <div className="bg-bg-card border border-border-subtle rounded-card p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-jotia-bold text-sm text-text-primary uppercase tracking-wider">Operative Clauses</h3>
-                  <button onClick={() => { setAddingType('OPERATIVE'); setAddingParent(null); }} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px] px-2">+ Add</button>
-                </div>
-                {opClauses.length === 0 && <p className="text-text-dimmed font-jotia text-sm">No operative clauses yet.</p>}
-                <div className="space-y-2">
-                  {opClauses.map((c, i) => (
-                    <div key={c.id}>
-                      <div className="bg-bg-raised rounded-card p-3 group">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="font-jotia text-text-primary text-sm">
-                            <span className="text-text-dimmed mr-2">{i + 1}.</span>
-                            <span className="underline">{c.opening_phrase}</span> {c.content};
-                          </p>
-                          <div className="hidden group-hover:flex gap-1 shrink-0">
-                            <button onClick={() => moveClause(c.id, -1)} className="text-xs text-text-dimmed px-1">↑</button>
-                            <button onClick={() => moveClause(c.id, 1)} className="text-xs text-text-dimmed px-1">↓</button>
-                            <button onClick={() => { setAddingType('OPERATIVE'); setAddingParent(c.id); }} className="text-xs text-text-dimmed px-1" title="Add sub-clause">+sub</button>
-                            <button onClick={() => deleteClause(c.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text px-1">×</button>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Sub-clauses */}
-                      {getSubClauses(c.id).map((sub, si) => (
-                        <div key={sub.id} className="ml-8 mt-1 bg-bg-raised/50 rounded-card p-2 group">
+                    {preamClauses.length === 0 && <p className="text-text-dimmed font-jotia text-sm">No preambulatory clauses yet.</p>}
+                    <div className="space-y-2">
+                      {preamClauses.map((c, i) => (
+                        <div key={c.id} className="bg-bg-raised rounded-card p-3 group">
                           <div className="flex items-start justify-between gap-2">
-                            <p className="font-jotia text-text-dimmed text-sm">
-                              <span className="mr-2">{String.fromCharCode(97 + si)}.</span>
-                              <span className="underline">{sub.opening_phrase}</span> {sub.content};
-                            </p>
-                            <button onClick={() => deleteClause(sub.id)} className="hidden group-hover:block text-xs text-text-dimmed hover:text-status-rejected-text px-1">×</button>
+                            <p className="font-jotia text-text-primary text-sm"><em className="underline">{c.opening_phrase}</em> {c.content}{i < preamClauses.length - 1 ? ',' : ''}</p>
+                            <div className="hidden group-hover:flex gap-1 shrink-0">
+                              <button onClick={() => moveClause(c.id, -1)} className="text-xs text-text-dimmed px-1"><ChevronUp className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => moveClause(c.id, 1)} className="text-xs text-text-dimmed px-1"><ChevronDown className="w-3.5 h-3.5" /></button>
+                              <button onClick={() => deleteClause(c.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text px-1"><X className="w-3.5 h-3.5" /></button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Operative Clauses */}
+                  <div className="bg-bg-card border border-border-subtle rounded-card p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-jotia-bold text-sm text-text-primary uppercase tracking-wider">Operative Clauses</h3>
+                      <button onClick={() => { setAddingType('OPERATIVE'); setAddingParent(null); }} className="text-xs text-text-dimmed hover:text-text-primary min-h-[28px] px-2">+ Add</button>
+                    </div>
+                    {opClauses.length === 0 && <p className="text-text-dimmed font-jotia text-sm">No operative clauses yet.</p>}
+                    <div className="space-y-2">
+                      {opClauses.map((c, i) => (
+                        <div key={c.id}>
+                          <div className="bg-bg-raised rounded-card p-3 group">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-jotia text-text-primary text-sm">
+                                <span className="text-text-dimmed mr-2">{i + 1}.</span>
+                                <span className="underline">{c.opening_phrase}</span> {c.content};
+                              </p>
+                              <div className="hidden group-hover:flex gap-1 shrink-0">
+                                <button onClick={() => moveClause(c.id, -1)} className="text-xs text-text-dimmed px-1"><ChevronUp className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => moveClause(c.id, 1)} className="text-xs text-text-dimmed px-1"><ChevronDown className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => { setAddingType('OPERATIVE'); setAddingParent(c.id); }} className="text-xs text-text-dimmed px-1" title="Add sub-clause"><Plus className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => deleteClause(c.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text px-1"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Sub-clauses */}
+                          {getSubClauses(c.id).map((sub, si) => (
+                            <div key={sub.id} className="ml-8 mt-1 bg-bg-raised/50 rounded-card p-2 group">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-jotia text-text-dimmed text-sm">
+                                  <span className="mr-2">{String.fromCharCode(97 + si)}.</span>
+                                  <span className="underline">{sub.opening_phrase}</span> {sub.content};
+                                </p>
+                                <button onClick={() => deleteClause(sub.id)} className="hidden group-hover:block text-xs text-text-dimmed hover:text-status-rejected-text px-1"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Add Clause Modal */}
               {addingType && (
@@ -424,33 +471,54 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
               </div>
 
               {/* Formatted Preview */}
-              <div className={`bg-white text-black rounded-card p-8 ${showPreview ? 'block' : 'hidden lg:block'}`}>
-                <div className="text-center mb-6">
-                  <p className="text-sm font-bold uppercase">{ctx.committee?.name || 'Committee'}</p>
-                  <p className="text-xs mt-1">Forum: {ctx.committee?.abbreviation || 'N/A'}</p>
-                  <p className="text-xs">Question of: {topic || '...'}</p>
-                  <p className="text-xs">Sponsors: {coSponsors.join(', ') || '...'}</p>
+              <div className={`bg-[#0A0A0A] text-[#E5E5E5] border border-border-subtle rounded-card p-10 ${showPreview ? 'block' : 'hidden lg:block'} shadow-2xl`}>
+                <div className="text-center mb-10 border-b border-border-subtle pb-8">
+                  <h1 className="text-lg font-bold uppercase tracking-widest text-[#FFFFFF]">{ctx.committee?.name || 'Committee'}</h1>
+                  <div className="mt-4 space-y-1 text-sm font-jotia opacity-80">
+                    <p>Forum: <span className="text-[#FFFFFF]">{ctx.committee?.abbreviation || 'N/A'}</span></p>
+                    <p>Question of: <span className="text-[#FFFFFF]">{topic || '...'}</span></p>
+                    <p>Sponsors: <span className="text-[#FFFFFF] font-medium">{coSponsors.join(', ') || '...'}</span></p>
+                  </div>
                 </div>
-                <div className="text-sm leading-relaxed">
-                  <p className="font-bold mb-2">The {ctx.committee?.name || 'Committee'},</p>
-                  {preamClauses.map((c, i) => (
-                    <p key={c.id} className="mb-1 italic">
-                      <span className="not-italic underline">{c.opening_phrase}</span> {c.content}{i < preamClauses.length - 1 ? ',' : ','}
-                    </p>
-                  ))}
-                  {opClauses.map((c, i) => (
-                    <div key={c.id} className="mb-2">
-                      <p>
-                        <span className="mr-1">{i + 1}.</span>
-                        <span className="underline font-semibold">{c.opening_phrase}</span> {c.content};
-                      </p>
-                      {getSubClauses(c.id).map((sub, si) => (
-                        <p key={sub.id} className="ml-8 mt-1 text-gray-700">
-                          {String.fromCharCode(97 + si)}. <span className="underline">{sub.opening_phrase}</span> {sub.content};
-                        </p>
-                      ))}
+                
+                <div className="text-sm font-jotia leading-loose space-y-6">
+                  {isManual ? (
+                    <div className="whitespace-pre-wrap whitespace-pre-line text-justify">
+                      {manualContent}
                     </div>
-                  ))}
+                  ) : (
+                    <>
+                      <p className="font-bold text-[#FFFFFF]">The {ctx.committee?.name || 'Committee'},</p>
+                      <div className="space-y-4">
+                        {preamClauses.map((c, i) => (
+                          <p key={c.id} className="italic text-justify">
+                            <span className="not-italic underline font-medium text-[#FFFFFF]">{c.opening_phrase}</span> {c.content}{i < preamClauses.length - 1 ? ',' : ','}
+                          </p>
+                        ))}
+                      </div>
+                      <div className="space-y-6 pt-4">
+                        {opClauses.map((c, i) => (
+                          <div key={c.id} className="relative">
+                            <p className="text-justify">
+                              <span className="inline-block w-6 font-bold text-[#FFFFFF]">{i + 1}.</span>
+                              <span className="underline font-bold text-[#FFFFFF]">{c.opening_phrase}</span> {c.content};
+                            </p>
+                            <div className="ml-10 mt-3 space-y-2">
+                              {getSubClauses(c.id).map((sub, si) => (
+                                <p key={sub.id} className="opacity-90 text-justify">
+                                  <span className="inline-block w-6 font-medium">{String.fromCharCode(97 + si)}.</span>
+                                  <span className="underline font-medium">{sub.opening_phrase}</span> {sub.content};
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="mt-12 text-center border-t border-border-subtle pt-6">
+                  <p className="text-[10px] uppercase tracking-tighter opacity-30">Formal Document Generated by BILLMUN 2026 Portal</p>
                 </div>
               </div>
 
@@ -502,7 +570,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
           <div className="bg-bg-card w-full max-w-4xl max-h-[90vh] rounded-card p-6 space-y-6 overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="font-jotia-bold text-2xl text-text-primary">How to Write a Resolution</h2>
-              <button onClick={() => setShowGuide(false)} className="text-text-dimmed hover:text-text-primary text-2xl">×</button>
+              <button onClick={() => setShowGuide(false)} className="text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="space-y-6 text-sm">
@@ -510,7 +578,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                 <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Basics of a Resolution</h3>
                 <div className="space-y-3 text-text-secondary">
                   <p><strong>Who:</strong> Any delegate in the committee can write a resolution. The author is called a sponsor. Most resolutions have multiple sponsors because it takes a group of countries to share good ideas and come to a consensus.</p>
-                  <p><strong>What:</strong> A resolution is a document that contains all the issues the committee wants to solve and the proposed solutions. It's called a resolution because that's what the United Nations calls their documents.</p>
+                  <p><strong>What:</strong> A resolution is a document that contains all the issues the committee wants to solve and the proposed solutions. It&apos;s called a resolution because that&apos;s what the United Nations calls their documents.</p>
                   <p><strong>When/Where:</strong> Most conferences require students to write resolutions during the conference, usually during unmoderated caucus where delegates can collaborate freely.</p>
                   <p><strong>Why:</strong> The ultimate purpose of a committee session is to pass a resolution. All speeches, debate, negotiation, and teamwork leads to resolutions containing proposed solutions.</p>
                 </div>
@@ -523,7 +591,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                 <div className="space-y-4">
                   <div className="bg-bg-raised rounded-card p-4">
                     <h4 className="font-semibold text-text-primary mb-2">1. Heading</h4>
-                    <p className="text-text-secondary text-xs">Contains: Committee name, sponsors, signatories, and topic. The sponsors are the authors. Signatories are delegates who want to see it debated but don't necessarily agree with it.</p>
+                    <p className="text-text-secondary text-xs">Contains: Committee name, sponsors, signatories, and topic. The sponsors are the authors. Signatories are delegates who want to see it debated but don&apos;t necessarily agree with it.</p>
                   </div>
 
                   <div className="bg-bg-raised rounded-card p-4">
@@ -542,7 +610,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                   <div className="bg-bg-raised rounded-card p-4">
                     <h4 className="font-semibold text-text-primary mb-2">3. Operative Clauses</h4>
                     <p className="text-text-secondary text-xs mb-2">State the solutions the sponsors propose. These should address issues mentioned in preambulatory clauses.</p>
-                    <p className="text-xs text-text-tertiary">Strategy: Add details to strengthen each clause. Answer "who, what, when, where, why, and how" for each resolution.</p>
+                    <p className="text-xs text-text-tertiary">Strategy: Add details to strengthen each clause. Answer &quot;who, what, when, where, why, and how&quot; for each resolution.</p>
                   </div>
                 </div>
               </section>
@@ -576,24 +644,24 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
                   <div className="bg-bg-raised rounded-card p-4">
                     <h4 className="font-semibold text-text-primary mb-2">Preambulatory Phrases</h4>
                     <div className="text-xs text-text-secondary space-y-1">
-                      <div>• Affirming, Alarmed by, Approving</div>
-                      <div>• Believing, Cognizant of, Confident</div>
-                      <div>• Deeply concerned, Deeply convinced</div>
-                      <div>• Emphasizing, Expecting, Fulfilling</div>
-                      <div>• Guided by, Having adopted, Noting</div>
-                      <div>• Realizing, Recalling, Recognizing</div>
+                      <div>- Affirming, Alarmed by, Approving</div>
+                      <div>- Believing, Cognizant of, Confident</div>
+                      <div>- Deeply concerned, Deeply convinced</div>
+                      <div>- Emphasizing, Expecting, Fulfilling</div>
+                      <div>- Guided by, Having adopted, Noting</div>
+                      <div>- Realizing, Recalling, Recognizing</div>
                     </div>
                   </div>
 
                   <div className="bg-bg-raised rounded-card p-4">
                     <h4 className="font-semibold text-text-primary mb-2">Operative Phrases</h4>
                     <div className="text-xs text-text-secondary space-y-1">
-                      <div>• Accepts, Affirms, Approves, Authorizes</div>
-                      <div>• Calls for, Calls upon, Commends</div>
-                      <div>• Condemns, Confirms, Congratulates</div>
-                      <div>• Declares, Demands, Deplores</div>
-                      <div>• Encourages, Endorses, Expresses</div>
-                      <div>• Invites, Notes, Recommends, Urges</div>
+                      <div>- Accepts, Affirms, Approves, Authorizes</div>
+                      <div>- Calls for, Calls upon, Commends</div>
+                      <div>- Condemns, Confirms, Congratulates</div>
+                      <div>- Declares, Demands, Deplores</div>
+                      <div>- Encourages, Endorses, Expresses</div>
+                      <div>- Invites, Notes, Recommends, Urges</div>
                     </div>
                   </div>
                 </div>

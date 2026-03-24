@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   // Always fetch all delegates; filter in JS for search since .or() on joined tables doesn't work in PostgREST
   const delegatesQuery = supabaseAdmin
     .from("committee_assignments")
-    .select("user_id, country, users(id, full_name, email, phone_number, role, status)")
+    .select("user_id, country, users:user_id(id, full_name, email, phone_number, role, status)")
     .eq("committee_id", committee_id);
 
   const [
@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
     { data: announcements },
     { data: resources },
     { data: attendance },
+    { data: rollCallHistory },
     { data: voteRecords },
     { data: chairNotes },
     { data: committeeChannel },
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
   ] = await Promise.all([
       supabaseAdmin
         .from("committee_assignments")
-        .select("user_id, users(id, full_name, role)")
+        .select("user_id, users:user_id(id, full_name, role)")
         .eq("committee_id", committee_id),
       supabaseAdmin
         .from("committee_sessions")
@@ -70,14 +71,14 @@ export async function GET(req: NextRequest) {
         .eq("committee_id", committee_id),
       supabaseAdmin
         .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, users(full_name)")
+        .select("id, user_id, title, type, status, uploaded_at, users:user_id(full_name)")
         .eq("committee_id", committee_id)
         .in("status", ["SUBMITTED", "REVISION_REQUESTED"])
         .order("uploaded_at", { ascending: true })
         .limit(50),
       supabaseAdmin
         .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, reviewed_at, users(full_name)")
+        .select("id, user_id, title, type, status, uploaded_at, reviewed_at, users:user_id(full_name)")
         .eq("committee_id", committee_id)
         .in("status", ["APPROVED", "REJECTED"])
         .order("reviewed_at", { ascending: false })
@@ -100,6 +101,12 @@ export async function GET(req: NextRequest) {
         .eq("committee_id", committee_id)
         .order("session_start", { ascending: false })
         .limit(50),
+      supabaseAdmin
+        .from("roll_call_records")
+        .select("*, entries:roll_call_entries(*, user:delegate_id(full_name))")
+        .eq("committee_id", committee_id)
+        .order("started_at", { ascending: false })
+        .limit(20),
       supabaseAdmin
         .from("committee_vote_records")
         .select("*")
@@ -135,16 +142,11 @@ export async function GET(req: NextRequest) {
       supabaseAdmin
         .from("conference_settings")
         .select("whatsapp_group_link")
-        .limit(1)
+        .eq("id", "1")
         .maybeSingle(),
       supabaseAdmin
         .from("audit_logs")
-        .select("id, actor_id, action, target_type, target_id, metadata, performed_at, actor:actor_id(full_name)")
-        .or(`target_type.eq.committee_assignments,target_type.eq.documents,target_type.eq.speakers_list,target_type.eq.votes,target_type.eq.messages,target_type.eq.announcements,target_type.eq.bloc_members,target_type.eq.resolution_clauses,actor_id.eq.${adminUserId}`)
-        .not('action', 'ilike', '%rejected%')
-        .not('action', 'ilike', '%suspended%')
-        .not('action', 'ilike', '%security%')
-        .not('action', 'ilike', '%emergency%')
+        .select("*, actor:actor_id(full_name)")
         .order("performed_at", { ascending: false })
         .limit(100),
     ]);
@@ -253,6 +255,7 @@ export async function GET(req: NextRequest) {
     status_summary: statusSummary,
     alerts,
     attendance: attendance || [],
+    roll_call_history: rollCallHistory || [],
     documents_queue: documentsQueue || [],
     reviewed_documents: reviewedDocs || [],
     announcements: announcements || [],

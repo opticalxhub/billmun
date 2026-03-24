@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Card, Badge } from '@/components/ui';
 import { Button } from '@/components/button';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 // Note: We'll implement real Uploadthing later, using standard input for now
 export function DocumentManager({ user, documents: initialDocs }: { user: any, documents: any[] }) {
   const [documents, setDocuments] = useState<any[]>(initialDocs || []);
@@ -24,11 +25,11 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
 
   const handleFileUpload = useCallback(async (file: File) => {
     if (!file || file.type !== 'application/pdf') {
-      alert('Only PDF files are allowed');
+      toast.error('Only PDF files are allowed');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size exceeds 10MB');
+      toast.error('File size exceeds 10MB');
       return;
     }
 
@@ -57,7 +58,7 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
       const newDoc = {
         title: file.name,
         file_url: urlData.publicUrl,
-        type: 'POSITION_PAPER',
+        type: 'OTHER', // defaulted to OTHER in manager, but in real use we should have a select
         user_id: user.id,
       };
 
@@ -75,7 +76,7 @@ export function DocumentManager({ user, documents: initialDocs }: { user: any, d
 
     } catch (err: any) {
       console.error(err);
-      alert('Upload failed: ' + err.message);
+      toast.error('Upload failed: ' + err.message);
       setIsUploading(false);
     }
   }, [user.id]);

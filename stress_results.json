@@ -1,0 +1,25 @@
+{
+  "DELEGATE": {
+    "successes": [
+      "Speeches",
+      "Blocs"
+    ],
+    "errors": [
+      "Create Resolution: Could not find the 'is_manual' column of 'resolutions' in the schema cache"
+    ]
+  },
+  "CHAIR": {
+    "successes": [],
+    "errors": [
+      "Roll Call: Could not find the 'status' column of 'delegate_presence_statuses' in the schema cache",
+      "Admin Chair Notes: Could not find the 'content' column of 'admin_chair_notes' in the schema cache"
+    ]
+  },
+  "EXECUTIVE_BOARD": {
+    "successes": [],
+    "errors": []
+  },
+  "SECURITY": {
+    "error": "User not found!"
+  }
+}

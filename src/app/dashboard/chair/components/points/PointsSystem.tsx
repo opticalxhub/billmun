@@ -244,7 +244,7 @@ export function PointsSystem({ committee }: { committee: any }) {
                 <div className="space-y-2">
                   <div className="text-sm font-semibold text-text-dimmed uppercase">Stance</div>
                   <p className="text-sm italic text-text-secondary leading-relaxed">
-                    "&ldquo;{bloc.stance || 'No stance recorded yet.'}&rdquo;"
+                    &ldquo;{bloc.stance || 'No stance recorded yet.'}&rdquo;
                   </p>
                 </div>
 

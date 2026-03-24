@@ -123,22 +123,35 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
     .limit(1)
     .maybeSingle();
 
-  if (assignmentError || !assignment?.committee_id) {
-    // Return context with null committee instead of 403, so the dashboard can show a "No assignment" state
-    return {
-      context: {
-        adminUserId,
-        committee_id: "",
-        committeeName: null,
-      },
-    };
+  // This block replaces the previous `if (assignmentError || !assignment?.committee_id)` and the final return.
+  let committeeId = assignment?.committee_id;
+  let committeeName = (assignment as any)?.committees?.name;
+
+  if (!committeeId) {
+    // If EB/ADMIN has no specific assignment, default to the first active committee
+    // This fixed the "No data in admin dashboard" issue for unassigned super-users
+    const { data: fallbackCommittee } = await supabaseAdmin
+      .from("committees")
+      .select("id, name")
+      .eq("is_active", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackCommittee) {
+      committeeId = fallbackCommittee.id;
+      committeeName = fallbackCommittee.name;
+    }
   }
+
+  if (!committeeId) return { error: "No committees found in system", status: 404 };
 
   return {
     context: {
-      adminUserId,
-      committee_id: assignment.committee_id,
-      committeeName: (assignment as any).committees?.name ?? null,
+      adminUserId: user.id,
+      committee_id: committeeId,
+      committeeName: committeeName ?? null,
     },
   };
 }
+

@@ -259,7 +259,7 @@ export default function DocumentsDashPage() {
                       <div key={i} className="relative pl-4">
                         <div className="absolute w-2 h-2 rounded-full bg-border-emphasized -left-[5px] top-1.5" />
                         <p className="text-sm font-semibold">{log.status}</p>
-                        <p className="text-xs text-text-dimmed">{log.user?.full_name || 'System'} • {new Date(log.created_at || log.changed_at).toLocaleString()}</p>
+                        <p className="text-xs text-text-dimmed">{log.user?.full_name || 'System'} &middot; {new Date(log.created_at || log.changed_at).toLocaleString()}</p>
                         {log.feedback && <p className="text-sm mt-1 text-text-secondary bg-bg-raised p-2 rounded">{log.feedback}</p>}
                       </div>
                     ))}
