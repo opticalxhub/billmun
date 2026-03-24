@@ -17,7 +17,7 @@ interface Announcement {
 
 export function AnnouncementBanner({ user, committeeId }: { user: any, committeeId?: string }) {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [currentIndex, setCurrentUser] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
   const fetchAnnouncements = async () => {
@@ -75,12 +75,12 @@ export function AnnouncementBanner({ user, committeeId }: { user: any, committee
       setDismissedIds([...dismissedIds, current.id]);
     }
     if (currentIndex >= activeAnnouncements.length - 1) {
-      setCurrentUser(0);
+      setCurrentIndex(0);
     }
   };
 
   const nextAnn = () => {
-    setCurrentUser((currentIndex + 1) % activeAnnouncements.length);
+    setCurrentIndex((currentIndex + 1) % activeAnnouncements.length);
   };
 
   return (

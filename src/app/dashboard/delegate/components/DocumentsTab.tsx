@@ -10,10 +10,11 @@ import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { X, FilePlus } from 'lucide-react';
 
 const STATUS_VARIANT: Record<string, string> = {
-  PENDING: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
+  SUBMITTED: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
+  UNDER_REVIEW: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
   APPROVED: 'bg-status-approved-bg text-status-approved-text border border-status-approved-border',
   REJECTED: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
-  NEEDS_REVISION: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
+  REVISION_REQUESTED: 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border',
 };
 
 function isAllowedMime(mime: string): boolean {
@@ -92,7 +93,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   }, [ctx.user?.id, queryClient]);
 
   // useQuery for Documents
-  const { data: documents = [], isLoading: documentsLoading, isError: documentsError, refetch: refetchDocuments } = useQuery({
+  const { data: documents, isLoading: documentsLoading, isError: documentsError, refetch: refetchDocuments } = useQuery({
     queryKey: ['delegate-documents', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -159,7 +160,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
           file_url: urlData.publicUrl,
           file_size: file.size,
           mime_type: file.type || 'application/octet-stream',
-          status: 'PENDING',
+          status: 'SUBMITTED',
         })
         .select('id')
         .single();
@@ -204,7 +205,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
           file_url,
           file_size: 0,
           mime_type: 'application/octet-stream',
-          status: 'PENDING',
+          status: 'SUBMITTED',
         })
         .select('id')
         .single();
@@ -313,7 +314,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
           file_url: urlData.publicUrl,
           file_size: file.size,
           mime_type: file.type || 'application/octet-stream',
-          status: 'PENDING',
+          status: 'SUBMITTED',
           parent_document_id: parentDoc.id,
         })
         .select('id')
@@ -436,7 +437,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
       )}
 
       {/* Documents Table / Cards */}
-      {documents.length === 0 ? (
+      {(documents || []).length === 0 ? (
         <div className="text-center py-12 border border-dashed border-border-subtle rounded-card bg-bg-raised/30">
           <FilePlus className="w-10 h-10 mx-auto text-text-dimmed mb-3" />
           <p className="text-text-primary font-jotia text-sm mb-1">No documents yet</p>
@@ -463,7 +464,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                 </tr>
               </thead>
               <tbody>
-                {documents.map((doc) => (
+                {(documents || []).map((doc) => (
                   <tr key={doc.id} onClick={() => openDrawer(doc)} className="border-b border-border-subtle/50 cursor-pointer hover:bg-bg-hover transition-colors">
                     <td className="px-4 py-3 font-jotia text-text-primary">
                       {renaming === doc.id ? (
@@ -486,7 +487,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
           {/* Mobile Cards */}
           <div className="md:hidden space-y-3">
-            {documents.map((doc) => (
+            {(documents || []).map((doc) => (
               <div key={doc.id} onClick={() => openDrawer(doc)} className="bg-bg-card border border-border-subtle rounded-card p-4 cursor-pointer active:bg-bg-hover">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <p className="font-jotia text-text-primary text-sm font-medium">{doc.title}</p>
@@ -518,7 +519,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
             </div>
 
             {/* Revision Banner */}
-            {drawerDoc.status === 'NEEDS_REVISION' && drawerDoc.feedback && (
+            {drawerDoc.status === 'REVISION_REQUESTED' && drawerDoc.feedback && (
               <div className="bg-status-rejected-bg border-b border-status-rejected-border p-4">
                 <p className="text-status-rejected-text font-jotia text-sm font-medium mb-2">Revision Requested</p>
                 <p className="text-status-rejected-text/80 font-jotia text-xs mb-3">{drawerDoc.feedback}</p>
@@ -608,7 +609,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
 
               {/* Actions */}
               <div className="flex gap-2 pt-4 border-t border-border-subtle">
-                {drawerDoc.status === 'PENDING' && (
+                {drawerDoc.status === 'SUBMITTED' && (
                   <Button
                     variant="outline"
                     onClick={() => { setRenaming(drawerDoc.id); setRenameValue(drawerDoc.title); setDrawerDoc(null); }}
@@ -616,7 +617,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                     Rename
                   </Button>
                 )}
-                {drawerDoc.status === 'PENDING' && !drawerDoc.feedback && (
+                {drawerDoc.status === 'SUBMITTED' && !drawerDoc.feedback && (
                   <Button
                     variant="destructive"
                     loading={deleteMutation.isPending}

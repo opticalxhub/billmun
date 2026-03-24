@@ -25,7 +25,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Events
-  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useQuery({
+  const { data: events, isLoading: eventsLoading, isError: eventsError } = useQuery({
     queryKey: ['schedule-events'],
     queryFn: async () => {
       const { data, error } = await supabase.from('schedule_events').select('*').order('start_time', { ascending: true });
@@ -36,7 +36,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Tasks
-  const { data: tasks = [], isLoading: tasksLoading, isError: tasksError } = useQuery({
+  const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useQuery({
     queryKey: ['personal-tasks', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -53,7 +53,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Committee Schedule
-  const { data: committeeSchedule = [] } = useQuery({
+  const { data: committeeSchedule } = useQuery({
     queryKey: ['committee-schedule', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -138,14 +138,14 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
 
   // Group events by day
   const eventsByDay: Record<string, any[]> = {};
-  events.forEach((e: any) => {
+  (events || []).forEach((e: any) => {
     if (!eventsByDay[e.day_label]) eventsByDay[e.day_label] = [];
     eventsByDay[e.day_label].push(e);
   });
 
   const isOverdue = (task: any) => task.due_at && !task.is_completed && new Date(task.due_at) < new Date();
-  const incompleteTasks = tasks.filter(t => !t.is_completed);
-  const completedTasks = tasks.filter(t => t.is_completed);
+  const incompleteTasks = (tasks || []).filter(t => !t.is_completed);
+  const completedTasks = (tasks || []).filter(t => t.is_completed);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -216,13 +216,13 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
       {ctx.committee?.id && (
         <div>
           <h2 className="font-jotia-bold text-xl text-text-primary mb-4">{ctx.committee.name} Schedule</h2>
-          {committeeSchedule.length === 0 ? (
+          {(committeeSchedule || []).length === 0 ? (
             <div className="bg-bg-card border border-border-subtle rounded-card p-8 text-center">
               <p className="text-text-dimmed font-jotia text-sm">No committee-specific sessions scheduled yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {committeeSchedule.map(ev => (
+              {(committeeSchedule || []).map(ev => (
                 <div key={ev.id} className="bg-bg-card border border-border-emphasized/30 rounded-card p-4">
                   <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                     <div className="shrink-0">
@@ -311,7 +311,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
               <button onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending} className="text-text-dimmed hover:text-status-rejected-text text-xs shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50">×</button>
             </div>
           ))}
-          {tasks.length === 0 && !addingTask && (
+          {(tasks || []).length === 0 && !addingTask && (
             <p className="text-text-dimmed font-jotia text-sm text-center py-8">No tasks yet. Add one to stay organized.</p>
           )}
         </div>

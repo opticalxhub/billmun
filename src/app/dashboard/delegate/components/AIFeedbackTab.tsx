@@ -41,7 +41,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   const queryClient = useQueryClient();
 
   // useQuery for Documents
-  const { data: documents = [], isLoading: documentsLoading, isError: documentsError } = useQuery({
+  const { data: documents, isLoading: documentsLoading, isError: documentsError } = useQuery({
     queryKey: ['delegate-documents-ai', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -53,7 +53,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Past Analyses
-  const { data: pastAnalyses = [], isLoading: pastAnalysesLoading, isError: pastError } = useQuery({
+  const { data: pastAnalyses, isLoading: pastAnalysesLoading, isError: pastError } = useQuery({
     queryKey: ['delegate-ai-analyses', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -92,7 +92,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
       return;
     }
     if (selectedDocId !== 'paste') {
-      const doc = documents.find(d => d.id === selectedDocId);
+      const doc = (documents || []).find(d => d.id === selectedDocId);
       if (!doc) return;
     }
 
@@ -159,7 +159,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
             className="w-full bg-bg-raised border border-border-input rounded-input px-3 h-10 font-jotia text-sm text-text-primary focus:border-text-primary transition-colors"
           >
             <option value="paste">Paste Text</option>
-            {documents.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
+            {(documents || []).map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
           </select>
         </div>
 
@@ -238,7 +238,7 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
               <div key={col.title} className={`bg-bg-card border-l-2 ${col.color} border border-border-subtle rounded-card p-4`}>
                 <h4 className="font-jotia-bold text-sm text-text-primary mb-3">{col.title}</h4>
                 <div className="space-y-2">
-                  {col.items.length === 0 ? (
+                  {(documents || []).length === 0 ? (
                     <p className="text-text-dimmed font-jotia text-xs">None identified.</p>
                   ) : (
                     col.items.map((item: string, i: number) => (
@@ -292,11 +292,11 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
       {/* Past Analyses */}
       <div className="bg-bg-card border border-border-subtle rounded-card p-6">
         <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Past Analyses</h3>
-        {pastAnalyses.length === 0 ? (
+        {(pastAnalyses || []).length === 0 ? (
           <p className="text-text-dimmed font-jotia text-sm">No previous analyses.</p>
         ) : (
           <div className="space-y-2">
-            {pastAnalyses.map(a => (
+            {(pastAnalyses || []).map(a => (
               <div key={a.id}>
                 <button
                   onClick={() => setExpandedAnalysis(expandedAnalysis === a.id ? null : a.id)}

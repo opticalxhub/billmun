@@ -1,0 +1,806 @@
+TOTAL TABLES: 77
+
+
+[admin_chair_notes] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  admin_user_id: uuid | [REQ] | FK->users.id
+  chair_user_id: uuid | FK->users.id
+  note_text: text | def=""
+  updated_at: timestamp with time zone | def="now()"
+
+[ai_feedback] (20 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  document_id: uuid | FK->documents.id
+  user_id: uuid | [REQ] | FK->users.id
+  input_text: text
+  overall_score: integer
+  argument_strength: integer
+  research_depth: integer
+  policy_alignment: integer
+  writing_clarity: integer
+  format_adherence: integer
+  diplomatic_language: integer
+  persuasiveness: integer
+  ai_detection_score: integer
+  ai_detection_phrases: text[]
+  summary: text
+  strengths: text[]
+  weaknesses: text[]
+  suggestions: text[]
+  annotated_segments: jsonb
+  generated_at: timestamp with time zone | def="now()"
+
+[announcements] (11 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  title: text | [REQ]
+  body: text | [REQ]
+  author_id: uuid | FK->users.id
+  is_pinned: boolean | def=false
+  target_roles: text[]
+  committee_id: uuid | FK->committees.id
+  scheduled_for: timestamp with time zone
+  is_active: boolean | def=true
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[artifacts] (11 cols)
+  id: uuid | def="extensions.uuid_generate_v4()" | [REQ]
+  user_id: uuid | [REQ] | FK->profiles.id
+  conversation_id: uuid | FK->conversations.id
+  message_id: uuid
+  type: text | [REQ]
+  title: text | [REQ]
+  content: text | [REQ]
+  file_url: text
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+  metadata: jsonb
+
+[attendance_records] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  user_id: uuid | [REQ] | FK->users.id
+  session_start: timestamp with time zone | [REQ]
+  session_end: timestamp with time zone
+  status: text | def="PRESENT"
+  corrected_by: uuid | FK->users.id
+  correction_note: text
+  corrected_at: timestamp with time zone
+
+[audit_logs] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  actor_id: uuid | FK->users.id
+  action: text
+  target_type: text
+  target_id: uuid
+  metadata: jsonb
+  ip_address: text
+  performed_at: timestamp with time zone | def="now()"
+
+[best_delegate_nominees] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  delegate_id: uuid | [REQ] | FK->users.id
+  nominated_by: uuid | [REQ] | FK->users.id
+  justification: text
+  is_winner: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+
+[bloc_documents] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  bloc_id: uuid | [REQ] | FK->blocs.id
+  uploader_id: uuid | [REQ] | FK->users.id
+  title: text | [REQ]
+  file_url: text | [REQ]
+  file_size: bigint | def=0
+  uploaded_at: timestamp with time zone | def="now()"
+
+[bloc_members] (4 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  bloc_id: uuid | [REQ] | FK->blocs.id
+  user_id: uuid | [REQ] | FK->users.id
+  joined_at: timestamp with time zone | def="now()"
+
+[bloc_messages] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  bloc_id: uuid | [REQ] | FK->blocs.id
+  user_id: uuid | [REQ] | FK->users.id
+  content: text | [REQ]
+  file_url: text
+  file_name: text
+  reply_to_id: uuid | FK->bloc_messages.id
+  reactions: jsonb
+  created_at: timestamp with time zone | def="now()"
+
+[blocs] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  name: text | [REQ]
+  description: text
+  invite_code: text | [REQ]
+  creator_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+  channel_id: uuid | FK->channels.id
+
+[chair_ai_runs] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  chair_id: uuid | [REQ] | FK->users.id
+  committee_id: uuid | FK->committees.id
+  tool: text | [REQ]
+  input_text: text | [REQ]
+  score: integer | def=0
+  summary: text
+  sections: jsonb
+  suggestions: text[]
+  created_at: timestamp with time zone | def="now()"
+
+[chair_preparation] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  chair_id: uuid | [REQ] | FK->users.id
+  checklist: jsonb
+  research_notes: jsonb
+  country_positions: jsonb
+  updated_at: timestamp with time zone | def="now()"
+
+[channel_members] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  channel_id: uuid | [REQ] | FK->channels.id
+  user_id: uuid | [REQ] | FK->users.id
+  role: text | def="MEMBER"
+  last_read_at: timestamp with time zone | def="now()"
+  joined_at: timestamp with time zone | def="now()"
+
+[channel_message_dismissals] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  channel_id: uuid | [REQ] | FK->channels.id
+  message_id: uuid | [REQ] | FK->messages.id
+  user_id: uuid | [REQ] | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[channels] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  name: text | [REQ]
+  type: text | def="COMMITTEE"
+  committee_id: uuid | FK->committees.id
+  bloc_id: uuid | FK->blocs.id
+  is_read_only: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+
+[committee_admin_tasks] (11 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  created_by: uuid | [REQ] | FK->users.id
+  assigned_admin_id: uuid | FK->users.id
+  title: text | [REQ]
+  description: text
+  priority: text | def="MEDIUM"
+  status: text | def="TODO"
+  due_at: timestamp with time zone
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[committee_assignments] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  committee_id: uuid | [REQ] | FK->committees.id
+  country: text
+  seat_number: text
+  assigned_at: timestamp with time zone | def="now()"
+  assigned_by_id: uuid | FK->users.id
+
+[committee_blocs] (11 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | FK->committees.id
+  name: text | [REQ]
+  resolution_topic: text
+  stance: text
+  members: text[]
+  supporting_countries: text[]
+  opposing_countries: text[]
+  ai_analysis: text
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[committee_resources] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  title: text | [REQ]
+  description: text
+  file_url: text | [REQ]
+  uploaded_by: uuid | FK->users.id
+  archived: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[committee_schedules] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  event_name: text | [REQ]
+  location: text
+  start_time: timestamp with time zone | [REQ]
+  end_time: timestamp with time zone | [REQ]
+  description: text
+  created_at: timestamp with time zone | def="now()"
+
+[committee_seating_assignments] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  user_id: uuid | [REQ] | FK->users.id
+  seat_label: text | [REQ]
+  updated_by: uuid | FK->users.id
+  updated_at: timestamp with time zone | def="now()"
+
+[committee_sessions] (14 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  status: text | def="ADJOURNED"
+  debate_topic: text
+  speaking_time_limit: integer
+  caucus_type: text
+  caucus_duration: integer
+  caucus_purpose: text
+  break_type: text
+  break_duration: integer
+  session_summary: text
+  updated_at: timestamp with time zone | def="now()"
+  updated_by_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[committee_vote_records] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  motion_type: text | [REQ]
+  outcome: text | [REQ]
+  votes_for: integer | def=0
+  votes_against: integer | def=0
+  abstentions: integer | def=0
+  recorded_votes: jsonb
+  recorded_by: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[committees] (15 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  name: text | [REQ]
+  abbreviation: text | [REQ]
+  topic: text
+  description: text
+  image_url: text
+  background_guide_url: text
+  rop_url: text
+  sub_topics: text[]
+  max_delegates: integer | def=10
+  difficulty: public.difficulty | enum=[BEGINNER,INTERMEDIATE,ADVANCED]
+  is_active: boolean | def=true
+  chair_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+  co_chair_id: uuid | FK->users.id
+
+[conference_settings] (14 cols)
+  id: text | def="1" | [REQ]
+  conference_name: text | def="BILLMUN 2026"
+  conference_date: date
+  conference_location: text
+  registration_open: boolean | def=false
+  auto_approve_registrations: boolean | def=false
+  portal_message: text
+  updated_at: timestamp with time zone | def="now()"
+  updated_by_id: uuid | FK->users.id
+  maintenance_mode: boolean | def=false
+  ai_analysis_enabled: boolean | def=true
+  max_file_upload_mb: integer | def=10
+  emergency_contact_phone: text | def="+966 5X XXX XXXX"
+  whatsapp_group_link: text
+
+[conversations] (8 cols)
+  id: uuid | def="extensions.uuid_generate_v4()" | [REQ]
+  user_id: uuid | [REQ] | FK->profiles.id
+  title: text | def="New Chat"
+  model: text | def="mar-beta"
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+  is_archived: boolean | def=false
+  metadata: jsonb
+
+[country_research] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  country_notes: text | def=""
+  previous_resolutions: text | def=""
+  updated_at: timestamp with time zone | def="now()"
+
+[delegate_presence_history] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  user_id: uuid | [REQ] | FK->users.id
+  status: text | [REQ]
+  changed_by: uuid | FK->users.id
+  changed_at: timestamp with time zone | def="now()"
+  note: text
+
+[delegate_presence_statuses] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  user_id: uuid | [REQ] | FK->users.id
+  current_status: text | def="PRESENT_IN_SESSION" | [REQ]
+  last_changed_by: uuid | FK->users.id
+  last_changed_at: timestamp with time zone | def="now()"
+  note: text
+
+[delegate_ratings] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  delegate_id: uuid | [REQ] | FK->users.id
+  rated_by: uuid | [REQ] | FK->users.id
+  argumentation_quality: integer | def=0
+  diplomacy: integer | def=0
+  preparation: integer | def=0
+  private_notes: text
+  updated_at: timestamp with time zone | def="now()"
+
+[delegate_stats] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | FK->committees.id
+  delegate_id: uuid | FK->users.id
+  pois_asked: integer | def=0
+  pois_answered: integer | def=0
+  opening_speech_words: integer | def=0
+  opening_speech_minutes: numeric | def=0
+  performance_score: integer | def=0
+  ai_performance_review: text
+  last_updated: timestamp with time zone | def="now()"
+
+[delegate_status_log] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  status: text | [REQ]
+  logged_by: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[document_status_history] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  document_id: uuid | [REQ] | FK->documents.id
+  status: public.document_status | enum=[SUBMITTED,UNDER_REVIEW,APPROVED,REJECTED,REVISION_REQUESTED] | [REQ]
+  changed_by_id: uuid | FK->users.id
+  note: text
+  changed_at: timestamp with time zone | def="now()"
+
+[document_versions] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  document_id: uuid | [REQ] | FK->documents.id
+  version: integer | def=1
+  file_url: text | [REQ]
+  file_size: bigint | def=0
+  uploaded_at: timestamp with time zone | def="now()"
+
+[documents] (15 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  committee_id: uuid | FK->committees.id
+  parent_document_id: uuid | FK->documents.id
+  type: text
+  title: text
+  file_url: text
+  file_size: bigint
+  mime_type: text
+  status: public.document_status | enum=[SUBMITTED,UNDER_REVIEW,APPROVED,REJECTED,REVISION_REQUESTED] | def="SUBMITTED"
+  feedback: text
+  uploaded_at: timestamp with time zone | def="now()"
+  reviewed_at: timestamp with time zone
+  reviewed_by_id: uuid | FK->users.id
+  ai_analysis_json: jsonb
+
+[eb_tasks] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  title: text | [REQ]
+  description: text
+  status: text | def="TODO"
+  priority: text | def="MEDIUM"
+  assigned_to: uuid | FK->users.id
+  created_by: uuid | FK->users.id
+  due_at: timestamp with time zone
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[emergency_sessions] (3 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  expires_at: timestamp with time zone | [REQ]
+  created_at: timestamp with time zone | def="now()"
+
+[issue_reports] (11 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  report_id: text | [REQ]
+  category: text | [REQ]
+  issue_type: text | [REQ]
+  description: text | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  user_details: jsonb | [REQ]
+  metadata: jsonb
+  status: text | def="PENDING"
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[mass_emails] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  subject: text | [REQ]
+  body_html: text | [REQ]
+  recipient_count: integer | def=0
+  sent_by: uuid | FK->users.id
+  sent_at: timestamp with time zone | def="now()"
+
+[media_gallery] (14 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  uploader_id: uuid | FK->users.id
+  title: text
+  media_url: text | [REQ]
+  media_type: text | def="image"
+  mime_type: text
+  file_size: bigint
+  caption: text
+  committee_tag: text
+  event_tag: text
+  status: text | def="PENDING"
+  approved_at: timestamp with time zone
+  rejection_reason: text
+  created_at: timestamp with time zone | def="now()"
+
+[message_attachments] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  message_id: uuid | [REQ] | FK->messages.id
+  file_url: text | [REQ]
+  file_name: text | [REQ]
+  file_size: bigint | [REQ]
+  mime_type: text | [REQ]
+  uploaded_at: timestamp with time zone | def="now()"
+
+[message_reactions] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  message_id: uuid | [REQ] | FK->messages.id
+  user_id: uuid | [REQ] | FK->users.id
+  emoji: text | [REQ]
+  created_at: timestamp with time zone | def="now()"
+
+[messages] (15 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  channel_id: uuid | [REQ] | FK->channels.id
+  sender_id: uuid | [REQ] | FK->users.id
+  content: text
+  type: text | def="TEXT"
+  file_url: text
+  is_announcement: boolean | def=false
+  is_pinned: boolean | def=false
+  pinned_at: timestamp with time zone
+  pinned_by_id: uuid | FK->users.id
+  reply_to_id: uuid | FK->messages.id
+  reactions: jsonb
+  created_at: timestamp with time zone | def="now()"
+  edited_at: timestamp with time zone
+  deleted_at: timestamp with time zone
+
+[missing_persons] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  last_known_location: text
+  reported_by: uuid | FK->users.id
+  resolved: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+
+[notifications] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  title: text | [REQ]
+  message: text
+  type: public.notification_type | enum=[INFO,SUCCESS,WARNING,ALERT] | def="INFO"
+  is_read: boolean | def=false
+  link: text
+  created_at: timestamp with time zone | def="now()"
+
+[password_reset_tokens] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  token: text | [REQ]
+  expires_at: timestamp with time zone | [REQ]
+  used_at: timestamp with time zone
+
+[personal_tasks] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  title: text | [REQ]
+  notes: text
+  due_at: timestamp with time zone
+  is_completed: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+
+[points_and_motions] (12 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  delegate_id: uuid | FK->users.id
+  type: text | [REQ]
+  description: text
+  outcome: text
+  votes_for: integer | def=0
+  votes_against: integer | def=0
+  votes_abstain: integer | def=0
+  created_at: timestamp with time zone | def="now()"
+  created_by: uuid | FK->users.id
+
+[press_releases] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  author_id: uuid | [REQ] | FK->users.id
+  title: text | [REQ]
+  body: text | [REQ]
+  target_committee_id: uuid | FK->committees.id
+  status: text | def="PENDING"
+  eb_notes: text
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[profiles] (7 cols)
+  id: uuid | [REQ]
+  email: text
+  full_name: text
+  avatar_url: text
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+  preferences: jsonb
+
+[resolution_clauses] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  resolution_id: uuid | [REQ] | FK->resolutions.id
+  type: text | [REQ]
+  opening_phrase: text | [REQ]
+  content: text | def=""
+  order_index: integer | def=0
+  parent_clause_id: uuid | FK->resolution_clauses.id
+  created_at: timestamp with time zone | def="now()"
+
+[resolutions] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  committee_id: uuid | FK->committees.id
+  title: text | def="Untitled Resolution"
+  topic: text | def=""
+  co_sponsors: text[]
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[roll_call_entries] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  roll_call_id: uuid | [REQ] | FK->roll_call_records.id
+  delegate_id: uuid | [REQ] | FK->users.id
+  assignment_id: uuid | FK->committee_assignments.id
+  status: text | def="ABSENT"
+
+[roll_call_records] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  started_at: timestamp with time zone | def="now()"
+  completed_at: timestamp with time zone
+  quorum_established: boolean | def=false
+  created_by: uuid | FK->users.id
+
+[schedule_events] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  day_label: text | [REQ]
+  event_name: text | [REQ]
+  location: text
+  start_time: timestamp with time zone | [REQ]
+  end_time: timestamp with time zone | [REQ]
+  description: text
+  applicable_roles: text[]
+  order_index: integer | def=0
+  created_at: timestamp with time zone | def="now()"
+
+[security_access_zones] (10 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  name: text | [REQ]
+  description: text
+  capacity: integer | def=0
+  authorized_roles: text[]
+  status: text | def="OPEN"
+  is_active: boolean | def=true
+  restricted_reason: text
+  updated_by: uuid | FK->users.id
+  updated_at: timestamp with time zone | def="now()"
+
+[security_alerts] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  severity: text | [REQ]
+  message: text | [REQ]
+  sent_by: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[security_badge_events] (8 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  badge_id: uuid | FK->security_badges.id
+  action: text | [REQ]
+  location: text
+  reason: text
+  officer_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[security_badges] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  badge_number: text | [REQ]
+  badge_status: text | def="ACTIVE"
+  flagged_reason: text
+  updated_at: timestamp with time zone | def="now()"
+
+[security_briefing_reads] (4 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  briefing_id: uuid | [REQ] | FK->security_briefings.id
+  user_id: uuid | [REQ] | FK->users.id
+  read_at: timestamp with time zone | def="now()"
+
+[security_briefings] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  title: text | [REQ]
+  body: text | [REQ]
+  created_by: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[security_delegate_locations] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  zone_id: uuid | FK->security_access_zones.id
+  last_seen_at: timestamp with time zone | def="now()"
+  last_seen_by: uuid | FK->users.id
+  missing: boolean | def=false
+  missing_note: text
+
+[security_incidents] (14 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  incident_type: text | [REQ]
+  location: text | [REQ]
+  involved_parties: jsonb
+  description: text | [REQ]
+  severity: text | [REQ]
+  immediate_action: text
+  requires_eb_notification: boolean | def=false
+  status: text | def="OPEN"
+  resolution_note: text
+  assigned_to: uuid | FK->users.id
+  reported_by: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[security_zone_logs] (6 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  zone_id: uuid | [REQ] | FK->security_access_zones.id
+  user_id: uuid | [REQ] | FK->users.id
+  action: text | [REQ]
+  officer_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+
+[session_events] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  event_type: text | [REQ]
+  title: text | [REQ]
+  description: text
+  metadata: jsonb
+  created_at: timestamp with time zone | def="now()"
+  created_by: uuid | FK->users.id
+
+[session_status_history] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  status: text | [REQ]
+  changed_by: uuid | FK->users.id
+  details: jsonb
+  created_at: timestamp with time zone | def="now()"
+
+[speakers_list] (13 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  delegate_id: uuid | [REQ] | FK->users.id
+  position: integer | def=0
+  status: text | def="QUEUED"
+  speaking_time_limit: integer | def=120
+  actual_speaking_time: integer | def=0
+  yield_type: text
+  yield_to_id: uuid | FK->users.id
+  started_at: timestamp with time zone
+  completed_at: timestamp with time zone
+  created_at: timestamp with time zone | def="now()"
+
+[speeches] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  title: text | def="Untitled Speech"
+  body: text | def=""
+  notes: text | def=""
+  word_count: integer | def=0
+  is_active: boolean | def=false
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"
+
+[stance_notes] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  sub_topic: text | [REQ]
+  stance: text | def=""
+  updated_at: timestamp with time zone | def="now()"
+
+[strategy_board] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  bloc_id: uuid | [REQ] | FK->blocs.id
+  shared_content: text | def=""
+  last_edited_by_id: uuid | FK->users.id
+  last_edited_at: timestamp with time zone | def="now()"
+
+[strategy_board_private] (5 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  bloc_id: uuid | [REQ] | FK->blocs.id
+  user_id: uuid | [REQ] | FK->users.id
+  content: text | def=""
+  updated_at: timestamp with time zone | def="now()"
+
+[timer_logs] (9 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  committee_id: uuid | [REQ] | FK->committees.id
+  session_id: uuid | FK->committee_sessions.id
+  label: text
+  set_duration: integer | [REQ]
+  actual_duration: integer | def=0
+  started_at: timestamp with time zone | def="now()"
+  completed_at: timestamp with time zone
+  created_by: uuid | FK->users.id
+
+[user_announcement_dismissals] (4 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  announcement_id: uuid | [REQ] | FK->announcements.id
+  user_id: uuid | [REQ] | FK->users.id
+  dismissed_at: timestamp with time zone | def="now()"
+
+[user_field_history] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  field_name: text | [REQ]
+  old_value: text | def=""
+  new_value: text | def=""
+  changed_by: uuid | FK->users.id
+  changed_at: timestamp with time zone | def="now()"
+
+[user_notes] (7 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  user_id: uuid | [REQ] | FK->users.id
+  content: text | [REQ]
+  author_id: uuid | FK->users.id
+  created_at: timestamp with time zone | def="now()"
+  note_type: text | def="GENERAL"
+  updated_at: timestamp with time zone | def="now()"
+
+[users] (25 cols)
+  id: uuid | def="gen_random_uuid()" | [REQ]
+  email: text | [REQ]
+  full_name: text
+  password_hash: text
+  date_of_birth: date
+  grade: text
+  phone_number: text
+  emergency_contact_name: text
+  emergency_contact_relation: text
+  emergency_contact_phone: text
+  role: public.user_role | enum=[DELEGATE,CHAIR,ADMIN,MEDIA,SECURITY,EXECUTIVE_BOARD,SECRETARY_GENERAL,DEPUTY_SECRETARY_GENERAL,CO_CHAIR] | def="DELEGATE"
+  status: public.user_status | enum=[PENDING,APPROVED,REJECTED,SUSPENDED] | def="PENDING"
+  preferred_committee: text
+  allocated_country: text
+  profile_image_url: text
+  badge_status: text | def="ACTIVE"
+  current_zone_id: uuid | FK->security_access_zones.id
+  ai_analyses_today: integer | def=0
+  ai_analyses_reset_date: date
+  has_completed_onboarding: boolean | def=false
+  dietary_restrictions: text
+  approved_at: timestamp with time zone
+  approved_by_id: uuid
+  created_at: timestamp with time zone | def="now()"
+  updated_at: timestamp with time zone | def="now()"

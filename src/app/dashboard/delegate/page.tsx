@@ -144,8 +144,8 @@ export default function DelegateDashboard() {
           filter: `committee_id=eq.${assignment.committee_id}`,
         },
         () => {
-          // Use background refetch to avoid full page loading circle flicker
-          refetchSession();
+          // Use background refetch with longer delay to prevent infinite refresh
+          setTimeout(() => refetchSession(), 1000);
         }
       )
       .subscribe();
@@ -153,15 +153,15 @@ export default function DelegateDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [assignment?.committee_id, refetchSession]); // Removed user?.id to prevent re-subscribing on every user update
+  }, [assignment?.committee_id]); // Removed user?.id and refetchSession to prevent re-subscribing on every update
 
   // Determine if we should show the full-page loader
   // Only show it on initial load of user OR if we're waiting for assignment to finish initial load
   const isInitialLoading = userLoading || (!!user && assignmentLoading && !assignment);
 
   const refreshData = useCallback(async () => {
-    await Promise.all([refetchUser(), refetchAssignment(), refetchSession()]);
-  }, [refetchUser, refetchAssignment, refetchSession]);
+    await Promise.all([refetchUser(), refetchAssignment()]);
+  }, [refetchUser, refetchAssignment]);
 
   // Memoize ctx to prevent unnecessary re-renders of all tabs
   const ctx: DelegateContext = useMemo(() => {

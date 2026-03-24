@@ -36,7 +36,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   const messagesParentRef = useRef<HTMLDivElement>(null);
 
   // useQuery for Blocs
-  const { data: blocs = [], isLoading: blocsLoading, isError: blocsError, refetch: refetchBlocs } = useQuery({
+  const { data: blocs, isLoading: blocsLoading, isError: blocsError, refetch: refetchBlocs } = useQuery({
     queryKey: ['delegate-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -73,7 +73,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Bloc Members
-  const { data: members = [], isLoading: membersLoading } = useQuery({
+  const { data: members, isLoading: membersLoading } = useQuery({
     queryKey: ['bloc-members', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
@@ -84,7 +84,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Bloc Docs
-  const { data: blocDocs = [], isLoading: blocDocsLoading } = useQuery({
+  const { data: blocDocs, isLoading: blocDocsLoading } = useQuery({
     queryKey: ['bloc-docs', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
@@ -95,7 +95,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Bloc Messages
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages, isLoading: messagesLoading } = useQuery({
     queryKey: ['bloc-messages', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
@@ -106,7 +106,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   const virtualizer = useVirtualizer({
-    count: messages.length,
+    count: (messages || []).length,
     getScrollElement: () => messagesParentRef.current,
     estimateSize: () => 60,
     overscan: 10,
@@ -115,10 +115,10 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   const virtualMessages = virtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (messages.length > 0) {
-      virtualizer.scrollToIndex(messages.length - 1);
+    if ((messages || []).length > 0) {
+      virtualizer.scrollToIndex((messages || []).length - 1);
     }
-  }, [messages.length, virtualizer]);
+  }, [(messages || []).length, virtualizer]);
 
   useEffect(() => {
     // Presence subscription
@@ -242,7 +242,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   useEffect(() => {
     if (!selectedBloc || blocTab !== 'strategy') return;
     loadStrategy(selectedBloc.id);
-    const interval = setInterval(() => loadStrategy(selectedBloc.id), 10000);
+    const interval = setInterval(() => loadStrategy(selectedBloc.id), 30000); // Increase to 30 seconds
     return () => clearInterval(interval);
   }, [blocTab, selectedBloc?.id]);
 
@@ -377,13 +377,13 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
           </div>
         </div>
 
-        {blocs.length === 0 ? (
+        {(blocs || []).length === 0 ? (
           <div className="text-center py-16 bg-bg-card border border-border-subtle rounded-card">
             <p className="text-text-dimmed font-jotia text-sm">You have not joined any blocs yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {blocs.map(b => (
+            {(blocs || []).map(b => (
               <div key={b.id} onClick={() => openBloc(b)} className="bg-bg-card border border-border-subtle rounded-card p-5 cursor-pointer hover:bg-bg-hover transition-colors">
                 <h3 className="font-jotia-bold text-text-primary mb-1">{b.name}</h3>
                 <div className="flex items-center gap-3 text-xs text-text-dimmed font-jotia mb-2">
@@ -496,7 +496,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                     {isCreator && <th className="text-left px-4 py-3 text-text-dimmed font-jotia text-xs uppercase">Actions</th>}
                   </tr></thead>
                   <tbody>
-                    {members.map(m => {
+                    {(members || []).map(m => {
                       const isOnline = m.user_id && onlineUsers.has(m.user_id);
                       return (
                       <tr key={m.id} className="border-b border-border-subtle/50">
@@ -521,7 +521,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                 </table>
               </div>
               <div className="md:hidden space-y-2">
-                {members.map(m => (
+                {(members || []).map(m => (
                   <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -558,11 +558,11 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
           </label>
           {blocDocsLoading ? (
             <LoadingSpinner className="py-12" />
-          ) : blocDocs.length === 0 ? (
+          ) : (blocDocs || []).length === 0 ? (
             <p className="text-text-dimmed font-jotia text-sm py-8 text-center">No shared files yet.</p>
           ) : (
             <div className="space-y-2">
-              {blocDocs.map(d => (
+              {(blocDocs || []).map(d => (
                 <div key={d.id} className="bg-bg-card border border-border-subtle rounded-card p-4 flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="font-jotia text-text-primary text-sm truncate">{d.title}</p>
@@ -614,6 +614,12 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       <div className="flex-1 overflow-hidden relative">
         {blocTab === 'messages' && (
           <div className="h-full flex flex-col p-4">
+            {/* Privacy Warning */}
+            <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <p className="text-xs text-yellow-400">
+                <strong>Privacy Notice:</strong> Bloc messages are not encrypted and may be accessed by conference organizers, committee chairs, and security personnel in accordance with BILLMUN regulations. All communications are subject to conference rules.
+              </p>
+            </div>
             {messagesLoading ? (
               <LoadingSpinner className="py-12" />
             ) : (
@@ -621,7 +627,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                 <div ref={messagesParentRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
                   <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                     {virtualMessages.map((virtualRow) => {
-                      const m = messages[virtualRow.index];
+                      const m = (messages || [])[virtualRow.index];
                       const isMe = m.user_id === ctx.user.id;
                       return (
                         <div
@@ -637,7 +643,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                           }}
                           className={`flex flex-col mb-4 ${isMe ? "items-end" : "items-start"}`}
                         >
-                          <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-raised border border-border-subtle"}`}>
+                          <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-card border border-border-subtle text-text-primary"}`}>
                             {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.users?.full_name}</p>}
                             <p className="font-jotia">{m.content}</p>
                           </div>

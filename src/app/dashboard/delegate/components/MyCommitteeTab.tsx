@@ -27,7 +27,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Announcements
-  const { data: announcements = [], isLoading: announcementsLoading, isError: announcementsError } = useQuery({
+  const { data: announcements, isLoading: announcementsLoading, isError: announcementsError } = useQuery({
     queryKey: ['committee-announcements', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -44,7 +44,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Roster
-  const { data: roster = [], isLoading: rosterLoading, isError: rosterError } = useQuery({
+  const { data: roster, isLoading: rosterLoading, isError: rosterError } = useQuery({
     queryKey: ['committee-roster', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -98,9 +98,9 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Announcements */}
-      {announcements.filter(a => a.is_pinned).length > 0 && (
+      {(announcements || []).filter(a => a.is_pinned).length > 0 && (
         <div className="space-y-3">
-          {announcements.filter(a => a.is_pinned).map((ann) => (
+          {(announcements || []).filter(a => a.is_pinned).map((ann) => (
             <div key={ann.id} className="bg-bg-raised border border-border-emphasized rounded-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <h4 className="font-jotia-bold text-sm text-text-primary">{ann.title}</h4>
@@ -209,7 +209,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
               </tr>
             </thead>
             <tbody>
-              {roster.map((r) => (
+              {(roster || []).map((r) => (
                 <tr key={r.id} className="border-b border-border-subtle/50">
                   <td className="py-3 font-jotia text-text-primary">{r.User?.full_name || 'Unknown'}</td>
                   <td className="py-3 font-jotia text-text-dimmed">{r.country}</td>
@@ -220,7 +220,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
         </div>
         {/* Mobile */}
         <div className="md:hidden space-y-2">
-          {roster.map((r) => (
+          {(roster || []).map((r) => (
             <div key={r.id} className="bg-bg-raised rounded-card p-3 flex justify-between items-center">
               <span className="font-jotia text-text-primary text-sm">{r.User?.full_name || 'Unknown'}</span>
               <span className="font-jotia text-text-dimmed text-xs">{r.country}</span>

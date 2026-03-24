@@ -67,7 +67,7 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
     };
 
     fetchCommitteeData();
-    const interval = setInterval(fetchCommitteeData, 20000);
+    const interval = setInterval(fetchCommitteeData, 60000);
 
     const channel = supabase
       .channel(`committee-sessions:${committee_id}`)

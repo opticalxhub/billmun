@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       if (!document_id || !status) {
         return NextResponse.json({ error: "Missing document review fields" }, { status: 400 });
       }
-      if (["NEEDS_REVISION", "REJECTED"].includes(status) && !String(feedback || "").trim()) {
+      if (["REVISION_REQUESTED", "REJECTED"].includes(status) && !String(feedback || "").trim()) {
         return NextResponse.json({ error: "Feedback is required for this outcome" }, { status: 400 });
       }
       const { data: doc } = await supabaseAdmin

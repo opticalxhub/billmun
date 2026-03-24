@@ -3,23 +3,24 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/button';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 import { X, ExternalLink } from "lucide-react";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const STATUS_STYLES: Record<string, string> = {
-  PENDING: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  SUBMITTED: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+  UNDER_REVIEW: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
   APPROVED: 'bg-green-500/15 text-green-400 border-green-500/30',
-  NEEDS_REVISION: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+  REVISION_REQUESTED: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   REJECTED: 'bg-red-500/15 text-red-400 border-red-500/30',
 };
 
 export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<any>(null);
-  const [reviewStatus, setReviewStatus] = useState('PENDING');
+  const [reviewStatus, setReviewStatus] = useState('SUBMITTED');
   const [feedback, setFeedback] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [consolidating, setConsolidating] = useState(false);
@@ -131,7 +132,7 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
         file_url: urlData.publicUrl,
         file_size: fileBlob.size,
         mime_type: 'text/plain',
-        status: 'PENDING',
+        status: 'SUBMITTED',
         feedback: `Consolidated from: ${sourceDocs.map(d => d.title).join(', ')}`,
       });
       if (insertError) throw insertError;
@@ -331,9 +332,10 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                 <div>
                   <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Status</label>
                   <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={reviewStatus} onChange={e => setReviewStatus(e.target.value)}>
-                    <option value="PENDING">Pending</option>
+                    <option value="SUBMITTED">Submitted</option>
+                    <option value="UNDER_REVIEW">Under Review</option>
                     <option value="APPROVED">Approved</option>
-                    <option value="NEEDS_REVISION">Needs Revision</option>
+                    <option value="REVISION_REQUESTED">Revision Requested</option>
                     <option value="REJECTED">Rejected</option>
                   </select>
                 </div>

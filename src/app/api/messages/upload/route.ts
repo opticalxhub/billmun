@@ -1,36 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UTApi } from "uploadthing/server";
 import { getRequestUserContext } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
-  const { context, error, status } = await getRequestUserContext();
-  if (!context) return NextResponse.json({ error }, { status: status || 500 });
+    const { context, error, status } = await getRequestUserContext();
+    if (!context) return NextResponse.json({ error }, { status: status || 500 });
 
-  const formData = await req.formData();
-  const file = formData.get("file");
-  if (!(file instanceof File)) return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    const formData = await req.formData();
+    const file = formData.get("file");
+    if (!(file instanceof File)) return NextResponse.json({ error: "Missing file" }, { status: 400 });
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowed.includes(file.type)) {
+      return NextResponse.json({ error: "Only JPG/PNG/WEBP/PDF allowed" }, { status: 400 });
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large (max 25MB)" }, { status: 400 });
+    }
 
-  const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-  if (!allowed.includes(file.type)) {
-    return NextResponse.json({ error: "Only JPG/PNG/WEBP/PDF allowed" }, { status: 400 });
-  }
-  if (file.size > 25 * 1024 * 1024) {
-    return NextResponse.json({ error: "File too large (max 25MB)" }, { status: 400 });
-  }
+    // Upload to Supabase Storage
+    const fileExt = file.name.split('.').pop();
+    const fileName = `messages/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const { data, error: uploadError } = await supabase.storage
+      .from('attachments')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
-  const utapi = new UTApi();
-  const uploaded = await utapi.uploadFiles(file);
-  if (uploaded.error || !uploaded.data?.ufsUrl) {
-    return NextResponse.json({ error: uploaded.error?.message || "Upload failed" }, { status: 500 });
-  }
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    }
 
-  return NextResponse.json({
-    file_url: uploaded.data.ufsUrl,
-    file_name: uploaded.data.name || file.name,
-    file_size: uploaded.data.size || file.size,
-    mime_type: uploaded.data.type || file.type,
-  });
+    const { data: { publicUrl } } = supabase.storage
+      .from('attachments')
+      .getPublicUrl(fileName);
+
+    return NextResponse.json({
+      file_url: publicUrl,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type,
+    });
   } catch (err: any) {
     console.error('[messages/upload]', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

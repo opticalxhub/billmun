@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         .from("documents")
         .select("id, user_id, title, type, status, uploaded_at, users(full_name)")
         .eq("committee_id", committee_id)
-        .in("status", ["PENDING", "NEEDS_REVISION"])
+        .in("status", ["SUBMITTED", "REVISION_REQUESTED"])
         .order("uploaded_at", { ascending: true })
         .limit(50),
       supabaseAdmin
@@ -140,6 +140,11 @@ export async function GET(req: NextRequest) {
       supabaseAdmin
         .from("audit_logs")
         .select("id, actor_id, action, target_type, target_id, metadata, performed_at, actor:actor_id(full_name)")
+        .or(`target_type.eq.committee_assignments,target_type.eq.documents,target_type.eq.speakers_list,target_type.eq.votes,target_type.eq.messages,target_type.eq.announcements,target_type.eq.bloc_members,target_type.eq.resolution_clauses,actor_id.eq.${adminUserId}`)
+        .not('action', 'ilike', '%rejected%')
+        .not('action', 'ilike', '%suspended%')
+        .not('action', 'ilike', '%security%')
+        .not('action', 'ilike', '%emergency%')
         .order("performed_at", { ascending: false })
         .limit(100),
     ]);

@@ -296,7 +296,7 @@ export async function runOnUserRejected(
       message: reason
         ? `Your registration was not approved. ${reason}`
         : "Your registration was not approved.",
-      type: "ERROR",
+      type: "ALERT",
     });
   });
 }
@@ -424,7 +424,7 @@ export async function runOnDocumentUploaded(
     // 1. Log initial status
     await supabaseAdmin.from("document_status_history").insert({
       document_id: documentId,
-      status: "PENDING",
+      status: "SUBMITTED",
       changed_by_id: actorId || ownerUserId,
       note: "Document submitted and queued for AI verification.",
     });
@@ -468,13 +468,13 @@ export async function runOnDocumentUploaded(
         if (analysis.ai_detection_score >= 80) {
           await supabaseAdmin.from("document_status_history").insert({
             document_id: documentId,
-            status: "NEEDS_REVISION",
-            changed_by_id: "00000000-0000-0000-0000-000000000001", // SYS98 njhTEM
+            status: "REVISION_REQUESTED",
+            changed_by_id: "00000000-0000-0000-0000-000000000001",
             note: `(AI FLAG) Plagiarism/AI detected in document content.`,
           });
 
           await supabaseAdmin.from("documents").update({
-            status: "NEEDS_REVISION",
+            status: "REVISION_REQUESTED",
             feedback: `AI checker flagged this document as potentially AI-generated (${analysis.ai_detection_score}%). Please revise and ensure originality.`,
           }).eq("id", documentId);
 

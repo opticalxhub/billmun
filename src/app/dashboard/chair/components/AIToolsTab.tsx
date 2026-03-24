@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Card, SectionLabel, Textarea, Select } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/button';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 import { 

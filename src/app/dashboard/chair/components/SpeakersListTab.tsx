@@ -77,7 +77,7 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
       user_id: speaker.delegate_id,
       title: "It's your turn to speak!",
       message: `The chair has recognized you. Your speaking time is ${fmt(speaker.speaking_time_limit || speakingLimit)}.`,
-      type: "MESSAGE",
+      type: "INFO",
       link: "/dashboard/delegate"
     });
 

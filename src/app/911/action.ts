@@ -13,8 +13,8 @@ export async function verifyEmergencyPassphrase(passphrase: string) {
     return { error: "Invalid passphrase." };
   }
 
-  // Create session valid for 2 minutes
-  const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
+  // Create session valid for 10 minutes
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   const { data, error } = await supabaseAdmin
     .from("emergency_sessions")
@@ -27,7 +27,7 @@ export async function verifyEmergencyPassphrase(passphrase: string) {
     return { error: "System error: could not create session." };
   }
 
-  // Set cookies for 2 minutes
+  // Set cookies for 10 minutes
   const cookieStore = await cookies();
   cookieStore.set("emergency_token", data.id, {
     expires: expiresAt,

@@ -15,6 +15,7 @@ import ChairDocumentsTab from './components/ChairDocumentsTab';
 import DelegatesTab from './components/DelegatesTab';
 import AnalyticsTab from './components/AnalyticsTab';
 import AIToolsTab from './components/AIToolsTab';
+import BlocsTab from './components/BlocsTab';
 import PreparationTab from './components/PreparationTab';
 import CommitteeScheduleTab from './components/CommitteeScheduleTab';
 import WhatsAppTab from '@/components/whatsapp-tab';
@@ -119,7 +120,7 @@ export default function ChairDashboard() {
   });
 
   // useQuery for Delegates
-  const { data: delegates = [] } = useQuery({
+  const { data: delegates = [], isLoading: delegatesLoading } = useQuery({
     queryKey: ['committee-delegates', committee?.id],
     enabled: !!committee?.id,
     queryFn: async () => {
@@ -229,10 +230,17 @@ export default function ChairDashboard() {
   const refreshData = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['chair-committee', user?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['committee-session', committee?.id] }),
       queryClient.invalidateQueries({ queryKey: ['committee-delegates', committee?.id] }),
-      refetchSession(),
+      queryClient.invalidateQueries({ queryKey: ['speakers-list', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['roll-call', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-tasks', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['committee-announcements', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['committee-resources', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['committee-documents', committee?.id] }),
+      queryClient.invalidateQueries({ queryKey: ['attendance-records', committee?.id] }),
     ]);
-  }, [queryClient, user?.id, committee?.id, refetchSession]);
+  }, [queryClient, user?.id, committee?.id]);
 
   if (loading) {
     return <DashboardLoadingState type="overview" />;
@@ -254,9 +262,9 @@ export default function ChairDashboard() {
   return (
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader
-        title="Chair Control Panel"
-        subtitle={`Session active for ${ctx.committee.name}`}
-        committeeName={ctx.committee.name}
+        title="Chair Dashboard"
+        subtitle={`Session active for ${ctx.committee?.name || 'No Committee'}`}
+        committeeName={ctx.committee?.name || 'No Committee'}
         user={user}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
@@ -272,7 +280,7 @@ export default function ChairDashboard() {
             {activeTab === 'Timers' && <TimersTab ctx={ctx} />}
             {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
             {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
-            {activeTab === 'Blocs & Resolutions' && <PointsSystem committee={ctx.committee} />}
+            {activeTab === 'Blocs & Resolutions' && <BlocsTab ctx={ctx} />}
             {activeTab === 'Delegate Stats' && <DelegateStatsSpreadsheet committee={ctx.committee} />}
             {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
             {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
@@ -283,7 +291,7 @@ export default function ChairDashboard() {
             {activeTab === 'WhatsApp' && <WhatsAppTab />}
           </DashboardAnimatedTabPanel>
         </div>
-        
+
         <div className="xl:col-span-4 space-y-4 sm:space-y-6">
           <Notepad dashboardKey="CHAIR" userId={user?.id} />
         </div>

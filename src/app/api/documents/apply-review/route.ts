@@ -12,7 +12,7 @@ const REVIEWER_ROLES = [
   "DEPUTY_SECRETARY_GENERAL",
 ] as const;
 
-const ALLOWED_STATUS = ["PENDING", "APPROVED", "NEEDS_REVISION", "REJECTED"] as const;
+const ALLOWED_STATUS = ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REVISION_REQUESTED", "REJECTED"] as const;
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    if (["NEEDS_REVISION", "REJECTED"].includes(newStatus) && !String(feedback || "").trim()) {
+    if (["REVISION_REQUESTED", "REJECTED"].includes(newStatus) && !String(feedback || "").trim()) {
       return NextResponse.json({ error: "Feedback is required for this status" }, { status: 400 });
     }
 

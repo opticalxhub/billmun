@@ -107,7 +107,7 @@ export default function AdminDashboard() {
       return json;
     },
     staleTime: 60 * 1000,
-    refetchInterval: 30 * 1000,
+    refetchInterval: false,
     placeholderData: (prev: unknown) => prev,
   });
 
@@ -1089,7 +1089,7 @@ export default function AdminDashboard() {
                   className="h-10 w-full rounded-input border border-border-input bg-bg-raised px-3 text-sm"
                 >
                   <option value="APPROVED">Approved</option>
-                  <option value="NEEDS_REVISION">Request Revision</option>
+                  <option value="REVISION_REQUESTED">Request Revision</option>
                   <option value="REJECTED">Rejected</option>
                 </select>
                 <Textarea value={reviewFeedback} onChange={(e) => setReviewFeedback(e.target.value)} placeholder="Feedback for delegate" />

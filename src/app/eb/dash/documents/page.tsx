@@ -115,7 +115,7 @@ export default function DocumentsDashPage() {
           </div>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm focus:ring-2 focus:ring-primary outline-none" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
             <option value="ALL">All Statuses</option>
-            <option value="PENDING">Pending</option>
+            <option value="SUBMITTED">Submitted</option>
             <option value="APPROVED">Approved</option>
             <option value="REVISION_REQUESTED">Needs Revision</option>
             <option value="REJECTED">Rejected</option>

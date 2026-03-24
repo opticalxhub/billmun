@@ -81,7 +81,7 @@ export default function EBSecurityPage() {
           user_id: row.id,
           title: `INCIDENT ESCALATED: ${severity}`,
           message: `An incident of type ${type} was escalated to the Executive Board.`,
-          type: "ERROR",
+          type: "ALERT",
           link: "/eb/dash/security"
         }))
       );

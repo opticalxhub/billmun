@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Card, SectionLabel } from '@/components/ui';
 import { displayRole } from '@/lib/roles';
 import { DashboardHeader, DashboardLoadingState } from '@/components/dashboard-shell';
+import { FadeIn, StaggerContainer, HoverScale } from '@/components/gsap-animations';
 
 export default function DashboardHub() {
   const router = useRouter();
@@ -76,8 +77,8 @@ export default function DashboardHub() {
   return (
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader 
-        title="Central Hub" 
-        subtitle={`Welcome, ${userProfile?.full_name || 'Delegate'}. Access your assigned tools below.`}
+        title="Conference Portal" 
+        subtitle={`Welcome, ${userProfile?.full_name || 'Delegate'}. Your conference dashboard is ready.`}
         user={userProfile}
       />
 
@@ -113,32 +114,40 @@ export default function DashboardHub() {
 
         {/* Delegate Dashboard */}
         {(isGodMode || role === 'DELEGATE' || isEB) && (
-          <Link href="/dashboard/delegate" className="group">
-            <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
-              <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Delegate Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Access working papers, AI document analysis, and bloc management.</p>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
-              </div>
-            </Card>
-          </Link>
+          <FadeIn delay={0.1} from="bottom">
+            <Link href="/dashboard/delegate" className="group">
+              <HoverScale>
+                <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Delegate Dashboard</h3>
+                    <p className="text-sm text-text-dimmed">Submit position papers, join blocs, and participate in committee sessions.</p>
+                  </div>
+                  <div className="mt-6 flex justify-end">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
+                  </div>
+                </Card>
+              </HoverScale>
+            </Link>
+          </FadeIn>
         )}
 
         {/* Chair Dashboard */}
         {(isGodMode || role === 'CHAIR' || isEB) && (
-          <Link href="/dashboard/chair" className="group">
-            <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
-              <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Chair Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Manage committee sessions, timers, speaker lists, and caucuses.</p>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
-              </div>
-            </Card>
-          </Link>
+          <FadeIn delay={0.2} from="bottom">
+            <Link href="/dashboard/chair" className="group">
+              <HoverScale>
+                <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Chair Dashboard</h3>
+                    <p className="text-sm text-text-dimmed">Lead debate sessions, manage speakers, and oversee committee proceedings.</p>
+                  </div>
+                  <div className="mt-6 flex justify-end">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
+                  </div>
+                </Card>
+              </HoverScale>
+            </Link>
+          </FadeIn>
         )}
 
         {/* Press Dashboard */}
@@ -147,7 +156,7 @@ export default function DashboardHub() {
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
                 <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Press Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Upload media to the conference gallery and review press materials.</p>
+                <p className="text-sm text-text-dimmed">Manage press coverage, media releases, and conference documentation.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -162,7 +171,7 @@ export default function DashboardHub() {
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
                 <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Admin Logistics</h3>
-                <p className="text-sm text-text-dimmed">Manage delegate attendance, lavatory breaks, and live statuses.</p>
+                <p className="text-sm text-text-dimmed">Handle delegate logistics, attendance tracking, and conference operations.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -177,7 +186,7 @@ export default function DashboardHub() {
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
                 <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Security Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Monitor venue access, incident reports, and safety protocols.</p>
+                <p className="text-sm text-text-dimmed">Ensure conference security, access control, and emergency response.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -192,7 +201,7 @@ export default function DashboardHub() {
             <Card className="h-full border-text-primary transition-colors cursor-pointer bg-text-primary text-bg-base flex flex-col justify-between hover:opacity-90">
               <div>
                 <h3 className="font-jotia text-2xl mb-2 group-hover:underline text-bg-base">Executive Board</h3>
-                <p className="text-sm text-bg-base/70">Master controls for users, announcements, media approval, and system settings.</p>
+                <p className="text-sm text-text-dimmed bg-bg-base/70">Complete conference administration, user management, and system oversight.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-bg-base/50 border border-bg-base/20 px-2 py-1 rounded">System Admin</div>

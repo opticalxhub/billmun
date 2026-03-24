@@ -47,6 +47,7 @@ export type Database = {
           difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
           is_active: boolean;
           chair_id?: string;
+          co_chair_id?: string;
           created_at: string;
         };
         Insert: Omit<Database['public']['Tables']['committees']['Row'], 'id' | 'created_at'>;
@@ -95,7 +96,7 @@ export type Database = {
           file_url: string;
           file_size: number;
           mime_type: string;
-          status: 'PENDING' | 'APPROVED' | 'NEEDS_REVISION' | 'REJECTED';
+          status: 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REVISION_REQUESTED' | 'REJECTED';
           feedback?: string;
           uploaded_at: string;
           reviewed_at?: string;
@@ -627,10 +628,12 @@ export type Database = {
           id: string;
           user_id: string;
           content: string;
+          note_type: string;
           author_id: string;
           created_at: string;
+          updated_at: string;
         };
-        Insert: Omit<Database['public']['Tables']['user_notes']['Row'], 'id' | 'created_at'>;
+        Insert: Omit<Database['public']['Tables']['user_notes']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['user_notes']['Insert']>;
       };
       user_field_history: {
@@ -640,7 +643,7 @@ export type Database = {
           field_name: string;
           old_value: string;
           new_value: string;
-          changed_by_id: string;
+          changed_by: string;
           changed_at: string;
         };
         Insert: Omit<Database['public']['Tables']['user_field_history']['Row'], 'id' | 'changed_at'>;
@@ -981,6 +984,7 @@ export type Database = {
           ai_analysis_enabled: boolean;
           max_file_upload_mb: number;
           emergency_contact_phone?: string;
+          whatsapp_group_link?: string;
         };
         Insert: Omit<Database['public']['Tables']['conference_settings']['Row'], 'id' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['conference_settings']['Insert']>;

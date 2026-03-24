@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Input } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/button';
 import { supabase } from '@/lib/supabase';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { 

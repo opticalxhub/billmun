@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Textarea } from '@/components/ui';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/button';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
 

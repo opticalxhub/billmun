@@ -52,9 +52,10 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const [selectedBlocId, setSelectedBlocId] = useState("");
   const [, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   // useQuery for Resolutions
-  const { data: resolutions = [], isLoading: resolutionsLoading, isError: resolutionsError, refetch: refetchResolutions } = useQuery({
+  const { data: resolutions, isLoading: resolutionsLoading, isError: resolutionsError, refetch: refetchResolutions } = useQuery({
     queryKey: ['resolutions', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -66,7 +67,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   });
 
   // useQuery for User Blocs
-  const { data: userBlocs = [], isLoading: blocsLoading, isError: blocsError } = useQuery({
+  const { data: userBlocs, isLoading: blocsLoading, isError: blocsError, refetch: refetchUserBlocs } = useQuery({
     queryKey: ['user-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
@@ -84,7 +85,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   });
 
   // useQuery for Clauses
-  const { data: clauses = [], refetch: refetchClauses } = useQuery({
+  const { data: clauses, refetch: refetchClauses } = useQuery({
     queryKey: ['resolution-clauses', selectedId],
     enabled: !!selectedId,
     queryFn: async () => {
@@ -179,7 +180,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
 
   const addClause = async () => {
     if (!addingPhrase || !selectedId || !addingType) return;
-    const maxOrder = clauses
+    const maxOrder = (clauses || [])
       .filter((c: Clause) => c.type === addingType && !c.parent_clause_id)
       .reduce((m: number, c: Clause) => Math.max(m, c.order_index), -1);
     
@@ -212,9 +213,9 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   };
 
   const moveClause = async (id: string, direction: -1 | 1) => {
-    const clause = clauses.find((c: Clause) => c.id === id);
+    const clause = (clauses || []).find((c: Clause) => c.id === id);
     if (!clause) return;
-    const siblings = clauses
+    const siblings = (clauses || [])
       .filter((c: Clause) => c.type === clause.type && c.parent_clause_id === clause.parent_clause_id)
       .sort((a: Clause, b: Clause) => a.order_index - b.order_index);
     const idx = siblings.findIndex((c: Clause) => c.id === id);
@@ -247,16 +248,16 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     }
   };
 
-  const preamClauses = clauses
+  const preamClauses = (clauses || [])
     .filter((c: Clause) => c.type === 'PREAMBULATORY' && !c.parent_clause_id)
     .sort((a: Clause, b: Clause) => a.order_index - b.order_index);
   
-  const opClauses = clauses
+  const opClauses = (clauses || [])
     .filter((c: Clause) => c.type === 'OPERATIVE' && !c.parent_clause_id)
     .sort((a: Clause, b: Clause) => a.order_index - b.order_index);
 
   const getSubClauses = (parentId: string) => 
-    clauses
+    (clauses || [])
       .filter((c: Clause) => c.parent_clause_id === parentId)
       .sort((a: Clause, b: Clause) => a.order_index - b.order_index);
 
@@ -264,15 +265,23 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-jotia-bold text-xl text-text-primary">Resolution Builder</h2>
-        <button onClick={createResolution} className="px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px]">
-          New Resolution
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowGuide(true)}
+            className="px-3 py-2 text-sm font-jotia bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-button hover:bg-blue-500/20 min-h-[44px]"
+          >
+            Guide
+          </button>
+          <button onClick={createResolution} className="px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px]">
+            New Resolution
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Resolution List */}
         <div className="lg:w-64 shrink-0 space-y-2">
-          {resolutions.map(r => (
+          {(resolutions || []).map(r => (
             <div key={r.id} onClick={() => selectResolution(r)} className={`rounded-card p-3 cursor-pointer transition-colors border ${selectedId === r.id ? 'bg-bg-raised border-border-emphasized' : 'bg-bg-card border-border-subtle hover:bg-bg-hover'}`}>
               <p className="font-jotia text-text-primary text-sm truncate">{r.title}</p>
               <p className="font-jotia text-text-tertiary text-xs">{new Date(r.updated_at).toLocaleDateString()}</p>
@@ -473,7 +482,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
               className="w-full bg-bg-raised border border-border-input rounded-input px-3 h-10 font-jotia text-sm text-text-primary"
             >
               <option value="">Select a bloc...</option>
-              {userBlocs.map(b => (
+              {(userBlocs || []).map(b => (
                 <option key={b.bloc_id} value={b.bloc_id}>{b.blocs?.name}</option>
               ))}
             </select>
@@ -481,6 +490,132 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
               <button onClick={() => setShowShareModal(false)} className="flex-1 px-4 py-2 text-sm font-jotia bg-bg-raised border border-border-subtle rounded-button text-text-primary hover:bg-bg-hover min-h-[44px]">Cancel</button>
               <button onClick={handleShareToBloc} disabled={!selectedBlocId || sharing} className="flex-1 px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px] disabled:opacity-50">
                 {sharing ? 'Sharing...' : 'Share'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resolution Guide Modal */}
+      {showGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto" onClick={() => setShowGuide(false)}>
+          <div className="bg-bg-card w-full max-w-4xl max-h-[90vh] rounded-card p-6 space-y-6 overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-jotia-bold text-2xl text-text-primary">How to Write a Resolution</h2>
+              <button onClick={() => setShowGuide(false)} className="text-text-dimmed hover:text-text-primary text-2xl">×</button>
+            </div>
+
+            <div className="space-y-6 text-sm">
+              <section>
+                <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Basics of a Resolution</h3>
+                <div className="space-y-3 text-text-secondary">
+                  <p><strong>Who:</strong> Any delegate in the committee can write a resolution. The author is called a sponsor. Most resolutions have multiple sponsors because it takes a group of countries to share good ideas and come to a consensus.</p>
+                  <p><strong>What:</strong> A resolution is a document that contains all the issues the committee wants to solve and the proposed solutions. It's called a resolution because that's what the United Nations calls their documents.</p>
+                  <p><strong>When/Where:</strong> Most conferences require students to write resolutions during the conference, usually during unmoderated caucus where delegates can collaborate freely.</p>
+                  <p><strong>Why:</strong> The ultimate purpose of a committee session is to pass a resolution. All speeches, debate, negotiation, and teamwork leads to resolutions containing proposed solutions.</p>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Resolution Structure</h3>
+                <p className="text-text-secondary mb-3">A resolution has three main parts: the heading, the preambulatory clauses, and the operative clauses.</p>
+                
+                <div className="space-y-4">
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">1. Heading</h4>
+                    <p className="text-text-secondary text-xs">Contains: Committee name, sponsors, signatories, and topic. The sponsors are the authors. Signatories are delegates who want to see it debated but don't necessarily agree with it.</p>
+                  </div>
+
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">2. Preambulatory Clauses</h4>
+                    <p className="text-text-secondary text-xs mb-2">States all the issues the committee wants to resolve. May include:</p>
+                    <ul className="text-xs text-text-secondary list-disc list-inside space-y-1">
+                      <li>Past UN resolutions, treaties, or conventions</li>
+                      <li>Regional, non-governmental, or national efforts</li>
+                      <li>References to UN Charter or international frameworks</li>
+                      <li>Statements by the Secretary-General or UN bodies</li>
+                      <li>General background information and facts</li>
+                    </ul>
+                    <p className="text-xs text-text-tertiary mt-2">Strategy: Fewer preambulatory clauses than operative clauses. More operative clauses show you have more solutions than problems.</p>
+                  </div>
+
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">3. Operative Clauses</h4>
+                    <p className="text-text-secondary text-xs mb-2">State the solutions the sponsors propose. These should address issues mentioned in preambulatory clauses.</p>
+                    <p className="text-xs text-text-tertiary">Strategy: Add details to strengthen each clause. Answer "who, what, when, where, why, and how" for each resolution.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Writing Clauses</h3>
+                
+                <div className="space-y-4">
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">Preambulatory Format</h4>
+                    <p className="text-text-secondary text-xs">Take a statement + preambulatory phrase + comma</p>
+                    <div className="bg-bg-base rounded p-2 mt-2 font-mono text-xs">
+                      <em className="underline">Alarmed by</em> the 17% increase in HIV/AIDS contraction among sub-Saharan African countries in the past five years,
+                    </div>
+                  </div>
+
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">Operative Format</h4>
+                    <p className="text-text-secondary text-xs">Take a solution + operative phrase + semicolon (final clause ends with period)</p>
+                    <div className="bg-bg-base rounded p-2 mt-2 font-mono text-xs">
+                      1. <span className="underline">Calls upon</span> the developed countries and major pharmaceutical countries to provide low-cost, generic medicines for HIV/AIDS to sub-Saharan African countries;
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Common Phrases</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">Preambulatory Phrases</h4>
+                    <div className="text-xs text-text-secondary space-y-1">
+                      <div>• Affirming, Alarmed by, Approving</div>
+                      <div>• Believing, Cognizant of, Confident</div>
+                      <div>• Deeply concerned, Deeply convinced</div>
+                      <div>• Emphasizing, Expecting, Fulfilling</div>
+                      <div>• Guided by, Having adopted, Noting</div>
+                      <div>• Realizing, Recalling, Recognizing</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-bg-raised rounded-card p-4">
+                    <h4 className="font-semibold text-text-primary mb-2">Operative Phrases</h4>
+                    <div className="text-xs text-text-secondary space-y-1">
+                      <div>• Accepts, Affirms, Approves, Authorizes</div>
+                      <div>• Calls for, Calls upon, Commends</div>
+                      <div>• Condemns, Confirms, Congratulates</div>
+                      <div>• Declares, Demands, Deplores</div>
+                      <div>• Encourages, Endorses, Expresses</div>
+                      <div>• Invites, Notes, Recommends, Urges</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-jotia-bold text-lg text-text-primary mb-3">Quick Tips</h3>
+                <ul className="text-xs text-text-secondary space-y-2 list-disc list-inside">
+                  <li>A resolution is one long sentence - beginning with title, ending with final period</li>
+                  <li>Preambulatory clauses end with commas, operative clauses end with semicolons</li>
+                  <li>Only the final operative clause ends with a period</li>
+                  <li>Operative clauses are numbered, preambulatory clauses are not</li>
+                  <li>Use formal, diplomatic language throughout</li>
+                  <li>Be specific and actionable in your operative clauses</li>
+                  <li>Ensure operative clauses address issues mentioned in preambulatory clauses</li>
+                </ul>
+              </section>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t border-border-subtle">
+              <button onClick={() => setShowGuide(false)} className="px-6 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px]">
+                Got it, thanks!
               </button>
             </div>
           </div>

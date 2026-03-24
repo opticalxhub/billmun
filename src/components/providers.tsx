@@ -3,11 +3,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 import { DataPreloader } from './data-preloader';
 
 export function Providers({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
@@ -17,7 +15,8 @@ export function Providers({ children }: { children: ReactNode }) {
         console.log('Token refreshed successfully');
       }
       if (event === 'SIGNED_OUT') {
-        router.push('/login');
+        // Use window.location for redirect to avoid router initialization issues
+        window.location.href = '/login';
       }
     });
 
@@ -38,7 +37,7 @@ export function Providers({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
       clearInterval(interval);
     };
-  }, [router]);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

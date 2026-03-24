@@ -116,7 +116,7 @@ export default function RegistrationsPage() {
   const [assignForm, setAssignForm] = useState({ committee_id: "", country: "", seat_number: "" });
   const [profileDraft, setProfileDraft] = useState<Record<string, string>>({});
   const [fieldHistory, setFieldHistory] = useState<
-    { id: string; field_name: string; old_value: string; new_value: string; changed_at: string; changed_by_id: string }[]
+    { id: string; field_name: string; old_value: string; new_value: string; changed_at: string; changed_by: string }[]
   >([]);
   const [saveProfileLoading, setSaveProfileLoading] = useState(false);
 

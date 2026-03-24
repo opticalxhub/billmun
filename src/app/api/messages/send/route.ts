@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
         user_id: m.user_id,
         title: `New DM from ${sender?.full_name || 'User'}`,
         message: content.length > 60 ? content.substring(0, 57) + "..." : content,
-        type: "MESSAGE",
+        type: "INFO",
         link: `/messages?channel=${channelId}`
       }));
       await supabaseAdmin.from("notifications").insert(notifs);

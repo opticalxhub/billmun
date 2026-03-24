@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
           user_id: eb.id,
           title: "🚨 MEDICAL EMERGENCY",
           message: `${user_details.full_name} reported a medical emergency at ${metadata.location}.`,
-          type: "EMERGENCY",
+          type: "ALERT",
           link: "/eb/dash?tab=reports"
         }));
         await supabaseAdmin.from("notifications").insert(notifs);

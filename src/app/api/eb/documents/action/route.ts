@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const statusMap: Record<string, string> = {
       "approve": "APPROVED",
-      "revise": "NEEDS_REVISION",
+      "revise": "REVISION_REQUESTED",
       "reject": "REJECTED"
     };
 

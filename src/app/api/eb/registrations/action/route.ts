@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
         field_name: field,
         old_value: oldVal != null ? String(oldVal) : "",
         new_value: revertTo,
-        changed_by_id: actorId,
+        changed_by: actorId,
       });
 
       await logAudit(`Reverted field ${field} for user ${targetUser.email}`);
@@ -306,7 +306,7 @@ export async function POST(req: NextRequest) {
           field_name: f,
           old_value: prev != null ? String(prev) : "",
           new_value: cleanData[f] != null ? String(cleanData[f]) : "",
-          changed_by_id: actorId,
+          changed_by: actorId,
         });
       }
 

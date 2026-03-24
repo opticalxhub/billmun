@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     if (format === 'pdf') {
       const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([595.28, 841.89]); // A4
+      let page = pdfDoc.addPage([595.28, 841.89]); // A4
       const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
       const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
       const italicFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
@@ -59,7 +59,9 @@ export async function GET(req: NextRequest) {
 
       const drawText = (text: string, f: any, size: number) => {
         if (y < 50) {
-            // Need new page logic ideally, simplified here
+          // Add new page
+          page = pdfDoc.addPage([595.28, 841.89]);
+          y = 800;
         }
         page.drawText(text, { x, y, size, font: f });
         y -= (size + 5);

@@ -53,24 +53,109 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   // useQuery for Activity
-  const { data: activity = [], isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
-    queryKey: ['delegate-activity', ctx.user?.id],
+  const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
+    queryKey: ['delegate-activity', ctx.user?.id, ctx.committee?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .eq('actor_id', ctx.user.id)
-        .order('performed_at', { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return data;
+      const committeeId = ctx.committee?.id;
+      if (!committeeId) return [];
+      
+      // Get delegate's personal activities + committee activities
+      const [personal, committeeDocs, announcements, blocMessages] = await Promise.all([
+        // Personal audit logs (filter out administrative actions)
+        supabase
+          .from('audit_logs')
+          .select('*')
+          .eq('actor_id', ctx.user.id)
+          .not('action', 'ilike', '%rejected%')
+          .not('action', 'ilike', '%suspended%')
+          .not('action', 'ilike', '%admin%')
+          .not('action', 'ilike', '%security%')
+          .order('performed_at', { ascending: false })
+          .limit(5),
+        // Committee document activity (only approved documents and user's own)
+        supabase
+          .from('documents')
+          .select('id, title, uploaded_at, reviewed_at, status, user_id, users(full_name)')
+          .eq('committee_id', committeeId)
+          .or(`status.eq.APPROVED,user_id.eq.${ctx.user.id}`)
+          .order('uploaded_at', { ascending: false })
+          .limit(3),
+        // Committee announcements
+        supabase
+          .from('announcements')
+          .select('id, title, body, created_at, author_id, users(full_name)')
+          .or(`committee_id.eq.${committeeId},target_roles.cs.{DELEGATE}`)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        // Bloc messages (if in any blocs)
+        supabase
+          .from('bloc_members')
+          .select('bloc_id')
+          .eq('user_id', ctx.user.id)
+      ]);
+
+      const activities: any[] = [];
+      
+      // Add personal activities (delegate-appropriate only)
+      (personal.data || []).forEach((log: any) => {
+        // Filter for delegate-relevant actions only
+        const delegateActions = [
+          'uploaded', 'submitted', 'joined', 'created', 'updated profile',
+          'speech', 'resolution', 'bloc', 'voted', 'spoke', 'motion'
+        ];
+        
+        if (delegateActions.some(action => log.action.toLowerCase().includes(action))) {
+          activities.push({
+            id: `personal-${log.id}`,
+            action: log.action,
+            performed_at: log.performed_at,
+            type: 'personal'
+          });
+        }
+      });
+
+      // Add document activities
+      (committeeDocs.data || []).forEach((doc: any) => {
+        if (doc.user_id === ctx.user.id) {
+          activities.push({
+            id: `doc-${doc.id}`,
+            action: `You uploaded "${doc.title}"`,
+            performed_at: doc.uploaded_at,
+            type: 'document'
+          });
+        } else if (doc.status === 'APPROVED') {
+          const userName = (doc.users as any)?.full_name || 'Unknown';
+          activities.push({
+            id: `doc-${doc.id}`,
+            action: `${userName}'s document "${doc.title}" was approved`,
+            performed_at: doc.reviewed_at || doc.uploaded_at,
+            type: 'document'
+          });
+        }
+      });
+
+      // Add announcements
+      (announcements.data || []).forEach((announcement: any) => {
+        activities.push({
+          id: `ann-${announcement.id}`,
+          action: `Announcement: ${announcement.title}`,
+          performed_at: announcement.created_at,
+          type: 'announcement'
+        });
+      });
+
+      return activities
+        .sort((a, b) => new Date(b.performed_at).getTime() - new Date(a.performed_at).getTime())
+        .slice(0, 10);
     },
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes to prevent excessive refreshing
+    refetchInterval: false, // Disable auto-refresh
   });
 
   // useQuery for Roster
-  const { data: roster = [] } = useQuery({
+  const { data: roster } = useQuery({
     queryKey: ['committee-roster', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -121,7 +206,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
     settings?.conference_date ? new Date(settings.conference_date) : new Date('2026-03-27T04:00:00Z'), 
   [settings]);
 
-  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showRoster, setShowRoster] = useState(false);
 
   useEffect(() => {
@@ -145,17 +230,15 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
       const now = new Date().getTime();
       const distance = conferenceDate.getTime() - now;
       if (distance < 0) {
-        clearInterval(interval);
         setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
-        setCountdown({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        setCountdown({ days, hours, minutes, seconds });
       }
-    }, 1000);
+    }, 1000); // Update every second
     return () => clearInterval(interval);
   }, [conferenceDate]);
 
@@ -253,11 +336,11 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
         {/* Recent Activity */}
         <div className="bg-bg-card border border-border-subtle rounded-card p-6">
           <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Recent Activity</h3>
-          {activity.length === 0 ? (
+          {(activity || []).length === 0 ? (
             <p className="text-text-dimmed font-jotia text-sm">No activity yet.</p>
           ) : (
             <div className="space-y-3">
-              {activity.map((a) => (
+              {(activity || []).map((a) => (
                 <div key={a.id} className="flex items-start gap-3 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-text-dimmed mt-2 shrink-0" />
                   <div className="min-w-0">
@@ -331,7 +414,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
                   </tr>
                 </thead>
                 <tbody>
-                  {roster.map(r => {
+                  {(roster || []).map(r => {
                     const isOnline = r.user_id && onlineUsers.has(r.user_id);
                     return (
                     <tr key={r.id} className="border-b border-border-subtle/50">

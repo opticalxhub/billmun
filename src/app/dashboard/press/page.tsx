@@ -204,7 +204,7 @@ export default function PressDashboard() {
                 <div className="space-y-2">
                   {events.map((event) => (
                     <div key={event.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
-                      <p className="text-sm font-semibold">{event.name}</p>
+                      <p className="text-sm font-semibold">{event.event_name}</p>
                       <p className="text-xs text-text-dimmed">{event.location || 'TBD'} · {event.start_time ? new Date(event.start_time).toLocaleString() : 'No start time'}</p>
                     </div>
                   ))}

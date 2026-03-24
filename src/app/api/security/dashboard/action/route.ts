@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       if (error) throw error;
       const { data: secs } = await supabaseAdmin.from("users").select("id").in("role", ["SECURITY", "EXECUTIVE_BOARD"]);
       if (secs?.length) {
-        await supabaseAdmin.from("notifications").insert(secs.map((row: { id: string }) => ({ user_id: row.id, title: "MISSING PERSON", message: `A delegate has been marked missing.`, type: "ERROR" })));
+        await supabaseAdmin.from("notifications").insert(secs.map((row: { id: string }) => ({ user_id: row.id, title: "MISSING PERSON", message: `A delegate has been marked missing.`, type: "ALERT" })));
       }
       return NextResponse.json({ ok: true });
     }

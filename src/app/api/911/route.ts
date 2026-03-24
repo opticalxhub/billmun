@@ -29,8 +29,8 @@ export async function POST(request: Request) {
     }
   );
 
-  // Calculate expiration (2 minutes from now)
-  const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+  // Calculate expiration (10 minutes from now)
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
   // Insert into emergency_sessions table
   const { data, error } = await supabase
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   response.cookies.set({
     name: 'emergency_token',
     value: data.id,
-    maxAge: 120, // 2 minutes
+    maxAge: 600, // 10 minutes
     path: '/',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
   response.cookies.set({
     name: 'emergency_expires',
     value: expiresAt,
-    maxAge: 120,
+    maxAge: 600,
     path: '/',
   });
 
