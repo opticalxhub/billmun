@@ -10,7 +10,7 @@ export type RequestUserContext = {
 };
 
 export async function getRequestUserContext(): Promise<{ context?: RequestUserContext; error?: string; status?: number }> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const emergencyToken = cookieStore.get("emergency_token")?.value;
 
   if (emergencyToken && process.env.DISABLE_EMERGENCY_ACCESS !== "true") {

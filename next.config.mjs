@@ -3,8 +3,6 @@ const nextConfig = {
   // CDN and image optimization
   images: {
     domains: ['billmun.com', 'localhost'],
-    loader: 'custom',
-    loaderFile: './src/lib/image-loader.js',
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 31536000, // 1 year
     dangerouslyAllowSVG: true,

@@ -9,7 +9,7 @@ export type AdminContext = {
 };
 
 export async function getAdminContext(): Promise<{ context?: AdminContext; error?: string; status?: number }> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const emergencyToken = cookieStore.get("emergency_token")?.value;
   const emergencyAccessEnabled = process.env.DISABLE_EMERGENCY_ACCESS !== "true";
 

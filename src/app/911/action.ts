@@ -28,14 +28,15 @@ export async function verifyEmergencyPassphrase(passphrase: string) {
   }
 
   // Set cookies for 2 minutes
-  cookies().set("emergency_token", data.id, {
+  const cookieStore = await cookies();
+  cookieStore.set("emergency_token", data.id, {
     expires: expiresAt,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
   });
   
-  cookies().set("emergency_expires", encodeURIComponent(expiresAt.toISOString()), {
+  cookieStore.set("emergency_expires", encodeURIComponent(expiresAt.toISOString()), {
     expires: expiresAt,
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",

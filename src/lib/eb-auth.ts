@@ -8,7 +8,7 @@ export type EBContext = {
 };
 
 export async function getEBContext(): Promise<{ context?: EBContext; error?: string; status?: number }> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   
   // Emergency access check
   const emergencyToken = cookieStore.get("emergency_token")?.value;

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function getSecurityContext() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const emergencyToken = cookieStore.get("emergency_token")?.value;
   if (emergencyToken && process.env.DISABLE_EMERGENCY_ACCESS !== "true") {
