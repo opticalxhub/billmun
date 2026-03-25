@@ -170,11 +170,16 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
 
   const deleteResolution = async (id: string) => {
     if (!confirm('Delete this resolution draft?')) return;
-    await supabase.from('resolutions').delete().eq('id', id);
-    if (selectedId === id) { 
-      setSelectedId(null); 
+    try {
+      const { error } = await supabase.from('resolutions').delete().eq('id', id);
+      if (error) throw error;
+      if (selectedId === id) { 
+        setSelectedId(null); 
+      }
+      refetchResolutions();
+    } catch {
+      toast.error('Failed to delete resolution');
     }
-    refetchResolutions();
   };
 
   const addSponsor = () => {
@@ -215,8 +220,13 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   };
 
   const deleteClause = async (id: string) => {
-    await supabase.from('resolution_clauses').delete().eq('id', id);
-    queryClient.invalidateQueries({ queryKey: ['resolution-clauses', selectedId] });
+    try {
+      const { error } = await supabase.from('resolution_clauses').delete().eq('id', id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['resolution-clauses', selectedId] });
+    } catch {
+      toast.error('Failed to delete clause');
+    }
   };
 
   const moveClause = async (id: string, direction: -1 | 1) => {

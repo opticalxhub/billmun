@@ -12,7 +12,7 @@ import WhatsAppTab from '@/components/whatsapp-tab';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { toast } from 'sonner';
-
+import { X } from 'lucide-react';
 
 type AdminTab =
   | 'overview'
@@ -1110,7 +1110,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-4xl bg-bg-card border border-border-subtle rounded-card p-6">
             <div className="flex justify-between items-start mb-4">
               <h2 className="font-jotia text-2xl uppercase tracking-tight">{reviewDoc.title}</h2>
-              <button onClick={() => setReviewDoc(null)} className="text-text-dimmed hover:text-text-primary text-2xl leading-none">&times;</button>
+              <button onClick={() => setReviewDoc(null)} className="text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="h-80 border border-border-subtle rounded-card overflow-hidden bg-bg-raised">
@@ -1181,7 +1181,7 @@ export default function AdminDashboard() {
           <div className="w-full max-w-2xl bg-bg-card border border-border-subtle rounded-card p-6">
             <div className="flex justify-between items-start mb-4">
               <h2 className="font-jotia text-2xl uppercase tracking-tight">{selectedDelegate.full_name} · Status History</h2>
-              <button onClick={() => setSelectedDelegate(null)} className="text-text-dimmed hover:text-text-primary text-2xl leading-none">&times;</button>
+              <button onClick={() => setSelectedDelegate(null)} className="text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
             </div>
             <div className="max-h-96 overflow-y-auto space-y-2">
               {selectedHistory.map((h: any) => (

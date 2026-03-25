@@ -149,6 +149,8 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
 
       setSelectedIds(new Set());
       await loadDocuments();
+    } catch (err: any) {
+      toast.error("Consolidation failed: " + err.message);
     } finally {
       setConsolidating(false);
     }

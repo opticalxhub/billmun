@@ -48,6 +48,7 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
       setTimeout(() => setSaved(false), 2000);
     } catch {
       toast.error('Failed to save speech');
+    } finally {
       setSaving(false);
     }
   };
@@ -82,16 +83,22 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
 
   const deleteSpeech = async (id: string) => {
     if (!confirm('Delete this speech draft?')) return;
-    await supabase.from('speeches').delete().eq('id', id);
-    if (selectedId === id) { 
-      setSelectedId(null); 
+    try {
+      const { error } = await supabase.from('speeches').delete().eq('id', id);
+      if (error) throw error;
+      if (selectedId === id) { 
+        setSelectedId(null); 
+      }
+      refetchSpeeches();
+    } catch {
+      toast.error('Failed to delete speech');
     }
-    refetchSpeeches();
   };
 
   const printSpeech = () => {
     if (!selectedId) return;
     const selected = (speeches || []).find(s => s.id === selectedId);
+    if (!selected) return;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`

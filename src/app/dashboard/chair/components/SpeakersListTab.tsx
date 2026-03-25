@@ -69,67 +69,88 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
   const markSpeaking = async (id: string) => {
     const speaker = queue.find(q => q.id === id);
     if (!speaker) return;
+    try {
+      await supabase.from('speakers_list').update({ status: 'SPEAKING', started_at: new Date().toISOString() }).eq('id', id);
+      
+      // Notify the delegate
+      await supabase.from('notifications').insert({
+        user_id: speaker.delegate_id,
+        title: "It's your turn to speak!",
+        message: `The chair has recognized you. Your speaking time is ${fmt(speaker.speaking_time_limit || speakingLimit)}.`,
+        type: "INFO",
+        link: "/dashboard/delegate"
+      });
 
-    await supabase.from('speakers_list').update({ status: 'SPEAKING', started_at: new Date().toISOString() }).eq('id', id);
-    
-    // Notify the delegate
-    await supabase.from('notifications').insert({
-      user_id: speaker.delegate_id,
-      title: "It's your turn to speak!",
-      message: `The chair has recognized you. Your speaking time is ${fmt(speaker.speaking_time_limit || speakingLimit)}.`,
-      type: "INFO",
-      link: "/dashboard/delegate"
-    });
-
-    setSpeakingTimer(speaker.speaking_time_limit || speakingLimit);
-    setSpeakingRunning(true);
-    loadQueue();
+      setSpeakingTimer(speaker.speaking_time_limit || speakingLimit);
+      setSpeakingRunning(true);
+      loadQueue();
+    } catch (err) {
+      console.error('Failed to mark speaker:', err);
+    }
   };
 
   const nextSpeaker = async () => {
-    const current = queue.find(q => q.status === 'SPEAKING');
-    if (current) {
-      const elapsed = speakingLimit - speakingTimer;
-      await supabase.from('speakers_list').update({
-        status: 'COMPLETED',
-        actual_speaking_time: elapsed,
-        completed_at: new Date().toISOString(),
-      }).eq('id', current.id);
-    }
-    setSpeakingRunning(false);
-    setSpeakingTimer(0);
+    try {
+      const current = queue.find(q => q.status === 'SPEAKING');
+      if (current) {
+        const elapsed = speakingLimit - speakingTimer;
+        await supabase.from('speakers_list').update({
+          status: 'COMPLETED',
+          actual_speaking_time: elapsed,
+          completed_at: new Date().toISOString(),
+        }).eq('id', current.id);
+      }
+      setSpeakingRunning(false);
+      setSpeakingTimer(0);
 
-    const nextInQueue = queue.find(q => q.status === 'QUEUED');
-    if (nextInQueue) {
-      await markSpeaking(nextInQueue.id);
+      const nextInQueue = queue.find(q => q.status === 'QUEUED');
+      if (nextInQueue) {
+        await markSpeaking(nextInQueue.id);
+      }
+      loadQueue();
+    } catch (err) {
+      console.error('Failed to advance speaker:', err);
     }
-    loadQueue();
   };
 
   const yieldTime = async (type: string) => {
     const current = queue.find(q => q.status === 'SPEAKING');
     if (!current) return;
-    const elapsed = speakingLimit - speakingTimer;
-    await supabase.from('speakers_list').update({
-      status: 'YIELDED',
-      yield_type: type,
-      actual_speaking_time: elapsed,
-      completed_at: new Date().toISOString(),
-    }).eq('id', current.id);
-    setSpeakingRunning(false);
-    setSpeakingTimer(0);
-    loadQueue();
+    try {
+      const elapsed = speakingLimit - speakingTimer;
+      await supabase.from('speakers_list').update({
+        status: 'YIELDED',
+        yield_type: type,
+        actual_speaking_time: elapsed,
+        completed_at: new Date().toISOString(),
+      }).eq('id', current.id);
+      setSpeakingRunning(false);
+      setSpeakingTimer(0);
+      loadQueue();
+    } catch (err) {
+      console.error('Failed to yield time:', err);
+    }
   };
 
   const removeFromQueue = async (id: string) => {
-    await supabase.from('speakers_list').delete().eq('id', id);
-    loadQueue();
+    try {
+      const { error } = await supabase.from('speakers_list').delete().eq('id', id);
+      if (error) throw error;
+      loadQueue();
+    } catch {
+      console.error('Failed to remove speaker from queue');
+    }
   };
 
   const clearList = async () => {
     if (!ctx.committee?.id) return;
-    await supabase.from('speakers_list').delete().eq('committee_id', ctx.committee.id).in('status', ['QUEUED']);
-    loadQueue();
+    try {
+      const { error } = await supabase.from('speakers_list').delete().eq('committee_id', ctx.committee.id).in('status', ['QUEUED']);
+      if (error) throw error;
+      loadQueue();
+    } catch {
+      console.error('Failed to clear speakers list');
+    }
   };
 
   const moveUp = async (index: number) => {
@@ -138,9 +159,13 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
     const a = items[index];
     const b = items[index - 1];
     if (a.status === 'SPEAKING' || b.status === 'SPEAKING') return;
-    await supabase.from('speakers_list').update({ position: b.position }).eq('id', a.id);
-    await supabase.from('speakers_list').update({ position: a.position }).eq('id', b.id);
-    loadQueue();
+    try {
+      await supabase.from('speakers_list').update({ position: b.position }).eq('id', a.id);
+      await supabase.from('speakers_list').update({ position: a.position }).eq('id', b.id);
+      loadQueue();
+    } catch (err) {
+      console.error('Failed to reorder speakers:', err);
+    }
   };
 
   const moveDown = async (index: number) => {
@@ -149,9 +174,13 @@ export default function SpeakersListTab({ ctx }: { ctx: ChairContext }) {
     const a = items[index];
     const b = items[index + 1];
     if (a.status === 'SPEAKING' || b.status === 'SPEAKING') return;
-    await supabase.from('speakers_list').update({ position: b.position }).eq('id', a.id);
-    await supabase.from('speakers_list').update({ position: a.position }).eq('id', b.id);
-    loadQueue();
+    try {
+      await supabase.from('speakers_list').update({ position: b.position }).eq('id', a.id);
+      await supabase.from('speakers_list').update({ position: a.position }).eq('id', b.id);
+      loadQueue();
+    } catch (err) {
+      console.error('Failed to reorder speakers:', err);
+    }
   };
 
   const fmt = (t: number) => `${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`;

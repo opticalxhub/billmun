@@ -18,7 +18,7 @@ export default function EBUsersPage() {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('*')
+          .select('id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, has_completed_onboarding, badge_status, profile_image_url, created_at, updated_at')
           .order('created_at', { ascending: false })
           .limit(100);
 

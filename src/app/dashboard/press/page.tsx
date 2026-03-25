@@ -224,7 +224,7 @@ export default function PressDashboard() {
                     <Input placeholder="Committee tag (optional)" value={mediaCommittee} onChange={(e) => setMediaCommittee(e.target.value)} />
                     <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={mediaEvent} onChange={(e) => setMediaEvent(e.target.value)}>
                       <option value="">Select event tag</option>
-                      {events.map((event) => <option key={event.id} value={event.name}>{event.name}</option>)}
+                      {events.map((event) => <option key={event.id} value={event.event_name}>{event.event_name}</option>)}
                     </select>
                     {uploading ? (
                       <div className="w-full h-2 rounded-full bg-bg-raised overflow-hidden border border-border-subtle">

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       if (ebs?.length) {
         const notifs = ebs.map(eb => ({
           user_id: eb.id,
-          title: "🚨 MEDICAL EMERGENCY",
+          title: "[URGENT] MEDICAL EMERGENCY",
           message: `${user_details.full_name} reported a medical emergency at ${metadata.location}.`,
           type: "ALERT",
           link: "/eb/dash?tab=reports"

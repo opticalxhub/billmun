@@ -92,18 +92,22 @@ export default function TimersTab({ ctx }: { ctx: ChairContext }) {
   const resetTimer = async () => {
     // Log the completed timer
     if (startTimeRef.current && ctx.committee?.id) {
-      const actual = setDurationRef.current - timeLeft;
-      await supabase.from('timer_logs').insert({
-        committee_id: ctx.committee.id,
-        session_id: ctx.session?.id,
-        label: label || null,
-        set_duration: setDurationRef.current,
-        actual_duration: actual,
-        started_at: startTimeRef.current.toISOString(),
-        completed_at: new Date().toISOString(),
-        created_by: ctx.user.id,
-      });
-      loadLogs();
+      try {
+        const actual = setDurationRef.current - timeLeft;
+        await supabase.from('timer_logs').insert({
+          committee_id: ctx.committee.id,
+          session_id: ctx.session?.id,
+          label: label || null,
+          set_duration: setDurationRef.current,
+          actual_duration: actual,
+          started_at: startTimeRef.current.toISOString(),
+          completed_at: new Date().toISOString(),
+          created_by: ctx.user.id,
+        });
+        loadLogs();
+      } catch (err) {
+        console.error('Failed to log timer:', err);
+      }
     }
     setRunning(false);
     setPaused(false);

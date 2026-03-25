@@ -71,32 +71,37 @@ export default function EBSecurityPage() {
   }, []);
 
   const escalateIncident = async (id: string, severity: string, type: string) => {
-    await supabase.from("security_incidents").update({ status: "ESCALATED", updated_at: new Date().toISOString() }).eq("id", id);
-    
-    // Notify all EB
-    const { data: ebRows } = await supabase.from("users").select("id").in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL"]);
-    if (ebRows?.length) {
-      await supabase.from("notifications").insert(
-        ebRows.map(row => ({
-          user_id: row.id,
-          title: `INCIDENT ESCALATED: ${severity}`,
-          message: `An incident of type ${type} was escalated to the Executive Board.`,
-          type: "ALERT",
-          link: "/eb/dash/security"
-        }))
-      );
-    }
-    
     try {
-      await supabase.from("audit_logs").insert({
-        actor_id: currentUser,
-        action: "Escalated security incident to EB",
-        target_type: "INCIDENT",
-        target_id: id
-      });
-    } catch { /* ignore */ }
-    
-    load();
+      await supabase.from("security_incidents").update({ status: "ESCALATED", updated_at: new Date().toISOString() }).eq("id", id);
+      
+      // Notify all EB
+      const { data: ebRows } = await supabase.from("users").select("id").in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL"]);
+      if (ebRows?.length) {
+        await supabase.from("notifications").insert(
+          ebRows.map(row => ({
+            user_id: row.id,
+            title: `INCIDENT ESCALATED: ${severity}`,
+            message: `An incident of type ${type} was escalated to the Executive Board.`,
+            type: "ALERT",
+            link: "/eb/dash/security"
+          }))
+        );
+      }
+      
+      try {
+        await supabase.from("audit_logs").insert({
+          actor_id: currentUser,
+          action: "Escalated security incident to EB",
+          target_type: "INCIDENT",
+          target_id: id
+        });
+      } catch { /* ignore */ }
+      
+      load();
+    } catch (err) {
+      console.error('Failed to escalate incident:', err);
+      alert('Failed to escalate incident.');
+    }
   };
 
   if (loading) return <DashboardLoadingState type="overview" />;

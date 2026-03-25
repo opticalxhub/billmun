@@ -153,7 +153,7 @@ export async function sendReportEmail(reportData: any) {
         <div class="container ${category === 'MEDICAL' ? 'urgent' : ''}">
           <div class="header">
             <h2 style="margin:0; color: ${category === 'MEDICAL' ? '#ef4444' : '#111'};">
-              ${category === 'MEDICAL' ? '🚨 MEDICAL EMERGENCY' : '⚠️ ISSUE REPORTED'}
+              ${category === 'MEDICAL' ? '[URGENT] MEDICAL EMERGENCY' : '[ALERT] ISSUE REPORTED'}
             </h2>
             <p style="margin:5px 0 0 0; font-size: 14px;">Report ID: ${report_id}</p>
           </div>
@@ -189,7 +189,7 @@ export async function sendReportEmail(reportData: any) {
   return resend.emails.send({
     from: "BILLMUN Reports <billmun@gomarai.com>",
     to: ["opticalxhub@gmail.com", "alaa2030abbadi@gmail.com"],
-    subject: `${category === 'MEDICAL' ? '🚨 MEDICAL' : '⚠️ ISSUE'}: ${issue_type} - ${user_details.full_name}`,
+    subject: `${category === 'MEDICAL' ? '[URGENT] MEDICAL' : '[ALERT] ISSUE'}: ${issue_type} - ${user_details.full_name}`,
     html,
   });
 }

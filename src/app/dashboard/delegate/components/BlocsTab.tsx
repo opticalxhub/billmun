@@ -260,21 +260,29 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
 
   const saveSharedStrategy = async () => {
     if (!selectedBloc) return;
-    await supabase.from('strategy_board').update({
-      shared_content: sharedStrategy,
-      last_edited_by_id: ctx.user.id,
-      last_edited_at: new Date().toISOString(),
-    }).eq('bloc_id', selectedBloc.id);
+    try {
+      await supabase.from('strategy_board').update({
+        shared_content: sharedStrategy,
+        last_edited_by_id: ctx.user.id,
+        last_edited_at: new Date().toISOString(),
+      }).eq('bloc_id', selectedBloc.id);
+    } catch (err) {
+      console.error('Failed to save shared strategy:', err);
+    }
   };
 
   const savePrivateStrategy = async () => {
     if (!selectedBloc) return;
-    await supabase.from('strategy_board_private').upsert({
-      bloc_id: selectedBloc.id,
-      user_id: ctx.user.id,
-      content: privateStrategy,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'bloc_id,user_id' });
+    try {
+      await supabase.from('strategy_board_private').upsert({
+        bloc_id: selectedBloc.id,
+        user_id: ctx.user.id,
+        content: privateStrategy,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'bloc_id,user_id' });
+    } catch (err) {
+      console.error('Failed to save private strategy:', err);
+    }
   };
 
   const removeMemberMutation = useMutation({

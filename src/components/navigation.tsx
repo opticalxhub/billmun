@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { X } from 'lucide-react';
 
 export function Navigation() {
   const queryClient = useQueryClient();
@@ -108,7 +109,7 @@ export function Navigation() {
                 <div className="absolute right-0 mt-2 w-80 bg-bg-card border border-border-subtle rounded-card shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="p-3 border-b border-border-subtle flex justify-between items-center bg-bg-raised">
                     <span className="text-xs font-bold uppercase tracking-widest">Notifications</span>
-                    <button onClick={() => setShowNotifications(false)} className="text-text-tertiary hover:text-text-primary">&times;</button>
+                    <button onClick={() => setShowNotifications(false)} className="text-text-tertiary hover:text-text-primary"><X className="w-4 h-4" /></button>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (

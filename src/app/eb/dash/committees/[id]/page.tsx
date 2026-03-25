@@ -92,40 +92,64 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
   useEffect(() => { load(); }, [id]);
 
   const saveCommittee = async () => {
-    await supabase.from("committees").update({
-      name: editForm.name,
-      description: editForm.description,
-      topic: editForm.topic,
-      image_url: editForm.image_url,
-      max_delegates: editForm.max_delegates,
-      difficulty: editForm.difficulty
-    }).eq("id", id);
-    setIsEditing(false);
-    load();
+    try {
+      const { error } = await supabase.from("committees").update({
+        name: editForm.name,
+        description: editForm.description,
+        topic: editForm.topic,
+        image_url: editForm.image_url,
+        max_delegates: editForm.max_delegates,
+        difficulty: editForm.difficulty
+      }).eq("id", id);
+      if (error) throw error;
+      setIsEditing(false);
+      load();
+    } catch (err) {
+      console.error('Failed to save committee:', err);
+      alert('Failed to save committee changes.');
+    }
   };
 
   const removeAssignment = async (assignmentId: string) => {
     if (!confirm("Remove this assignment?")) return;
-    await supabase.from("committee_assignments").delete().eq("id", assignmentId);
-    load();
+    try {
+      const { error } = await supabase.from("committee_assignments").delete().eq("id", assignmentId);
+      if (error) throw error;
+      load();
+    } catch (err) {
+      console.error('Failed to remove assignment:', err);
+      alert('Failed to remove assignment.');
+    }
   };
 
   const addDelegate = async () => {
     if (!addDelegateForm.user_id) return;
-    await supabase.from("committee_assignments").insert({
-      user_id: addDelegateForm.user_id,
-      committee_id: id,
-      country: addDelegateForm.country,
-      seat_number: addDelegateForm.seatNumber
-    });
-    setShowAddDelegate(false);
-    setAddDelegateForm({ user_id: "", country: "", seatNumber: "" });
-    load();
+    try {
+      const { error } = await supabase.from("committee_assignments").insert({
+        user_id: addDelegateForm.user_id,
+        committee_id: id,
+        country: addDelegateForm.country,
+        seat_number: addDelegateForm.seatNumber
+      });
+      if (error) throw error;
+      setShowAddDelegate(false);
+      setAddDelegateForm({ user_id: "", country: "", seatNumber: "" });
+      load();
+    } catch (err) {
+      console.error('Failed to add delegate:', err);
+      alert('Failed to add delegate.');
+    }
   };
 
   const reassignChair = async (chair_id: string) => {
-    await supabase.from("committees").update({ chair_id: chair_id || null }).eq("id", id);
-    load();
+    try {
+      const { error } = await supabase.from("committees").update({ chair_id: chair_id || null }).eq("id", id);
+      if (error) throw error;
+      load();
+    } catch (err) {
+      console.error('Failed to reassign chair:', err);
+      alert('Failed to reassign chair.');
+    }
   };
 
   const addAdmin = async (adminId: string) => {
@@ -134,12 +158,18 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
       alert("Maximum 2 admins allowed per committee.");
       return;
     }
-    await supabase.from("committee_assignments").insert({
-      user_id: adminId,
-      committee_id: id,
-      country: "Admin"
-    });
-    load();
+    try {
+      const { error } = await supabase.from("committee_assignments").insert({
+        user_id: adminId,
+        committee_id: id,
+        country: "Admin"
+      });
+      if (error) throw error;
+      load();
+    } catch (err) {
+      console.error('Failed to add admin:', err);
+      alert('Failed to add admin.');
+    }
   };
 
   if (loading) return <div className="p-12 text-center text-text-dimmed">Loading committee...</div>;

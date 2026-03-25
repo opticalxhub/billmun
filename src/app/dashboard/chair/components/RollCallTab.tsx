@@ -57,20 +57,25 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   };
 
   const startRollCall = async () => {
-    const { data } = await supabase.from('roll_call_records').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      created_by: ctx.user.id,
-    }).select().single();
+    try {
+      const { data, error } = await supabase.from('roll_call_records').insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        created_by: ctx.user.id,
+      }).select().single();
+      if (error) throw error;
 
-    if (data) {
-      setActiveRollCall(data);
-      // Initialize all delegates as ABSENT
-      const initial: Record<string, string> = {};
-      ctx.delegates.forEach(d => { initial[d.user_id] = 'ABSENT'; });
-      setEntries(initial);
-      setElapsedTime(0);
-      setTimerRunning(true);
+      if (data) {
+        setActiveRollCall(data);
+        // Initialize all delegates as ABSENT
+        const initial: Record<string, string> = {};
+        ctx.delegates.forEach(d => { initial[d.user_id] = 'ABSENT'; });
+        setEntries(initial);
+        setElapsedTime(0);
+        setTimerRunning(true);
+      }
+    } catch (err) {
+      console.error('Failed to start roll call:', err);
     }
   };
 
@@ -84,46 +89,49 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   const completeRollCall = async () => {
     if (!activeRollCall) return;
     setTimerRunning(false);
+    try {
+      // Save entries
+      const inserts = Object.entries(entries).map(([delegateId, status]) => ({
+        roll_call_id: activeRollCall.id,
+        delegate_id: delegateId,
+        status,
+      }));
+      await supabase.from('roll_call_entries').insert(inserts);
 
-    // Save entries
-    const inserts = Object.entries(entries).map(([delegateId, status]) => ({
-      roll_call_id: activeRollCall.id,
-      delegate_id: delegateId,
-      status,
-    }));
-    await supabase.from('roll_call_entries').insert(inserts);
+      // Update delegate physical status
+      await Promise.all(
+        Object.entries(entries).map(([delegateId, status]) => 
+          supabase
+            .from('delegate_presence_statuses')
+            .upsert({
+              user_id: delegateId,
+              committee_id: ctx.committee.id,
+              current_status: status === 'ABSENT' ? 'Absent' : 'Present In Session',
+              last_changed_by: ctx.user.id,
+              last_changed_at: new Date().toISOString()
+            }, { onConflict: 'committee_id,user_id' })
+        )
+      );
 
-    // Update delegate physical status
-    await Promise.all(
-      Object.entries(entries).map(([delegateId, status]) => 
-        supabase
-          .from('delegate_presence_statuses')
-          .upsert({
-            user_id: delegateId,
-            committee_id: ctx.committee.id,
-            current_status: status === 'ABSENT' ? 'Absent' : 'Present In Session',
-            last_changed_by: ctx.user.id,
-            last_changed_at: new Date().toISOString()
-          }, { onConflict: 'committee_id,user_id' })
-      )
-    );
+      // Mark complete
+      await supabase.from('roll_call_records').update({ completed_at: new Date().toISOString() }).eq('id', activeRollCall.id);
 
-    // Mark complete
-    await supabase.from('roll_call_records').update({ completed_at: new Date().toISOString() }).eq('id', activeRollCall.id);
+      // Log event
+      const presentCount = Object.values(entries).filter(s => s !== 'ABSENT').length;
+      await supabase.from('session_events').insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        event_type: 'ROLL_CALL',
+        title: `Roll call completed: ${presentCount}/${ctx.delegates.length} present`,
+        metadata: { entries, elapsed: elapsedTime },
+        created_by: ctx.user.id,
+      });
 
-    // Log event
-    const presentCount = Object.values(entries).filter(s => s !== 'ABSENT').length;
-    await supabase.from('session_events').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      event_type: 'ROLL_CALL',
-      title: `Roll call completed: ${presentCount}/${ctx.delegates.length} present`,
-      metadata: { entries, elapsed: elapsedTime },
-      created_by: ctx.user.id,
-    });
-
-    setActiveRollCall(null);
-    loadHistory();
+      setActiveRollCall(null);
+      loadHistory();
+    } catch (err) {
+      console.error('Failed to complete roll call:', err);
+    }
   };
 
   const presentCount = Object.values(entries).filter(s => s !== 'ABSENT').length;

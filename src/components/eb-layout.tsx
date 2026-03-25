@@ -47,7 +47,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
 
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        supabase.from('users').select('*').eq('id', data.user.id).single().then(({ data: userData }) => {
+        supabase.from('users').select('id, email, full_name, role, status, has_completed_onboarding, profile_image_url, phone_number').eq('id', data.user.id).single().then(({ data: userData }) => {
           setUser(userData);
         });
       }

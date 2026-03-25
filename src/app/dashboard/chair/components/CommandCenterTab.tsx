@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { Play } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: 'IN_SESSION', label: 'In Session', color: 'bg-text-primary/70' },
@@ -138,54 +139,60 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
 
   const saveStatusChange = async (newStatus: string, details: any) => {
     setSaving(true);
-    // Update session
-    if (ctx.session?.id) {
-      await supabase
-        .from('committee_sessions')
-        .update({ 
-          status: newStatus, 
-          debate_topic: details.topic || ctx.session.debate_topic,
-          speaking_time_limit: details.speakingTime || ctx.session.speaking_time_limit,
-          caucus_type: newStatus.includes('CAUCUS') ? (newStatus.includes('MODERATED') ? 'MODERATED' : 'UNMODERATED') : 'NONE',
-          caucus_duration: details.duration || null,
-          caucus_purpose: details.purpose || null,
-          break_type: details.break_type || null,
-          break_duration: details.duration || null,
-          session_summary: details.summary || null,
-          updated_at: new Date().toISOString(),
-          updated_by_id: ctx.user.id
-        })
-        .eq('id', ctx.session.id);
+    try {
+      // Update session
+      if (ctx.session?.id) {
+        await supabase
+          .from('committee_sessions')
+          .update({ 
+            status: newStatus, 
+            debate_topic: details.topic || ctx.session.debate_topic,
+            speaking_time_limit: details.speakingTime || ctx.session.speaking_time_limit,
+            caucus_type: newStatus.includes('CAUCUS') ? (newStatus.includes('MODERATED') ? 'MODERATED' : 'UNMODERATED') : 'NONE',
+            caucus_duration: details.duration || null,
+            caucus_purpose: details.purpose || null,
+            break_type: details.break_type || null,
+            break_duration: details.duration || null,
+            session_summary: details.summary || null,
+            updated_at: new Date().toISOString(),
+            updated_by_id: ctx.user.id
+          })
+          .eq('id', ctx.session.id);
+      }
+
+      // Save status change details
+      await supabase.from('session_status_history').insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        status: newStatus,
+        topic: details.topic || null,
+        speaking_time: details.speakingTime || null,
+        duration: details.duration || null,
+        purpose: details.purpose || null,
+        break_type: details.break_type || null,
+        summary: details.summary || null,
+        created_by: ctx.user.id
+      });
+
+      // Log event
+      await supabase.from('session_events').insert({
+        committee_id: ctx.committee.id,
+        session_id: ctx.session?.id,
+        event_type: 'STATUS_CHANGE',
+        title: `Session status changed to ${STATUS_OPTIONS.find(opt => opt.value === newStatus)?.label || newStatus.replace(/_/g, ' ')}`,
+        description: details.topic || details.purpose || details.summary || (details.break_type ? `${details.break_type} Break` : null),
+        metadata: details,
+        created_by: ctx.user.id,
+      });
+
+      setStatusModal({ open: false, status: '' });
+      ctx.refreshData();
+    } catch (err) {
+      console.error('Failed to change session status:', err);
+      toast.error('Failed to update session status');
+    } finally {
+      setSaving(false);
     }
-
-    // Save status change details
-    await supabase.from('session_status_history').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      status: newStatus,
-      topic: details.topic || null,
-      speaking_time: details.speakingTime || null,
-      duration: details.duration || null,
-      purpose: details.purpose || null,
-      break_type: details.break_type || null,
-      summary: details.summary || null,
-      created_by: ctx.user.id
-    });
-
-    // Log event
-    await supabase.from('session_events').insert({
-      committee_id: ctx.committee.id,
-      session_id: ctx.session?.id,
-      event_type: 'STATUS_CHANGE',
-      title: `Session status changed to ${STATUS_OPTIONS.find(opt => opt.value === newStatus)?.label || newStatus.replace(/_/g, ' ')}`,
-      description: details.topic || details.purpose || details.summary || (details.break_type ? `${details.break_type} Break` : null),
-      metadata: details,
-      created_by: ctx.user.id,
-    });
-
-    setStatusModal({ open: false, status: '' });
-    setSaving(false);
-    ctx.refreshData();
   };
 
   const handleModalSubmit = () => {
@@ -312,7 +319,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
             {speakers.length === 0 && <p className="text-text-dimmed text-sm py-4 text-center">No speakers in queue.</p>}
             {speakers.map((s, i) => (
               <div key={s.id} className={`flex items-center gap-3 p-3 rounded-card border ${i === 0 && s.status === 'SPEAKING' ? 'bg-bg-card border-border-emphasized' : 'bg-bg-raised border-border-subtle'}`}>
-                <span className="text-xs font-bold text-text-tertiary w-6">{i === 0 && s.status === 'SPEAKING' ? '▶' : i + 1}</span>
+                <span className="text-xs font-bold text-text-tertiary w-6">{i === 0 && s.status === 'SPEAKING' ? <Play className="w-3 h-3 inline" /> : i + 1}</span>
                 <span className="text-sm font-medium text-text-primary">{s.delegate?.full_name || 'Unknown'}</span>
                 {i === 0 && s.status === 'SPEAKING' && <span className="ml-auto text-xs font-bold text-text-primary uppercase tracking-widest">Now Speaking</span>}
               </div>
