@@ -11,8 +11,8 @@ import { DashboardAnimatedTabPanel, DashboardTabBar } from "@/components/dashboa
 type TabName = "Delegates" | "Chair Assignment" | "Admin Assignment" | "Session History" | "Statistics";
 const TABS: TabName[] = ["Delegates", "Chair Assignment", "Admin Assignment", "Session History", "Statistics"];
 
-export default function ManageCommitteePage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ManageCommitteePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const router = useRouter();
   
   const [committee, setCommittee] = useState<any>(null);

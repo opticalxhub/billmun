@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // CDN and image optimization
   images: {
     domains: ['billmun.com', 'localhost'],

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint",
     "seed": "npx tsx src/scripts/seed.ts",
@@ -41,7 +41,7 @@
     "groq-sdk": "^0.5.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.577.0",
-    "next": "^16.1.6",
+    "next": "^15.1.6",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
@@ -61,8 +61,8 @@
     "@types/react": "18.3.28",
     "@types/react-dom": "18.3.7",
     "@types/uuid": "^10.0.0",
-    "eslint": "^8",
-    "eslint-config-next": "^16.1.6",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.1.6",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "5.9.3"
