@@ -50,7 +50,7 @@ export function DelegateStatsSpreadsheet({ committee }: { committee: any }) {
     // Get delegates first
     const { data: delegates } = await supabase
       .from('committee_assignments')
-      .select('user_id, country, users(id, full_name)')
+      .select('user_id, country, users(id, full_name, role)')
       .eq('committee_id', committee.id);
 
     // Get existing stats
@@ -60,7 +60,7 @@ export function DelegateStatsSpreadsheet({ committee }: { committee: any }) {
       .eq('committee_id', committee.id);
 
     if (delegates) {
-      const mergedStats = delegates.map((d: any) => {
+      const mergedStats = delegates.filter((d: any) => d.users?.role === 'DELEGATE').map((d: any) => {
         const existing = existingStats?.find(s => s.delegate_id === d.user_id);
         return {
           id: existing?.id || `temp-${d.user_id}`,

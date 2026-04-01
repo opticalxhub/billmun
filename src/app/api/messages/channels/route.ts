@@ -10,7 +10,7 @@ export async function GET() {
     .from("channel_members")
     .select("channel_id, last_read_at")
     .eq("user_id", context.userId);
-  if (membershipError) return NextResponse.json({ error: membershipError.message }, { status: 500 });
+  if (membershipError) { console.error('[messages/channels] membership error:', membershipError); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
 
   const channels = memberships || [];
   const channelIds = channels.map((row: any) => row.channel_id);
@@ -20,7 +20,7 @@ export async function GET() {
     .from("channels")
     .select("id, name, type, is_read_only, committee_id, bloc_id, created_at")
     .in("id", channelIds);
-  if (channelError) return NextResponse.json({ error: channelError.message }, { status: 500 });
+  if (channelError) { console.error('[messages/channels] channel error:', channelError); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
 
   const { data: latestMessages, error: latestError } = await supabaseAdmin
     .from("messages")
@@ -29,7 +29,7 @@ export async function GET() {
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(50);
-  if (latestError) return NextResponse.json({ error: latestError.message }, { status: 500 });
+  if (latestError) { console.error('[messages/channels] latest error:', latestError); return NextResponse.json({ error: 'Internal server error' }, { status: 500 }); }
 
   const groupedLatest = new Map<string, any>();
   for (const message of latestMessages || []) {

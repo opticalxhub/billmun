@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRequestUserContext } from "@/lib/auth-context";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Upload to Supabase Storage
     const fileExt = file.name.split('.').pop();
     const fileName = `messages/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from('attachments')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
       });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      console.error('[messages/upload] storage error:', uploadError);
+      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseAdmin.storage
       .from('attachments')
       .getPublicUrl(fileName);
 

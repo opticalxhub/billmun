@@ -203,8 +203,8 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   });
 
   const conferenceDate = useMemo(() => 
-    settings?.conference_date ? new Date(`${settings.conference_date}T09:00:00+03:00`) : new Date('2026-04-03T09:00:00+03:00'), 
-  [settings]);
+    new Date('2026-04-03T12:30:00+03:00'), 
+  []);
 
   const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showRoster, setShowRoster] = useState(false);

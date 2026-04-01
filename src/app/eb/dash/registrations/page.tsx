@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { X, Loader2 } from "lucide-react";
+import { displayRole, formatLabel } from '@/lib/roles';
 
 const EDITABLE_FIELDS_LIST = [
   "full_name",
@@ -87,11 +88,18 @@ export default function RegistrationsPage() {
   const totalCount = registrationData.totalCount || 0;
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
       .channel("registrations-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, () => refetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "users" }, () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => refetch(), 2000);
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, [refetch]);
 
   const virtualizer = useVirtualizer({
@@ -349,11 +357,11 @@ export default function RegistrationsPage() {
                         </div>
                         <div className="p-3 w-[15%] flex items-center">
                           <Badge variant={row.status === 'APPROVED' ? 'approved' : row.status === 'REJECTED' || row.status === 'SUSPENDED' ? 'rejected' : 'pending'}>
-                            {row.status}
+                            {formatLabel(row.status)}
                           </Badge>
                         </div>
                         <div className="p-3 w-[15%] flex items-center">
-                          <Badge variant="default">{row.role}</Badge>
+                          <Badge variant="default">{displayRole(row.role)}</Badge>
                         </div>
                         <div className="p-3 w-[25%] flex flex-col justify-center">
                           <p className="text-text-secondary truncate">{row.committee_assignments?.[0]?.committees?.name || "Unassigned"}</p>
@@ -399,7 +407,7 @@ export default function RegistrationsPage() {
                 <div className="flex items-center gap-3">
                   <SectionLabel>Current Status</SectionLabel>
                   <Badge variant={selectedUser.status === 'APPROVED' ? 'approved' : selectedUser.status === 'REJECTED' || selectedUser.status === 'SUSPENDED' ? 'rejected' : 'pending'}>
-                    {selectedUser.status}
+                    {formatLabel(selectedUser.status)}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">

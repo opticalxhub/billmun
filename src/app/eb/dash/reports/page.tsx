@@ -18,6 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { displayRole, formatLabel } from '@/lib/roles';
 
 export default function EBReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -141,7 +142,7 @@ export default function EBReportsPage() {
                     report.status === 'REVIEWED' ? 'bg-text-primary/10 text-text-primary border-border-emphasized' :
                     'bg-status-approved-bg/10 text-status-approved-text border-status-approved-border/20'
                   }`}>
-                    {report.status}
+                    {formatLabel(report.status)}
                   </span>
                 </div>
                 <h4 className="font-bold text-text-primary truncate">{report.issue_type}</h4>
@@ -189,7 +190,7 @@ export default function EBReportsPage() {
                       selectedReport.status === 'REVIEWED' ? 'bg-text-primary/10 text-text-primary border-border-emphasized' :
                       'bg-status-approved-bg/10 text-status-approved-text border-status-approved-border/20'
                     }`}>
-                      {selectedReport.status}
+                      {formatLabel(selectedReport.status)}
                     </span>
                   </div>
                   <h2 className="font-jotia text-2xl uppercase tracking-tight text-text-primary">{selectedReport.issue_type}</h2>
@@ -262,7 +263,7 @@ export default function EBReportsPage() {
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-1">Role & Grade</p>
-                      <p className="text-sm font-bold text-text-primary">{selectedReport.user_details.role} &middot; Grade {selectedReport.user_details.grade}</p>
+                      <p className="text-sm font-bold text-text-primary">{displayRole(selectedReport.user_details.role)} &middot; Grade {selectedReport.user_details.grade}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-1">Committee</p>

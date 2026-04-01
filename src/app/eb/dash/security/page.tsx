@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, SectionLabel, Badge } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/button";
+import { supabase } from "@/lib/supabase";
+import { formatLabel } from '@/lib/roles';
 import { DashboardLoadingState } from "@/components/dashboard-shell";
 
 export default function EBSecurityPage() {
@@ -144,7 +145,7 @@ export default function EBSecurityPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-bold">{inc.incident_type}</span>
                       <Badge variant={inc.severity === 'CRITICAL' || inc.severity === 'HIGH' ? 'rejected' : 'pending'}>{inc.severity}</Badge>
-                      <Badge variant="default">{inc.status}</Badge>
+                      <Badge variant="default">{formatLabel(inc.status)}</Badge>
                     </div>
                     <span className="text-[11px] text-text-dimmed">{new Date(inc.created_at).toLocaleString()}</span>
                   </div>

@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 1. Unauthenticated users (and no emergency access)
+  // 1. Unauthenticated users (and no emergency access) - allow public pages, no forced redirect
   if (!user && !hasValidEmergencyAccess) {
     if (
       !path.startsWith('/login') &&
@@ -118,7 +118,15 @@ export async function middleware(request: NextRequest) {
       !path.startsWith('/api') &&
       !path.startsWith('/911') &&
       !path.startsWith('/dev/test') &&
-      path !== '/'
+      !path.startsWith('/gallery') &&
+      !path.startsWith('/socials') &&
+      !path.startsWith('/contact') &&
+      path !== '/' &&
+      !path.startsWith('/dashboard') &&
+      !path.startsWith('/eb') &&
+      !path.startsWith('/messages') &&
+      !path.startsWith('/pending') &&
+      !path.startsWith('/rejected')
     ) {
       return NextResponse.redirect(new URL('/login', request.url));
     }

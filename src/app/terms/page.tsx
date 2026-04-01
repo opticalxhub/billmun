@@ -102,7 +102,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">14. CONTACT INFORMATION AND NOTICES</h2>
-            <p>14.1. All notices and communications should be sent to: legal@billmun.com.</p>
+            <p>14.1. All notices and communications should be sent to: legal@billmun.gomarai.com.</p>
             <p>14.2. Notice Policy: We may provide notices to you via email or by posting them on the Platform. Any notice provided by email is deemed received one business day after it is sent.</p>
           </section>
 

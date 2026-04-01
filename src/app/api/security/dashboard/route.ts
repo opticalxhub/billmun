@@ -24,7 +24,7 @@ export async function GET() {
   ] = await Promise.all([
     supabaseAdmin
       .from("users")
-      .select("id, full_name, email, role, badge_status, current_zone_id, committee_assignments(country, committees(name))")
+      .select("id, full_name, email, role, badge_status, current_zone_id, committee_assignments!committee_assignments_user_id_fkey(country, committees(name))")
       .eq("status", "APPROVED")
       .limit(500),
     supabaseAdmin

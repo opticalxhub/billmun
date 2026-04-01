@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { Resend } from "resend";
 import { getEBContext } from "@/lib/eb-auth";
+import { generateEmailHTML, generateEmailPlainText } from "@/lib/email-template";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,15 +21,17 @@ export async function POST(req: NextRequest) {
     } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
-    const { subject, html, filters } = body;
+    // Accept both plain text body and legacy html
+    const { subject, html, bodyText, filters, testEmail } = body;
     const ebUserId = context.ebUserId;
 
-    if (!subject || !html || !filters) {
+    const emailBody = bodyText || html || "";
+    if (!subject || !emailBody || !filters) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
     // Build query for matching users
-    let query = supabaseAdmin.from("users").select("id, full_name, email, role, status, committee_assignments(committee_id)");
+    let query = supabaseAdmin.from("users").select("id, full_name, email, role, status, committee_assignments!committee_assignments_user_id_fkey(committee_id)");
 
     if (filters.status && filters.status !== "ALL") {
       query = query.eq("status", filters.status);
@@ -39,11 +42,9 @@ export async function POST(req: NextRequest) {
 
     const { data: users, error: uErr } = await query;
     if (uErr) {
-      console.error("User query error:", uErr);
       return NextResponse.json({ error: "Failed to fetch recipients" }, { status: 400 });
     }
 
-    // Further filter by committee if needed
     let matchedUsers = users || [];
     if (filters.committee_id && filters.committee_id !== "ALL") {
       matchedUsers = matchedUsers.filter((u: any) => 
@@ -52,53 +53,72 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Test email mode: send only to the requesting EB member
+    if (testEmail) {
+      const { data: sender } = await supabaseAdmin.from("users").select("email, full_name").eq("id", ebUserId).single();
+      if (!sender?.email) return NextResponse.json({ error: "Could not find your email" }, { status: 400 });
+
+      const htmlContent = generateEmailHTML(subject, emailBody, sender.full_name);
+      const textContent = generateEmailPlainText(subject, emailBody, sender.full_name);
+
+      await resend.emails.send({
+        from: "BILLMUN <billmun@gomarai.com>",
+        to: [sender.email],
+        subject: `[TEST] ${subject}`,
+        html: htmlContent,
+        text: textContent,
+      });
+
+      return NextResponse.json({ ok: true, sentCount: 1, test: true });
+    }
+
     if (matchedUsers.length === 0) {
       return NextResponse.json({ error: "No matching users found" }, { status: 400 });
     }
 
-    const emails = matchedUsers.map(u => u.email).filter(Boolean);
-
-    // If Resend API is not fully configured, log it instead in dev, but call it anyway
-    if (process.env.RESEND_API_KEY) {
-      // Send in batches of 50
-      for (let i = 0; i < emails.length; i += 50) {
-        const batch = emails.slice(i, i + 50);
-        await resend.emails.send({
+    // Send personalized emails in batches
+    let sentCount = 0;
+    for (let i = 0; i < matchedUsers.length; i += 50) {
+      const batch = matchedUsers.slice(i, i + 50);
+      const sendPromises = batch.map((u: any) => {
+        const htmlContent = generateEmailHTML(subject, emailBody, u.full_name);
+        const textContent = generateEmailPlainText(subject, emailBody, u.full_name);
+        return resend.emails.send({
           from: "BILLMUN <billmun@gomarai.com>",
-          to: batch,
-          subject: subject,
-          html: html,
-        });
-      }
-    } else {
-      console.log(`Mock sent email to ${emails.length} recipients: ${subject}`);
+          to: [u.email],
+          subject,
+          html: htmlContent,
+          text: textContent,
+        }).catch(() => null);
+      });
+      const results = await Promise.all(sendPromises);
+      sentCount += results.filter(Boolean).length;
     }
 
     // Log to mass_emails table
     try {
       await supabaseAdmin.from("mass_emails").insert({
         subject,
-        body_html: html,
-        recipient_count: emails.length,
+        body_html: generateEmailHTML(subject, emailBody),
+        recipient_count: sentCount,
         sent_by: ebUserId,
         sent_at: new Date().toISOString(),
       });
-    } catch (err) {
-      console.error("Failed to log mass email:", err);
-    }
+    } catch { /* ignore */ }
 
     // Log to audit_logs
     try {
       await supabaseAdmin.from("audit_logs").insert({
         actor_id: ebUserId,
-        action: `Sent mass email to ${emails.length} recipients`,
+        action: `Sent mass email to ${sentCount} recipients`,
         target_type: "SYSTEM",
         target_id: ebUserId,
       });
     } catch { /* ignore */ }
 
-    return NextResponse.json({ ok: true, sentCount: emails.length });
+    return NextResponse.json({ ok: true, sentCount });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[eb/mass-email] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

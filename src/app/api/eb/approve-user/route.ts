@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
       .eq('id', userId);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      console.error("[eb/approve-user] update error:", updateError);
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     if (approve) {
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    return NextResponse.json({ error: 'Server error', details: error.message }, { status: 500 });
+    console.error("[eb/approve-user] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

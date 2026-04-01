@@ -14,6 +14,39 @@ import { toast } from 'sonner';
 type TabName = 'Overview' | 'Coverage Planning' | 'Upload Media' | 'Press Releases' | 'Media Gallery' | 'Press Guidelines' | 'My Stats' | 'WhatsApp';
 const TABS: TabName[] = ['Overview', 'Coverage Planning', 'Upload Media', 'Press Releases', 'Media Gallery', 'Press Guidelines', 'My Stats', 'WhatsApp'];
 
+type MediaItem = {
+  id: string;
+  uploader_id: string;
+  media_url: string;
+  caption: string | null;
+  title: string | null;
+  status: string;
+  mime_type: string | null;
+  committee_tag: string | null;
+  event_tag: string | null;
+};
+
+type PressRelease = {
+  id: string;
+  author_id: string;
+  title: string;
+  body: string;
+  status: string;
+};
+
+type Event = {
+  id: string;
+  event_name: string;
+  location: string | null;
+  start_time: string | null;
+};
+
+type Resource = {
+  id: string;
+  title: string;
+  file_url: string;
+};
+
 export default function PressDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -53,23 +86,18 @@ export default function PressDashboard() {
 
   const { data: pressData, isLoading: pressLoading, isError: pressError } = useQuery({
     queryKey: ['press-dashboard'],
-    enabled: !!user?.id,
     queryFn: async () => {
-      const [{ data: media }, { data: events }, { data: resources }, { data: pr }] = await Promise.all([
-        supabase.from('media_gallery').select('*').order('created_at', { ascending: false }).limit(100),
-        supabase.from('schedule_events').select('*').order('start_time', { ascending: true }).limit(50),
-        supabase.from('committee_resources').select('*').eq('archived', false).order('created_at', { ascending: false }).limit(50),
-        supabase.from('press_releases').select('*').order('created_at', { ascending: false }).limit(50),
-      ]);
-      return { media: media || [], events: events || [], resources: resources || [], pressReleases: pr || [] };
+      const res = await fetch('/api/press/dashboard');
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
+      return res.json();
     },
-    staleTime: 60 * 1000,
+    enabled: !!user
   });
 
-  const media = pressData?.media || [];
-  const events = pressData?.events || [];
-  const resources = pressData?.resources || [];
-  const pressReleases = pressData?.pressReleases || [];
+  const media: MediaItem[] = pressData?.media || [];
+  const pressReleases: PressRelease[] = pressData?.pressReleases || [];
+  const events: Event[] = pressData?.events || [];
+  const resources: Resource[] = pressData?.resources || [];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -183,7 +211,7 @@ export default function PressDashboard() {
       <DashboardHeader 
         title="Media & Press Control" 
         subtitle="Conference-wide reporting and media management" 
-        committeeName="Press Corps"
+        committeeName="Media Team"
         user={user}
       />
       <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={(t) => setActiveTab(t as TabName)} />
@@ -193,9 +221,9 @@ export default function PressDashboard() {
             {activeTab === 'Overview' && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card><SectionLabel>Assigned Today</SectionLabel><p className="text-3xl font-bold">{events.length}</p></Card>
-                <Card><SectionLabel>Pending Approval</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'PENDING').length}</p></Card>
-                <Card><SectionLabel>Approved</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.status === 'APPROVED').length}</p></Card>
-                <Card><SectionLabel>Latest Approved</SectionLabel><p className="text-xs text-text-dimmed">{media.find((m) => m.status === 'APPROVED')?.caption || 'None yet'}</p></Card>
+                <Card><SectionLabel>Pending Approval</SectionLabel><p className="text-3xl font-bold">{media.filter((m: MediaItem) => m.status === 'PENDING').length}</p></Card>
+                <Card><SectionLabel>Approved</SectionLabel><p className="text-3xl font-bold">{media.filter((m: MediaItem) => m.status === 'APPROVED').length}</p></Card>
+                <Card><SectionLabel>Latest Approved</SectionLabel><p className="text-xs text-text-dimmed">{media.find((m: MediaItem) => m.status === 'APPROVED')?.caption || '0'}</p></Card>
               </div>
             )}
 
@@ -203,7 +231,7 @@ export default function PressDashboard() {
               <Card>
                 <SectionLabel>Conference Schedule</SectionLabel>
                 <div className="space-y-2">
-                  {events.map((event) => (
+                  {events.map((event: Event) => (
                     <div key={event.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
                       <p className="text-sm font-semibold">{event.event_name}</p>
                       <p className="text-xs text-text-dimmed">{event.location || 'TBD'} · {event.start_time ? new Date(event.start_time).toLocaleString() : 'No start time'}</p>
@@ -224,7 +252,7 @@ export default function PressDashboard() {
                     <Input placeholder="Committee tag (optional)" value={mediaCommittee} onChange={(e) => setMediaCommittee(e.target.value)} />
                     <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={mediaEvent} onChange={(e) => setMediaEvent(e.target.value)}>
                       <option value="">Select event tag</option>
-                      {events.map((event) => <option key={event.id} value={event.event_name}>{event.event_name}</option>)}
+                      {events.map((event: Event) => <option key={event.id} value={event.event_name}>{event.event_name}</option>)}
                     </select>
                     {uploading ? (
                       <div className="w-full h-2 rounded-full bg-bg-raised overflow-hidden border border-border-subtle">
@@ -237,7 +265,7 @@ export default function PressDashboard() {
                 <Card>
                   <SectionLabel>My Uploads</SectionLabel>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {media.filter((m) => m.uploader_id === user.id).map((m) => (
+                    {media.filter((m: MediaItem) => m.uploader_id === user.id).map((m: MediaItem) => (
                       <div key={m.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
                         <p className="text-xs">{m.caption || 'Untitled'}</p>
                         <Badge variant={(m.status || 'pending').toLowerCase() as any}>{m.status}</Badge>
@@ -262,7 +290,7 @@ export default function PressDashboard() {
                 <Card>
                   <SectionLabel>My Press Releases</SectionLabel>
                   <div className="space-y-2">
-                    {pressReleases.filter((r) => r.author_id === user.id).map((r) => (
+                    {pressReleases.filter((r: PressRelease) => r.author_id === user.id).map((r: PressRelease) => (
                       <div key={r.id} className="p-3 rounded-card border border-border-subtle bg-bg-raised">
                         <p className="text-sm font-semibold">{r.title}</p>
                         <Badge variant={(r.status || 'pending').toLowerCase() as any}>{r.status}</Badge>
@@ -277,7 +305,7 @@ export default function PressDashboard() {
               <Card>
                 <SectionLabel>Approved Gallery</SectionLabel>
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {media.filter((m) => m.status === 'APPROVED').map((m) => (
+                  {media.filter((m: MediaItem) => m.status === 'APPROVED').map((m: MediaItem) => (
                     <div key={m.id} className="group relative rounded-card border border-border-subtle bg-bg-raised overflow-hidden aspect-video transition-all hover:border-text-primary/30">
                       {m.mime_type?.startsWith('video/') ? (
                         <video src={m.media_url} className="w-full h-full object-cover" />
@@ -291,7 +319,7 @@ export default function PressDashboard() {
                       </div>
                     </div>
                   ))}
-                  {media.filter(m => m.status === 'APPROVED').length === 0 && (
+                  {media.filter((m: MediaItem) => m.status === 'APPROVED').length === 0 && (
                     <div className="col-span-full py-20 text-center text-text-dimmed italic">No approved media in gallery yet.</div>
                   )}
                 </div>
@@ -311,7 +339,7 @@ export default function PressDashboard() {
                 <Card>
                   <SectionLabel>Branding Assets</SectionLabel>
                   <div className="space-y-2">
-                    {resources.map((r) => (
+                    {resources.map((r: Resource) => (
                       <a key={r.id} href={r.file_url} target="_blank" rel="noreferrer" className="block p-3 rounded-card border border-border-subtle bg-bg-raised hover:border-text-primary/30 transition-all">
                         <p className="text-sm font-semibold">{r.title}</p>
                         <p className="text-[10px] text-text-tertiary uppercase tracking-widest">Download Asset</p>
@@ -324,9 +352,9 @@ export default function PressDashboard() {
 
             {activeTab === 'My Stats' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card><SectionLabel>Total Uploads</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id).length}</p></Card>
-                <Card><SectionLabel>Approved Media</SectionLabel><p className="text-3xl font-bold">{media.filter((m) => m.uploader_id === user.id && m.status === 'APPROVED').length}</p></Card>
-                <Card><SectionLabel>Published PRs</SectionLabel><p className="text-3xl font-bold">{pressReleases.filter((r) => r.author_id === user.id && r.status === 'PUBLISHED').length}</p></Card>
+                <Card><SectionLabel>Total Uploads</SectionLabel><p className="text-3xl font-bold">{media.filter((m: MediaItem) => m.uploader_id === user.id).length}</p></Card>
+                <Card><SectionLabel>Approved Media</SectionLabel><p className="text-3xl font-bold">{media.filter((m: MediaItem) => m.uploader_id === user.id && m.status === 'APPROVED').length}</p></Card>
+                <Card><SectionLabel>Published PRs</SectionLabel><p className="text-3xl font-bold">{pressReleases.filter((r: PressRelease) => r.author_id === user.id && r.status === 'PUBLISHED').length}</p></Card>
               </div>
             )}
 

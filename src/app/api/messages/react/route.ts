@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const { error: insertError } = await supabaseAdmin
     .from("message_reactions")
     .insert({ message_id: messageId, user_id: context.userId, emoji });
-  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
+  if (insertError) { console.error("[messages/react] error:", insertError); return NextResponse.json({ error: "Internal server error" }, { status: 500 }); }
 
   return NextResponse.json({ added: true });
   } catch (err: any) {

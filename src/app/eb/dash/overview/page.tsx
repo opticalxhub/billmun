@@ -25,85 +25,33 @@ export default function EBDashOverview() {
     queryKey: ['eb-overview'],
     enabled: !!user?.id,
     queryFn: async () => {
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-
-      const [
-        { count: totalUsers }, { count: pending }, { count: approved },
-        { count: docsToday }, { count: messagesToday }, { count: aiToday },
-        { count: openIncidents },
-        { data: logs },
-        { data: commData }
-      ] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact' }),
-        supabase.from('users').select('id', { count: 'exact' }).eq('status', 'PENDING'),
-        supabase.from('users').select('id', { count: 'exact' }).eq('status', 'APPROVED'),
-        supabase.from('documents').select('id', { count: 'exact' }).gte('uploaded_at', startOfDay),
-        supabase.from('messages').select('id', { count: 'exact' }).gte('created_at', startOfDay),
-        supabase.from('ai_feedback').select('id', { count: 'exact' }).gte('created_at', startOfDay),
-        supabase.from('security_incidents').select('id', { count: 'exact' }).neq('status', 'RESOLVED'),
-        supabase.from('audit_logs').select('*, actor:actor_id(full_name)').order('performed_at', { ascending: false }).limit(30),
-        supabase.from('committees').select('*, committee_sessions(id, status), chair:chair_id(full_name)')
-      ]);
-
-      // Process committees
-      const processedComms = await Promise.all((commData || []).map(async (c: any) => {
-        const sessionId = c.committee_sessions?.[0]?.id;
-        let presentCount = 0;
-        if (sessionId) {
-          const { data: latestRollCall } = await supabase
-            .from('roll_call_records')
-            .select('id')
-            .eq('session_id', sessionId)
-            .order('started_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          if (latestRollCall) {
-            const { count } = await supabase
-              .from('roll_call_entries')
-              .select('id', { count: 'exact', head: true })
-              .eq('roll_call_id', latestRollCall.id)
-              .in('status', ['PRESENT', 'PRESENT_AND_VOTING']);
-            presentCount = count || 0;
-          }
-        }
-        return {
-          id: c.id,
-          name: c.name,
-          chair_name: c.chair?.full_name || 'No Chair',
-          session_status: c.committee_sessions?.[0]?.status || 'OFFLINE',
-          present_count: presentCount,
-        };
-      }));
-
-      return {
-        stats: {
-          totalUsers: totalUsers ?? 0,
-          pending: pending ?? 0,
-          approved: approved ?? 0,
-          committeesInSession: commData?.filter(c => c.is_active)?.length ?? 0,
-          documentsToday: docsToday ?? 0,
-          messagesToday: messagesToday ?? 0,
-          ai_analyses_today: aiToday ?? 0,
-          open_incidents: openIncidents ?? 0,
-        },
-        activityFeed: logs || [],
-        committees: processedComms
-      };
+      const res = await fetch("/api/eb/overview", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load EB overview");
+      return res.json();
     },
     staleTime: 30 * 1000,
   });
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedInvalidate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['eb-overview'] });
+      }, 2000);
+    };
+
     const channel = supabase
       .channel("eb-overview")
-      .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "committee_sessions" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, () => queryClient.invalidateQueries({ queryKey: ['eb-overview'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "committee_sessions" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, debouncedInvalidate)
       .subscribe();
       
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, [queryClient]);
 
   if (userLoading || ebLoading) {
@@ -170,7 +118,7 @@ export default function EBDashOverview() {
             <Card>
               <SectionLabel>Live Committee Grid</SectionLabel>
               <div className="grid grid-cols-1 gap-3 mt-4">
-                {committees.map((c) => (
+                {committees.map((c: any) => (
                   <div key={c.id} className="p-3 rounded border border-border-subtle bg-bg-raised">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-sm font-bold">{c.name}</span>
@@ -189,7 +137,7 @@ export default function EBDashOverview() {
               <SectionLabel>Live Activity Feed</SectionLabel>
               <div className="space-y-3 mt-4 max-h-[400px] overflow-auto pr-2">
                 {activityFeed.length === 0 && <p className="text-xs text-text-dimmed">No recent activity</p>}
-                {activityFeed.map((log) => (
+                {activityFeed.map((log: any) => (
                   <div key={log.id} className="text-sm pb-3 border-b border-border-subtle last:border-0">
                     <div className="flex items-start justify-between">
                       <span className="font-medium">{log.actor?.full_name || 'System'}</span>

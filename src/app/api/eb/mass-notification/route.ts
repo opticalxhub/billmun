@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    let query = supabaseAdmin.from("users").select("id, committee_assignments(committee_id)");
+    let query = supabaseAdmin.from("users").select("id, committee_assignments!committee_assignments_user_id_fkey(committee_id)");
     if (filters.status && filters.status !== "ALL") {
       query = query.eq("status", filters.status);
     }
@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, sentCount: notifications.length });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[eb/mass-notification] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

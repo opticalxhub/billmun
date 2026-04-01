@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
 
     // Build response object so SSR client can set cookies on it
     const response = NextResponse.json({ success: true });
+  response.headers.set('RateLimit-Limit', '10');
+  response.headers.set('RateLimit-Remaining', '9');
+  response.headers.set('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60));
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      const retry = await retrySupa.auth.signInWithPassword({ email, password });
+      const retry = await retrySupa.auth.signInWithPassword({ email: emailNorm, password });
       if (retry.error) {
         return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
       }
@@ -144,6 +147,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
   } catch (err: any) {
     console.error('Login error:', err);
-    return NextResponse.json({ error: err.message || 'Login failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

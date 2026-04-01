@@ -1,43 +1,43 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Footer() {
-  const [year, setYear] = useState<number | null>(null);
-
-  useEffect(() => {
-    setYear(new Date().getFullYear());
-  }, []);
-
   return (
     <footer className="border-t border-border-subtle bg-bg-card py-12 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center sm:text-left">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-text-primary">BILLMUN</h4>
-            <p className="text-sm text-text-tertiary max-w-xs">
-              The premier Model United Nations platform for delegates and organizers worldwide.
-            </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-center gap-6">
+          {/* Logo + BILLMUN text */}
+          <div className="flex items-center gap-3">
+            <Image
+              src="/billmun.png"
+              alt="BILLMUN"
+              width={40}
+              height={40}
+              className="w-10 h-10 object-contain dark:invert"
+              unoptimized
+            />
+            <span className="font-jotia text-xl tracking-widest uppercase text-text-primary">
+              BILLMUN
+            </span>
           </div>
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-text-primary">Legal</h4>
-            <ul className="space-y-2">
-              <li><Link href="/privacy" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">Terms of Service</Link></li>
-              <li><Link href="/acceptable-use" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">Acceptable Use</Link></li>
-            </ul>
+
+          {/* Links */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-jotia font-bold uppercase tracking-widest text-text-secondary">
+            <Link href="/" className="hover:text-text-primary transition-colors">Home</Link>
+            <Link href="/gallery" className="hover:text-text-primary transition-colors">Gallery</Link>
+            <Link href="/socials" className="hover:text-text-primary transition-colors">Socials</Link>
+            <Link href="/contact" className="hover:text-text-primary transition-colors">Contact</Link>
+            <Link href="/privacy" className="hover:text-text-primary transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-text-primary transition-colors">Terms</Link>
           </div>
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-text-primary">Contact</h4>
-            <ul className="space-y-2">
-              <li><a href="mailto:support@billmun.com" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">support@billmun.com</a></li>
-              <li><a href="https://instagram.com/billmun.sa" target="_blank" rel="noopener noreferrer" className="text-sm text-text-tertiary hover:text-text-primary transition-colors">Instagram</a></li>
-            </ul>
-          </div>
-        </div>
-        <div className="pt-8 border-t border-white/5 text-center text-xs text-text-tertiary uppercase tracking-widest">
-          &copy; {year || 2026} BILLMUN Organization. All rights reserved.
+
+          {/* Copyright */}
+          <p className="text-center text-xs font-jotia text-text-tertiary uppercase tracking-widest">
+            © 2026 BILLMUN. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

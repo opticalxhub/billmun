@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
     }
     
     if (search) {
-      query = query.ilike('full_name', `%${search}%`);
+      const safeSearch = search.replace(/[%_]/g, '\\$&');
+      query = query.ilike('full_name', `%${safeSearch}%`);
     }
 
     const { data, error: qErr, count } = await query
@@ -48,6 +49,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ users: data || [], totalCount: count });
   } catch (error: any) {
     console.error("Registrations API error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

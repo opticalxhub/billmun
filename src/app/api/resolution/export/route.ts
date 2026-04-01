@@ -152,6 +152,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ error: 'Unsupported format' }, { status: 400 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[resolution/export] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       due_at: body?.due_at || null,
     };
     const { error: insertError } = await supabaseAdmin.from("committee_admin_tasks").insert(payload);
-    if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
+    if (insertError) { console.error("[chair/admin-tasks] insert error:", insertError); return NextResponse.json({ error: "Internal server error" }, { status: 500 }); }
     return NextResponse.json({ ok: true });
   }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       .from("committee_admin_tasks")
       .update({ status: statusValue, updated_at: new Date().toISOString() })
       .eq("id", id);
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (updateError) { console.error("[chair/admin-tasks] update error:", updateError); return NextResponse.json({ error: "Internal server error" }, { status: 500 }); }
     return NextResponse.json({ ok: true });
   }
 

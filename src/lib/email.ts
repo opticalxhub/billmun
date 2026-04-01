@@ -100,7 +100,7 @@ export async function sendRejectionEmail(email: string, name: string, reason?: s
               <p>Hello <strong>${name}</strong>,</p>
               <p>Thank you for your interest in BILLMUN 2026. Unfortunately, your registration was not approved for this conference cycle.</p>
               ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-              <p>For inquiries, please contact us at <a href="mailto:support@billmun.com">support@billmun.com</a></p>
+              <p>For inquiries, please contact us at <a href="mailto:support@billmun.gomarai.com">support@billmun.gomarai.com</a></p>
             </div>
             <div class="footer">
               <p>BILLMUN Conference 2026</p>

@@ -12,6 +12,7 @@ import {
   DashboardLoadingState,
   DashboardTabBar,
 } from "@/components/dashboard-shell";
+import { displayRole, formatLabel } from '@/lib/roles';
 import { Notepad } from "@/components/notepad";
 import WhatsAppTab from "@/components/whatsapp-tab";
 
@@ -65,15 +66,24 @@ export default function SecurityDashboard() {
   });
 
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedInvalidate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['security-dashboard'] });
+      }, 2000);
+    };
+
     const channel = supabase
       .channel("security-live-feed")
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_access_zones" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_badge_events" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_alerts" }, () => queryClient.invalidateQueries({ queryKey: ['security-dashboard'] }))
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_incidents" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "audit_logs" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_access_zones" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_badge_events" }, debouncedInvalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_alerts" }, debouncedInvalidate)
       .subscribe();
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
@@ -270,7 +280,7 @@ export default function SecurityDashboard() {
                                 </Badge>
                               </p>
                               <p className="text-xs text-text-dimmed">
-                                {d.role} · {d.committee_assignments?.[0]?.committees?.name || 'No Committee'} · {d.committee_assignments?.[0]?.country || 'No Country'}
+                                {displayRole(d.role)} · {d.committee_assignments?.[0]?.committees?.name || 'No Committee'} · {d.committee_assignments?.[0]?.country || 'No Country'}
                               </p>
                             </div>
                           </div>
@@ -374,7 +384,7 @@ export default function SecurityDashboard() {
                             <div className="flex items-center gap-2">
                               <Badge variant="default">{i.incident_type}</Badge>
                               <Badge variant={getSeverityColor(i.severity) as any}>{i.severity}</Badge>
-                              <Badge variant={i.status === 'RESOLVED' ? 'approved' : 'pending'}>{i.status}</Badge>
+                              <Badge variant={i.status === 'RESOLVED' ? 'approved' : 'pending'}>{formatLabel(i.status)}</Badge>
                             </div>
                             <span className="text-[11px] text-text-dimmed">{new Date(i.created_at).toLocaleString()}</span>
                           </div>
@@ -494,7 +504,7 @@ export default function SecurityDashboard() {
                           <p className="text-sm font-semibold">{z.name}</p>
                           <p className="text-xs text-text-dimmed">{z.description || "No description"}</p>
                         </div>
-                        <Badge variant={z.status === 'OPEN' ? 'approved' : z.status === 'CLOSED' ? 'rejected' : 'pending'}>{z.status}</Badge>
+                        <Badge variant={z.status === 'OPEN' ? 'approved' : z.status === 'CLOSED' ? 'rejected' : 'pending'}>{formatLabel(z.status)}</Badge>
                       </div>
                       <div className="flex items-center gap-2 mt-3">
                         <select

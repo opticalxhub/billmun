@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">2. DATA CONTROLLER AND DATA PROTECTION OFFICER</h2>
             <p>2.1. BILLMUN acts as the Data Controller for the Personal Data processed through the Platform. We have appointed a Data Protection Officer (DPO) who is responsible for overseeing questions in relation to this privacy policy. If you have any questions about this privacy policy, including any requests to exercise your legal rights, please contact the DPO using the details set out below.</p>
-            <p>2.2. Contact Email: dpo@billmun.com</p>
+            <p>2.2. Contact Email: dpo@billmun.gomarai.com</p>
           </section>
 
           <section>
@@ -151,7 +151,7 @@ export default function PrivacyPage() {
               <li>Request transfer of your Personal Data.</li>
               <li>Right to withdraw consent.</li>
             </ul>
-            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@billmun.com.</p>
+            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@billmun.gomarai.com.</p>
             <p>10.3. You will not have to pay a fee to access your Personal Data (or to exercise any of the other rights). However, we may charge a reasonable fee if your request is clearly unfounded, repetitive or excessive. Alternatively, we may refuse to comply with your request in these circumstances.</p>
           </section>
 

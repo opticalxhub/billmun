@@ -21,6 +21,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email, password and full name are required' }, { status: 400 });
     }
 
+    // Restrict self-registration to safe roles only — privileged roles must be assigned by EB
+    const ALLOWED_SELF_REGISTER_ROLES = ['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN', 'MEDIA', 'PRESS', 'SECURITY'];
+    const safeDepartment = ALLOWED_SELF_REGISTER_ROLES.includes(department) ? department : 'DELEGATE';
+
     const emailNorm = email.trim().toLowerCase();
 
     const { data: existingProfile } = await supabaseAdmin.from('users').select('id').eq('email', emailNorm).maybeSingle();
@@ -31,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(department) && (!preferred_committee || preferred_committee === '')) {
+    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(safeDepartment) && (!preferred_committee || preferred_committee === '')) {
       return NextResponse.json({ error: 'Committee selection is required for your role' }, { status: 400 });
     }
 
@@ -46,7 +50,8 @@ export async function POST(request: NextRequest) {
       if (authError.message.includes('already registered')) {
         return NextResponse.json({ error: 'This email is already registered. Please try logging in instead.' }, { status: 400 });
       }
-      return NextResponse.json({ error: authError.message }, { status: 500 });
+      console.error('[register] auth error:', authError);
+      return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
     }
 
     if (!authData.user) {
@@ -62,7 +67,7 @@ export async function POST(request: NextRequest) {
       email: emailNorm,
       full_name,
       password_hash,
-      role: department,
+      role: safeDepartment,
       status: autoApprove ? 'APPROVED' : 'PENDING',
       date_of_birth,
       grade,
@@ -71,14 +76,15 @@ export async function POST(request: NextRequest) {
       emergency_contact_relation,
       emergency_contact_phone,
       dietary_restrictions,
-      preferred_committee: ['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(department) ? preferred_committee : null,
-      allocated_country: department === 'DELEGATE' ? allocated_country : null,
+      preferred_committee: ['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(safeDepartment) ? preferred_committee : null,
+      allocated_country: safeDepartment === 'DELEGATE' ? allocated_country : null,
     });
 
     if (profileError) {
       // Rollback: delete auth user if profile creation fails
       await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json({ error: profileError.message }, { status: 400 });
+      console.error('[register] profile error:', profileError);
+      return NextResponse.json({ error: 'Registration failed' }, { status: 400 });
     }
 
     if (autoApprove) {
@@ -93,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Auto-assign committee assignment if preferred_committee is provided (for ADMIN/CHAIR)
-    if (['ADMIN', 'CHAIR', 'CO_CHAIR'].includes(department) && preferred_committee) {
+    if (['ADMIN', 'CHAIR', 'CO_CHAIR'].includes(safeDepartment) && preferred_committee) {
       const pref = preferred_committee.trim();
       const prefU = pref.toUpperCase();
       const { data: committees } = await supabaseAdmin.from('committees').select('id, name, abbreviation');
@@ -114,7 +120,7 @@ export async function POST(request: NextRequest) {
           committee_id: committee.id
         });
       }
-    } else if (department === 'DELEGATE' && preferred_committee) {
+    } else if (safeDepartment === 'DELEGATE' && preferred_committee) {
       const pref = preferred_committee.trim();
       const prefU = pref.toUpperCase();
       const { data: committees } = await supabaseAdmin.from('committees').select('id, name, abbreviation');
@@ -137,9 +143,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, userId: authData.user.id });
+    const response = NextResponse.json({ success: true, userId: authData.user.id });
+    response.headers.set('RateLimit-Limit', '5');
+    response.headers.set('RateLimit-Remaining', '4');
+    response.headers.set('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 300));
+    return response;
   } catch (err: any) {
     console.error('Registration error:', err);
-    return NextResponse.json({ error: err.message || 'Registration failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Registration failed' }, { status: 500 });
   }
 }

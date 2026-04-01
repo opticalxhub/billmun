@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
       if (upsertError) {
         console.error("Upsert status error:", upsertError);
-        return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
       }
       
       const { error: historyError } = await supabaseAdmin
@@ -401,6 +401,43 @@ export async function POST(request: NextRequest) {
         });
       } catch { /* ignore */ }
       return NextResponse.json({ success: true });
+    }
+
+    if (action === "quick_message_committee") {
+      const title = (body?.title as string) || "";
+      const message = (body?.message as string) || "";
+      if (!title.trim() || !message.trim()) {
+        return NextResponse.json({ error: "Title and message are required" }, { status: 400 });
+      }
+      const { data: delegateRows } = await supabaseAdmin
+        .from("committee_assignments")
+        .select("user_id, users(role, status)")
+        .eq("committee_id", committee_id);
+      const recipients = (delegateRows || [])
+        .filter((r: any) => r?.users?.status === "APPROVED")
+        .map((r: any) => r.user_id);
+      if (recipients.length === 0) {
+        return NextResponse.json({ error: "No approved users in this committee" }, { status: 400 });
+      }
+      await supabaseAdmin.from("notifications").insert(
+        recipients.map((uid: string) => ({
+          user_id: uid,
+          title: title.trim(),
+          message: message.trim(),
+          type: "INFO" as const,
+          link: "/dashboard",
+        }))
+      );
+      try {
+        await supabaseAdmin.from("audit_logs").insert({
+          actor_id: adminUserId,
+          action: "QUICK_MESSAGE_COMMITTEE",
+          target_type: "COMMITTEE",
+          target_id: committee_id,
+          metadata: { title: title.trim(), recipient_count: recipients.length },
+        });
+      } catch { /* ignore */ }
+      return NextResponse.json({ success: true, sentCount: recipients.length });
     }
 
     if (action === "update_admin_task_status") {

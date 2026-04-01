@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, Badge, Input, Modal, FormLabel } from '@/components/ui';
-import { displayRole } from '@/lib/roles';
+import { displayRole, formatLabel } from '@/lib/roles';
 
 export default function EBUsersPage() {
   const [users, setUsers] = useState<Record<string, any>[]>([]);
@@ -163,7 +163,7 @@ export default function EBUsersPage() {
                   </td>
                   <td className="p-5 text-xs font-medium text-text-secondary tracking-wide">{user.preferred_committee || '-'}</td>
                   <td className="p-5">
-                    <Badge variant={user.status.toLowerCase()} className="text-[9px] px-2 py-0.5">{user.status}</Badge>
+                    <Badge variant={user.status.toLowerCase()} className="text-[9px] px-2 py-0.5">{formatLabel(user.status)}</Badge>
                   </td>
                   <td className="p-5">
                     <div className="flex gap-2">

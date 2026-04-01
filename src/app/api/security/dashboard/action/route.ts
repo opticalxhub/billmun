@@ -233,6 +233,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[security/action] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[eb/documents/action] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

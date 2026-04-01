@@ -39,9 +39,11 @@ export default function CommunicationsPage() {
   // Email & Notification Form
   const [filters, setFilters] = useState({ roles: [] as string[], status: "ALL", committee_id: "ALL" });
   const [emailSubject, setEmailSubject] = useState("");
-  const [emailHtml, setEmailHtml] = useState("");
+  const [emailBody, setEmailBody] = useState("");
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
+  const [sendingTest, setSendingTest] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [matchedCount, setMatchedCount] = useState<number | null>(null);
 
@@ -64,40 +66,26 @@ export default function CommunicationsPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  // Recalculate matched users when filters change
+  // Recalculate matched users when filters change — uses server-side endpoint to bypass RLS
   useEffect(() => {
     const calcMatches = async () => {
       try {
-        let query = supabase.from("users").select("id, role, status, committee_assignments(committee_id)");
-        
-        if (filters.status !== "ALL") {
-          query = query.eq("status", filters.status);
-        }
-        
-        if (filters.roles.length > 0) {
-          query = query.in("role", filters.roles);
-        }
-
-        const { data, error } = await query;
-        
-        if (error) {
-          console.error("Error calculating matches:", error);
+        const res = await fetch("/api/eb/matched-count", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roles: filters.roles,
+            status: filters.status,
+            committee_id: filters.committee_id,
+          }),
+        });
+        if (!res.ok) {
+          console.error("Error calculating matches:", await res.text());
           setMatchedCount(0);
           return;
         }
-
-        let users = data || [];
-        
-        if (filters.committee_id !== "ALL") {
-          users = users.filter((u: any) => {
-            const assignments = u.committee_assignments;
-            if (!assignments) return false;
-            const assignmentArray = Array.isArray(assignments) ? assignments : [assignments];
-            return assignmentArray.some((ca: any) => ca?.committee_id === filters.committee_id);
-          });
-        }
-        
-        setMatchedCount(users.length);
+        const data = await res.json();
+        setMatchedCount(data.count ?? 0);
       } catch (err) {
         console.error("Unexpected error calculating matches:", err);
         setMatchedCount(0);
@@ -132,30 +120,54 @@ export default function CommunicationsPage() {
   };
 
   const sendMassEmail = async () => {
-    if (!confirm(`Send email to ${matchedCount} recipients?`)) return;
+    setShowConfirm(false);
     setSubmitting(true);
     try {
       const res = await fetch("/api/eb/mass-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: emailSubject, html: emailHtml, filters, ebUserId: currentUser })
+        body: JSON.stringify({ subject: emailSubject, bodyText: emailBody, filters })
       });
       const data = await res.json();
       if (res.ok) {
         alert(`Success! Sent email to ${data.sentCount || matchedCount} recipients.`);
         setEmailSubject("");
-        setEmailHtml("");
-        queryClient.invalidateQueries({ queryKey: ['communications-dashboard'] });
+        setEmailBody("");
+        loadData();
       } else {
         alert(data.error || "Failed to send email");
       }
-    } catch (err) {
-      console.error("Error sending mass email:", err);
+    } catch {
       alert("Error sending mass email.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const sendTestEmail = async () => {
+    setSendingTest(true);
+    try {
+      const res = await fetch("/api/eb/mass-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: emailSubject, bodyText: emailBody, filters, testEmail: true })
+      });
+      const data = await res.json();
+      if (res.ok) alert("Test email sent to your inbox!");
+      else alert(data.error || "Failed to send test email");
+    } catch {
+      alert("Error sending test email.");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  const emailPreviewHtml = (() => {
+    if (!emailSubject && !emailBody) return "";
+    const sanitize = (t: string) => t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const bodyHtml = sanitize(emailBody || "").split(/\n\n+/).map(p => `<p style="margin:0 0 16px 0;line-height:1.7;color:#fff;font-size:15px;">${p.split("\n").join("<br/>")}</p>`).join("");
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;"><tr><td align="center" style="padding:40px 20px;"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;"><tr><td align="center" style="padding:0 0 24px 0;"><img src="/billmun.png" alt="BILLMUN" width="120" style="display:block;max-width:120px;filter:invert(1);"/></td></tr><tr><td style="padding:0 0 32px 0;"><div style="height:1px;background:#222;"></div></td></tr><tr><td style="padding:0 0 24px 0;"><h1 style="margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:0.02em;">${sanitize(emailSubject || "Subject")}</h1></td></tr><tr><td style="padding:0 0 32px 0;"><p style="margin:0 0 16px 0;line-height:1.7;color:#fff;font-size:15px;">Dear [Recipient Name],</p>${bodyHtml}</td></tr><tr><td style="padding:0 0 24px 0;"><div style="height:1px;background:#222;"></div></td></tr><tr><td style="padding:0;"><p style="margin:0 0 8px 0;font-size:12px;color:#666;text-align:center;">© 2026 BILLMUN. All rights reserved.</p><p style="margin:0 0 8px 0;font-size:12px;color:#666;text-align:center;"><a href="https://instagram.com/billmun.sa" style="color:#999;text-decoration:underline;">Instagram</a> · <a href="https://billmun.sa" style="color:#999;text-decoration:underline;">billmun.sa</a></p><p style="margin:0;font-size:11px;color:#666;text-align:center;line-height:1.5;">This email was sent because you registered for BILLMUN.<br/>Contact <a href="mailto:pr@billmun.gomarai.com" style="color:#999;">pr@billmun.gomarai.com</a> if this was a mistake.</p></td></tr></table></td></tr></table></body></html>`;
+  })();
 
   const sendNotification = async () => {
     if (!confirm(`Send portal notification to ${matchedCount} users?`)) return;
@@ -282,34 +294,90 @@ export default function CommunicationsPage() {
         )}
 
         {activeTab === "Mass Email" && (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <FilterPanel />
-            <Card className="border-primary/20">
-              <div className="flex items-center gap-2 mb-6">
-                <Mail className="w-5 h-5 text-primary" />
-                <SectionLabel className="mb-0">Compose Email</SectionLabel>
-              </div>
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Subject</label>
-                  <Input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Important Information..." />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">HTML Body</label>
-                  <Textarea value={emailHtml} onChange={e => setEmailHtml(e.target.value)} placeholder="<p>Hello delegates,</p>" rows={10} className="font-mono text-xs" />
-                </div>
-                <Button 
-                  onClick={() => void sendMassEmail()} 
-                  disabled={submitting || !emailSubject || !emailHtml || matchedCount === 0} 
-                  className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest"
-                >
-                  {submitting ? <LoadingSpinner size="sm" /> : <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> <span>Send to {matchedCount} Recipients</span></div>}
-                </Button>
-              </div>
-            </Card>
 
+            {/* Compose + Preview Split */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Compose Side */}
+              <Card className="border-primary/20">
+                <div className="flex items-center gap-2 mb-6">
+                  <Mail className="w-5 h-5 text-primary" />
+                  <SectionLabel className="mb-0">Compose Email</SectionLabel>
+                </div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Subject</label>
+                    <Input value={emailSubject} onChange={e => setEmailSubject(e.target.value)} placeholder="Important Information..." />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Body (plain text — auto-wrapped in branded template)</label>
+                    <Textarea value={emailBody} onChange={e => setEmailBody(e.target.value)} placeholder="Write your email content here. Each recipient will be greeted personally with 'Dear [Name]'." rows={12} />
+                    <p className="text-[10px] text-text-dimmed">{emailBody.length} characters</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline"
+                      onClick={() => void sendTestEmail()} 
+                      disabled={sendingTest || !emailSubject || !emailBody}
+                      className="flex-1 h-12"
+                    >
+                      {sendingTest ? <LoadingSpinner size="sm" /> : "Send Test to My Inbox"}
+                    </Button>
+                    <Button 
+                      onClick={() => setShowConfirm(true)} 
+                      disabled={submitting || !emailSubject || !emailBody || matchedCount === 0} 
+                      className="flex-1 h-12 bg-primary hover:bg-primary/90 text-white font-bold uppercase tracking-widest"
+                    >
+                      {submitting ? <LoadingSpinner size="sm" /> : <div className="flex items-center gap-2"><Mail className="w-4 h-4" /> <span>Send to {matchedCount}</span></div>}
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Preview Side */}
+              <Card>
+                <SectionLabel>Live Preview</SectionLabel>
+                <div className="border border-border-subtle rounded-card overflow-hidden bg-[#0a0a0a]" style={{ minHeight: 400 }}>
+                  {emailPreviewHtml ? (
+                    <iframe
+                      srcDoc={emailPreviewHtml}
+                      className="w-full border-0"
+                      style={{ height: 500 }}
+                      title="Email Preview"
+                      sandbox=""
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-[400px] text-text-dimmed text-sm">
+                      Start typing to see preview
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+
+            {/* Send Confirmation Modal */}
+            {showConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowConfirm(false)}>
+                <div className="bg-bg-card border border-border-subtle rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <h3 className="font-jotia text-xl text-text-primary mb-4">Confirm Send</h3>
+                  <div className="space-y-3 text-sm text-text-secondary mb-6">
+                    <p><strong className="text-text-primary">Recipients:</strong> {matchedCount} users</p>
+                    <p><strong className="text-text-primary">Subject:</strong> {emailSubject}</p>
+                    <p><strong className="text-text-primary">Preview:</strong> {emailBody.slice(0, 100)}{emailBody.length > 100 ? "..." : ""}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setShowConfirm(false)} className="flex-1">Cancel</Button>
+                    <Button onClick={() => void sendMassEmail()} className="flex-1 bg-primary text-white">Confirm Send</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Sent History */}
             <div className="mt-8 space-y-4">
               <SectionLabel>Sent Mass Emails</SectionLabel>
+              {sentEmails.length === 0 && <p className="text-text-dimmed text-sm text-center py-6">No emails sent yet.</p>}
               {sentEmails.map(e => (
                 <div key={e.id} className="p-4 border border-border-subtle rounded-card bg-bg-raised flex justify-between items-center">
                   <div className="flex items-center gap-3">

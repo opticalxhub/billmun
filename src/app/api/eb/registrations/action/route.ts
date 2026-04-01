@@ -354,7 +354,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[eb/registrations/action] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

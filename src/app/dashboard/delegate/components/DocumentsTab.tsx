@@ -9,6 +9,7 @@ import { Input, Textarea } from '@/components/ui';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { toast } from 'sonner';
 import { X, FilePlus } from 'lucide-react';
+import { formatLabel } from '@/lib/roles';
 
 const STATUS_VARIANT: Record<string, string> = {
   SUBMITTED: 'bg-status-pending-bg text-status-pending-text border border-status-pending-border',
@@ -591,14 +592,14 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                         </td>
                         <td className="px-5 py-4">
                           <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold bg-bg-raised text-text-secondary border border-border-subtle uppercase tracking-tighter">
-                            {doc.type.replace(/_/g, ' ')}
+                            {formatLabel(doc.type)}
                           </span>
                         </td>
                         <td className="px-5 py-4 font-jotia text-text-dimmed text-xs uppercase">{new Date(doc.uploaded_at).toLocaleDateString()}</td>
                         <td className="px-5 py-4 font-jotia text-text-dimmed text-xs uppercase">{formatSize(doc.file_size)}</td>
                         <td className="px-5 py-4">
                           <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-widest ${STATUS_VARIANT[doc.status] || ''}`}>
-                            {doc.status.replace(/_/g, ' ')}
+                            {formatLabel(doc.status)}
                           </span>
                         </td>
                         <td className="px-5 py-4 font-jotia text-text-dimmed text-xs uppercase">{doc.reviewer?.full_name || '-'}</td>
@@ -615,11 +616,11 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <p className="font-jotia-bold text-text-primary text-sm leading-tight">{doc.title}</p>
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest shrink-0 ${STATUS_VARIANT[doc.status] || ''}`}>
-                        {doc.status.replace(/_/g, ' ')}
+                        {formatLabel(doc.status)}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-2 pt-4 border-t border-border-subtle/30 text-[10px] text-text-dimmed font-jotia uppercase tracking-widest">
-                      <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-border-emphasized/30" />{doc.type.replace(/_/g, ' ')}</span>
+                      <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-border-emphasized/30" />{formatLabel(doc.type)}</span>
                       <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-border-emphasized/30" />{formatSize(doc.file_size)}</span>
                       <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-border-emphasized/30" />{new Date(doc.uploaded_at).toLocaleDateString()}</span>
                     </div>
@@ -643,7 +644,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
             <div className="sticky top-0 bg-bg-card border-b border-border-subtle p-5 flex items-center justify-between z-10">
               <div>
                 <h3 className="font-jotia-bold text-lg text-text-primary truncate max-w-[320px] leading-tight mb-1">{drawerDoc.title}</h3>
-                <p className="text-[10px] font-jotia text-text-tertiary uppercase tracking-widest">{drawerDoc.type.replace(/_/g, ' ')}</p>
+                <p className="text-[10px] font-jotia text-text-tertiary uppercase tracking-widest">{formatLabel(drawerDoc.type)}</p>
               </div>
               <button 
                 onClick={() => setDrawerDoc(null)} 
@@ -716,7 +717,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                 <div className="space-y-1">
                   <p className="text-text-tertiary font-jotia text-[10px] uppercase tracking-widest">Current Status</p>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${STATUS_VARIANT[drawerDoc.status] || ''}`}>
-                    {drawerDoc.status.replace(/_/g, ' ')}
+                    {formatLabel(drawerDoc.status)}
                   </span>
                 </div>
               </div>
@@ -755,7 +756,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
                                 <div className="absolute left-[3px] top-2 bottom-0 w-[1px] bg-border-strong/30" />
                               )}
                               <div className="absolute left-0 top-1.5 w-[7px] h-[7px] rounded-full bg-text-dimmed shadow-[0_0_0_4px_var(--bg-card)]" />
-                              <p className="font-jotia-bold text-text-primary text-xs uppercase tracking-wider mb-1">{h.status.replace(/_/g, ' ')}</p>
+                              <p className="font-jotia-bold text-text-primary text-xs uppercase tracking-wider mb-1">{formatLabel(h.status)}</p>
                               <div className="flex items-center gap-2 text-[10px] text-text-tertiary uppercase font-jotia mb-2">
                                 <span>{h.changer?.full_name || 'System'}</span>
                                 <span>&bull;</span>

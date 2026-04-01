@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel } from '@/components/ui';
 import type { ChairContext } from '../page';
+import { formatLabel } from '@/lib/roles';
 
 export default function AnalyticsTab({ ctx }: { ctx: ChairContext }) {
   const [docStats, setDocStats] = useState<{ date: string; count: number }[]>([]);
@@ -87,7 +88,7 @@ export default function AnalyticsTab({ ctx }: { ctx: ChairContext }) {
     if (!data) return;
     const byType: Record<string, number> = {};
     data.forEach(d => { byType[d.type] = (byType[d.type] || 0) + 1; });
-    setMotionTypes(Object.entries(byType).map(([type, count]) => ({ type: type.replace(/_/g, ' '), count })).sort((a, b) => b.count - a.count));
+    setMotionTypes(Object.entries(byType).map(([type, count]) => ({ type: formatLabel(type), count })).sort((a, b) => b.count - a.count));
   };
 
   const loadApprovalRate = async () => {

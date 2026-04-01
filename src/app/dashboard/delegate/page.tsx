@@ -51,84 +51,47 @@ export default function DelegateDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabName>('Overview');
 
-  // useQuery for User Profile
-  const { data: user, isLoading: userLoading, refetch: refetchUser } = useQuery({
-    queryKey: ['user-profile'],
+  // Single consolidated API call for all delegate dashboard data
+  const { data: dashData, isLoading: dashLoading, refetch: refetchDash } = useQuery({
+    queryKey: ['delegate-dashboard'],
     queryFn: async () => {
       // Emergency Override Check
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
-          id: '00000000-0000-0000-0000-000000000000',
-          email: 'emergency@billmun.online',
-          full_name: 'Engineer (Emergency)',
-          role: 'EXECUTIVE_BOARD',
-          status: 'APPROVED',
-          has_completed_onboarding: true
+          user: {
+            id: '00000000-0000-0000-0000-000000000000',
+            email: 'emergency@billmun.gomarai.com',
+            full_name: 'MR. Abdulrahman',
+            role: 'EXECUTIVE_BOARD',
+            status: 'APPROVED',
+            has_completed_onboarding: true
+          },
+          assignment: null,
+          committee: null,
+          committeeSession: null,
         };
       }
 
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, email, full_name, role, status, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at')
-        .eq('id', authUser.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // useQuery for Committee Assignment
-  const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
-    queryKey: ['committee-assignment', user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('committee_assignments')
-        .select('*')
-        .eq('user_id', user!.id)
-        .limit(1)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      
+      const res = await fetch(`/api/delegate/dashboard?userId=${authUser.id}`);
+      if (!res.ok) throw new Error('Failed to load dashboard data');
+      return await res.json();
     },
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  // useQuery for Committee Details
-  const { data: committee } = useQuery({
-    queryKey: ['committee', assignment?.committee_id],
-    enabled: !!assignment?.committee_id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('committees')
-        .select('*')
-        .eq('id', assignment!.committee_id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 2 * 60 * 1000,
-  });
+  const user = dashData?.user ?? null;
+  const assignment = dashData?.assignment ?? null;
+  const committee = dashData?.committee ?? null;
+  const committeeSession = dashData?.committeeSession ?? null;
+  const userLoading = dashLoading;
+  const assignmentLoading = dashLoading;
 
-  // useQuery for Committee Session
-  const { data: committeeSession, refetch: refetchSession } = useQuery({
-    queryKey: ['committee-session', assignment?.committee_id],
-    enabled: !!assignment?.committee_id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('committee_sessions')
-        .select('*')
-        .eq('committee_id', assignment!.committee_id)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    staleTime: 5 * 60 * 1000, // Increased stale time to reduce unnecessary refetches
-    refetchOnWindowFocus: false, // Prevent refetches on tab switches
-  });
+  // Alias refetch for session-specific refresh
+  const refetchSession = refetchDash;
 
   // Stable ref for refetchSession to avoid stale closures in subscription
   const refetchSessionRef = useRef(refetchSession);
@@ -168,8 +131,8 @@ export default function DelegateDashboard() {
   const isInitialLoading = userLoading || (!!user && assignmentLoading && !assignment);
 
   const refreshData = useCallback(async () => {
-    await Promise.all([refetchUser(), refetchAssignment()]);
-  }, [refetchUser, refetchAssignment]);
+    await refetchDash();
+  }, [refetchDash]);
 
   // Memoize ctx to prevent unnecessary re-renders of all tabs
   const ctx: DelegateContext = useMemo(() => {

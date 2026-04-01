@@ -18,6 +18,7 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
     queryKey: ['committee-blocs', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
+      // Fetch blocs with members (separate messages query to avoid RLS join failures)
       const { data, error } = await supabase
         .from('blocs')
         .select(`
@@ -27,20 +28,27 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
             user_id,
             joined_at,
             users(full_name, allocated_country)
-          ),
-          bloc_messages(
-            id,
-            content,
-            created_at,
-            user_id,
-            users(full_name)
           )
         `)
         .eq('committee_id', ctx.committee.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      const blocs = data || [];
+
+      // Fetch message counts per bloc separately (resilient to RLS)
+      const blocIds = blocs.map((b: any) => b.id);
+      if (blocIds.length > 0) {
+        const { data: msgs } = await supabase
+          .from('bloc_messages')
+          .select('bloc_id, id')
+          .in('bloc_id', blocIds);
+        const msgCounts: Record<string, number> = {};
+        (msgs || []).forEach((m: any) => { msgCounts[m.bloc_id] = (msgCounts[m.bloc_id] || 0) + 1; });
+        blocs.forEach((b: any) => { b._message_count = msgCounts[b.id] || 0; });
+      }
+
+      return blocs;
     },
     staleTime: 30 * 1000,
   });
@@ -114,7 +122,7 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
                   <span>Created {new Date(bloc.created_at).toLocaleDateString()}</span>
                   <div className="flex items-center gap-1">
                     <MessageSquare className="w-3 h-3" />
-                    {(bloc.bloc_messages?.length || 0)} messages
+                    {bloc._message_count || 0} messages
                   </div>
                 </div>
 
@@ -215,7 +223,7 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
                 </div>
                 <div>
                   <span className="text-xs text-text-tertiary uppercase">Messages</span>
-                  <p className="text-text-primary">{selectedBloc.bloc_messages?.length || 0} messages exchanged</p>
+                  <p className="text-text-primary">{selectedBloc._message_count || 0} messages exchanged</p>
                 </div>
               </div>
             </Card>

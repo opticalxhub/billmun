@@ -53,9 +53,23 @@ export function DashboardHeader({
     router.push("/login");
   };
 
+  // Get honorific based on user's full_name
+  const getHonorific = (name: string) => {
+    if (!name) return "";
+    // Simple heuristic - can be enhanced later
+    return "Mr./Ms.";
+  };
+
+  const userGreeting = user?.full_name 
+    ? `Hello, ${getHonorific(user.full_name)} ${user.full_name.split(' ').pop()}`
+    : null;
+
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
       <div className="min-w-0">
+        {userGreeting && (
+          <p className="text-xs sm:text-sm text-text-secondary font-medium mb-1">{userGreeting}</p>
+        )}
         <h1 className="font-jotia text-2xl sm:text-3xl md:text-4xl uppercase tracking-tight text-text-primary truncate">{title}</h1>
         {subtitle ? <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-text-dimmed truncate">{subtitle}</p> : null}
       </div>

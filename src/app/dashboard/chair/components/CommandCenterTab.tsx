@@ -6,6 +6,7 @@ import { Card, SectionLabel, Input, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
 import { useQuery } from '@tanstack/react-query';
+import { formatLabel } from '@/lib/roles';
 import { toast } from 'sonner';
 import { Play } from 'lucide-react';
 
@@ -179,7 +180,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
         committee_id: ctx.committee.id,
         session_id: ctx.session?.id,
         event_type: 'STATUS_CHANGE',
-        title: `Session status changed to ${STATUS_OPTIONS.find(opt => opt.value === newStatus)?.label || newStatus.replace(/_/g, ' ')}`,
+        title: `Session status changed to ${STATUS_OPTIONS.find(opt => opt.value === newStatus)?.label || formatLabel(newStatus)}`,
         description: details.topic || details.purpose || details.summary || (details.break_type ? `${details.break_type} Break` : null),
         metadata: details,
         created_by: ctx.user.id,
@@ -362,7 +363,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
               {adminTasks.slice(0, 6).map((task: any) => (
                 <div key={task.id} className="p-3 bg-bg-raised rounded-card border border-border-subtle">
                   <p className="text-sm font-semibold text-text-primary">{task.title}</p>
-                  <p className="text-xs text-text-dimmed">{task.priority} · {task.status}</p>
+                  <p className="text-xs text-text-dimmed">{formatLabel(task.priority)} · {formatLabel(task.status)}</p>
                 </div>
               ))}
             </div>

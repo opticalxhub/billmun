@@ -9,6 +9,7 @@ import type { ChairContext } from '../page';
 import { X, ExternalLink } from "lucide-react";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { formatLabel } from '@/lib/roles';
 
 const STATUS_STYLES: Record<string, string> = {
   SUBMITTED: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
@@ -250,11 +251,11 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                       </td>
                       <td className="p-3 text-sm text-text-primary">{doc.user?.full_name || 'Unknown'}</td>
                       <td className="p-3 text-sm text-text-primary font-medium">{doc.title}</td>
-                      <td className="p-3 text-xs text-text-secondary uppercase">{doc.type?.replace(/_/g, ' ')}</td>
+                      <td className="p-3 text-xs text-text-secondary uppercase">{formatLabel(doc.type)}</td>
                       <td className="p-3 text-xs text-text-dimmed">{new Date(doc.uploaded_at).toLocaleDateString()}</td>
                       <td className="p-3">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border ${STATUS_STYLES[doc.status] || ''}`}>
-                          {doc.status}
+                          {formatLabel(doc.status)}
                         </span>
                       </td>
                     </tr>
@@ -272,10 +273,10 @@ export default function ChairDocumentsTab({ ctx }: { ctx: ChairContext }) {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-bold text-text-primary">{doc.title}</p>
-                      <p className="text-xs text-text-dimmed mt-0.5">{doc.user?.full_name} · {doc.type?.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-text-dimmed mt-0.5">{doc.user?.full_name} · {formatLabel(doc.type)}</p>
                     </div>
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${STATUS_STYLES[doc.status] || ''}`}>
-                      {doc.status}
+                      {formatLabel(doc.status)}
                     </span>
                   </div>
                 </div>

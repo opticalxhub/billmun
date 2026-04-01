@@ -13,6 +13,7 @@ import { AnnouncementBanner } from '@/components/announcement-banner';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
+import { formatLabel } from '@/lib/roles';
 
 type AdminTab =
   | 'overview'
@@ -87,6 +88,8 @@ export default function AdminDashboard() {
 
   const [sharedNote, setSharedNote] = useState('');
   const [assignToChairNote, setAssignToChairNote] = useState('');
+  const [quickMsgTitle, setQuickMsgTitle] = useState('');
+  const [quickMsgBody, setQuickMsgBody] = useState('');
 
   const [voteForm, setVoteForm] = useState({
     motionType: '',
@@ -169,6 +172,14 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (data?.noAssignment || !data?.committee?.id) return;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const debouncedInvalidate = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      }, 2000);
+    };
 
     const channels = [
       supabase
@@ -181,9 +192,7 @@ export default function AdminDashboard() {
             table: 'delegate_presence_statuses',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
       supabase
@@ -196,9 +205,7 @@ export default function AdminDashboard() {
             table: 'committee_admin_tasks',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
       supabase
@@ -211,9 +218,7 @@ export default function AdminDashboard() {
             table: 'announcements',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
       supabase
@@ -226,9 +231,7 @@ export default function AdminDashboard() {
             table: 'committee_resources',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
       supabase
@@ -241,9 +244,7 @@ export default function AdminDashboard() {
             table: 'documents',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
       supabase
@@ -256,14 +257,13 @@ export default function AdminDashboard() {
             table: 'attendance_records',
             filter: `committee_id=eq.${data.committee.id}`,
           },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-          },
+          debouncedInvalidate,
         )
         .subscribe(),
     ];
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [data?.committee?.id, data?.noAssignment, queryClient]);
@@ -726,7 +726,7 @@ export default function AdminDashboard() {
                     <tr key={doc.id} className="border-b border-border-subtle">
                       <td className="py-3 text-sm">{doc.users?.full_name || '-'}</td>
                       <td className="py-3 text-sm">{doc.title}</td>
-                      <td className="py-3 text-sm">{doc.type}</td>
+                      <td className="py-3 text-sm">{formatLabel(doc.type)}</td>
                       <td className="py-3 text-sm text-text-dimmed">{new Date(doc.uploaded_at).toLocaleString()}</td>
                       <td className="py-3 text-sm text-text-dimmed">{Math.max(0, Math.floor((Date.now() - new Date(doc.uploaded_at).getTime()) / (1000 * 60 * 60)))}</td>
                       <td className="py-3">
@@ -767,7 +767,7 @@ export default function AdminDashboard() {
                     <tr key={doc.id} className="border-b border-border-subtle">
                       <td className="py-3 text-sm">{doc.users?.full_name || '-'}</td>
                       <td className="py-3 text-sm">{doc.title}</td>
-                      <td className="py-3 text-sm">{doc.status}</td>
+                      <td className="py-3 text-sm">{formatLabel(doc.status)}</td>
                       <td className="py-3 text-sm text-text-dimmed">{doc.reviewed_at ? new Date(doc.reviewed_at).toLocaleString() : '-'}</td>
                     </tr>
                   ))}
@@ -949,7 +949,7 @@ export default function AdminDashboard() {
                     <p className="text-xs text-text-dimmed mt-0.5">
                       Priority: <span className={`font-bold ${task.priority === 'CRITICAL' || task.priority === 'HIGH' ? 'text-status-rejected-text' : 'text-text-secondary'}`}>{task.priority}</span>
                       {' · '}
-                      Status: <span className="capitalize">{task.status.toLowerCase().replace('_', ' ')}</span>
+                      Status: <span className="capitalize">{formatLabel(task.status)}</span>
                     </p>
                     {task.description && <p className="text-xs text-text-dimmed mt-1 line-clamp-2 italic">{task.description}</p>}
                   </div>
@@ -1023,7 +1023,7 @@ export default function AdminDashboard() {
             <div className="mt-4 space-y-2">
               {votes.slice(0, 8).map((vote: any) => (
                 <div key={vote.id} className="p-3 border border-border-subtle rounded-card text-sm">
-                  {vote.motion_type} · {vote.outcome} · {vote.votes_for}/{vote.votes_against}/{vote.abstentions}
+                  {vote.motion_type} · {formatLabel(vote.outcome)} · {vote.votes_for}/{vote.votes_against}/{vote.abstentions}
                 </div>
               ))}
             </div>
@@ -1033,6 +1033,30 @@ export default function AdminDashboard() {
 
       {activeTab === 'communication' && (
         <div className="space-y-6">
+          <Card className="space-y-6">
+            <SectionLabel>Quick Message to Committee</SectionLabel>
+            <p className="text-sm text-text-dimmed">
+              Send an instant in-portal notification to all delegates in your committee.
+            </p>
+            <Input
+              placeholder="Message title (e.g. Room Change)"
+              value={quickMsgTitle}
+              onChange={(e) => setQuickMsgTitle(e.target.value)}
+            />
+            <Textarea
+              className="min-h-[80px] text-sm bg-bg-raised"
+              placeholder="Message body..."
+              value={quickMsgBody}
+              onChange={(e) => setQuickMsgBody(e.target.value)}
+            />
+            <Button
+              disabled={!quickMsgTitle.trim() || !quickMsgBody.trim()}
+              loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'quick_message_committee'}
+              onClick={() => postAction({ action: 'quick_message_committee', title: quickMsgTitle.trim(), message: quickMsgBody.trim() }).then(() => { setQuickMsgTitle(''); setQuickMsgBody(''); })}
+            >
+              Send to Committee
+            </Button>
+          </Card>
           <Card className="space-y-6">
             <SectionLabel>Shared Notes with Chair</SectionLabel>
             <p className="text-sm text-text-dimmed">
@@ -1186,7 +1210,7 @@ export default function AdminDashboard() {
             <div className="max-h-96 overflow-y-auto space-y-2">
               {selectedHistory.map((h: any) => (
                 <div key={h.id} className="p-3 border border-border-subtle rounded-card">
-                  <p className="text-sm text-text-primary">{h.status}</p>
+                  <p className="text-sm text-text-primary">{formatLabel(h.status)}</p>
                   <p className="text-xs text-text-dimmed mt-1">{new Date(h.changed_at).toLocaleString()}</p>
                   {h.note ? <p className="text-xs text-text-secondary mt-1">{h.note}</p> : null}
                 </div>

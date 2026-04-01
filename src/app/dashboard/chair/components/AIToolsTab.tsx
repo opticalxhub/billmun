@@ -7,6 +7,7 @@ import { Card, SectionLabel, Textarea, Select } from '@/components/ui';
 import { Button } from '@/components/button';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
+import { formatLabel } from '@/lib/roles';
 import { 
   FileText, 
   BrainCircuit, 
@@ -270,7 +271,7 @@ export default function AIToolsTab({ ctx }: { ctx: ChairContext }) {
                   <div key={h.id} className="p-2 bg-bg-card rounded-lg border border-border-subtle flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <span className="text-[10px] text-text-primary font-bold uppercase truncate max-w-[120px]">{h.tool?.replace(/_/g, ' ')}</span>
+                      <span className="text-[10px] text-text-primary font-bold uppercase truncate max-w-[120px]">{formatLabel(h.tool)}</span>
                     </div>
                     <span className="text-[9px] text-text-dimmed">{new Date(h.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                   </div>

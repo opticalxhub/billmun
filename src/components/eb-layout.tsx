@@ -17,12 +17,15 @@ const NAV_ITEMS = [
   { id: 'documents', label: 'Documents' },
   { id: 'security', label: 'Security' },
   { id: 'communications', label: 'Communications' },
+  { id: 'contact', label: 'Contact Submissions' },
+  { id: 'media-pr', label: 'Media/PR Approval' },
   { id: 'settings', label: 'Settings' },
   { id: 'audit', label: 'Audit Log' },
   { id: 'internal-workspace', label: 'Internal Workspace' },
   { id: 'whatsapp', label: 'WhatsApp' },
   { id: 'reports', label: 'Reports Panel' },
   { id: 'schedule', label: 'Conference Schedule' },
+  { id: 'conference', label: 'Conference Control' },
 ];
 
 export const EBLayout = ({ children, activeTab, onTabChange }: { children: React.ReactNode, activeTab: string, onTabChange: (id: string) => void }) => {
@@ -36,7 +39,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
     if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
       setUser({
         id: 'emergency-actor',
-        email: 'emergency@billmun.com',
+        email: 'emergency@billmun.gomarai.com',
         full_name: 'Engineer (Emergency)',
         role: 'EXECUTIVE_BOARD',
         status: 'APPROVED',

@@ -6,6 +6,7 @@ import { Card, SectionLabel, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import type { ChairContext } from '../page';
+import { formatLabel } from '@/lib/roles';
 
 const TYPES = [
   { value: 'POINT_OF_ORDER', label: 'Point of Order' },
@@ -145,7 +146,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
           <div>
             <label className="text-xs font-bold text-text-tertiary uppercase tracking-widest block mb-1">Outcome</label>
             <select className="w-full h-10 rounded-input border border-border-input bg-transparent px-3 py-2 text-sm" value={outcome} onChange={e => setOutcome(e.target.value)}>
-              {OUTCOMES.map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
+              {OUTCOMES.map(o => <option key={o} value={o}>{formatLabel(o)}</option>)}
             </select>
           </div>
           {type.startsWith('MOTION_') && (
@@ -185,7 +186,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
                       {r.description && <p className="text-xs text-text-dimmed mt-1">{r.description}</p>}
                     </div>
                     <div className="text-right">
-                      <span className={`text-xs font-bold uppercase ${OUTCOME_STYLES[r.outcome] || ''}`}>{r.outcome?.replace(/_/g, ' ')}</span>
+                      <span className={`text-xs font-bold uppercase ${OUTCOME_STYLES[r.outcome] || ''}`}>{formatLabel(r.outcome)}</span>
                       {r.votes_for > 0 && (
                         <p className="text-[10px] text-text-dimmed mt-0.5">{r.votes_for}-{r.votes_against}-{r.votes_abstain}</p>
                       )}
@@ -206,7 +207,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
             {sessionLog.map(e => (
               <div key={e.id} className="p-3 bg-bg-raised rounded-card border border-border-subtle">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest px-2 py-0.5 bg-bg-card rounded-full border border-border-subtle">{e.event_type}</span>
+                  <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest px-2 py-0.5 bg-bg-card rounded-full border border-border-subtle">{formatLabel(e.event_type)}</span>
                   <span className="text-[10px] text-text-dimmed">{new Date(e.created_at).toLocaleTimeString()}</span>
                 </div>
                 <p className="text-sm font-medium text-text-primary">{e.title}</p>

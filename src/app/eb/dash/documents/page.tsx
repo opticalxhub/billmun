@@ -6,6 +6,7 @@ import { Card, Badge, Input, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { X, FileText, Users, Search, Clock } from "lucide-react";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
+import { displayRole, formatLabel } from '@/lib/roles';
 
 export default function DocumentsDashPage() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -169,15 +170,15 @@ export default function DocumentsDashPage() {
                     <div className="text-[10px] text-text-dimmed font-mono">{doc.users?.email}</div>
                   </td>
                   <td className="p-4">
-                    <Badge variant="default" className="text-[9px] uppercase font-black tracking-widest border-border-emphasized/30">{doc.users?.role || '-'}</Badge>
+                    <Badge variant="default" className="text-[9px] uppercase font-black tracking-widest border-border-emphasized/30">{displayRole(doc.users?.role)}</Badge>
                   </td>
                   <td className="p-4 text-text-secondary font-medium">{doc.committees?.name || "-"}</td>
                   <td className="p-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary bg-bg-raised px-2 py-1 rounded border border-white/5">{doc.type}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary bg-bg-raised px-2 py-1 rounded border border-white/5">{formatLabel(doc.type)}</span>
                   </td>
                   <td className="p-4">
                     <Badge variant={doc.status === 'APPROVED' ? 'approved' : doc.status === 'REJECTED' || doc.status === 'REVISION_REQUESTED' ? 'rejected' : 'pending'}>
-                      {doc.status}
+                      {formatLabel(doc.status)}
                     </Badge>
                   </td>
                 </tr>
@@ -223,13 +224,13 @@ export default function DocumentsDashPage() {
 
               {/* Metadata */}
               <div className="grid grid-cols-2 gap-4 text-sm bg-bg-card p-4 rounded-card border border-border-subtle">
-                <div><span className="text-text-dimmed block text-xs">Type</span>{selectedDoc.type}</div>
+                <div><span className="text-text-dimmed block text-xs">Type</span>{formatLabel(selectedDoc.type)}</div>
                 <div><span className="text-text-dimmed block text-xs">Size</span>{(selectedDoc.file_size / 1024).toFixed(1)} KB</div>
                 <div><span className="text-text-dimmed block text-xs">Uploaded</span>{new Date(selectedDoc.uploaded_at).toLocaleString()}</div>
                 <div>
                   <span className="text-text-dimmed block text-xs mb-1">Status</span>
                   <Badge variant={selectedDoc.status === 'APPROVED' ? 'approved' : selectedDoc.status === 'REJECTED' || selectedDoc.status === 'REVISION_REQUESTED' ? 'rejected' : 'pending'}>
-                    {selectedDoc.status}
+                    {formatLabel(selectedDoc.status)}
                   </Badge>
                 </div>
               </div>
@@ -258,7 +259,7 @@ export default function DocumentsDashPage() {
                     {history.map((log, i) => (
                       <div key={i} className="relative pl-4">
                         <div className="absolute w-2 h-2 rounded-full bg-border-emphasized -left-[5px] top-1.5" />
-                        <p className="text-sm font-semibold">{log.status}</p>
+                        <p className="text-sm font-semibold">{formatLabel(log.status)}</p>
                         <p className="text-xs text-text-dimmed">{log.user?.full_name || 'System'} &middot; {new Date(log.created_at || log.changed_at).toLocaleString()}</p>
                         {log.feedback && <p className="text-sm mt-1 text-text-secondary bg-bg-raised p-2 rounded">{log.feedback}</p>}
                       </div>

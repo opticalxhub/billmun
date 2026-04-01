@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 
 /** Groq chat model — keep in sync with chair-ai and health checks. */
-export const GROQ_CHAT_MODEL = "llama-3.1-8b-instant";
+export const GROQ_CHAT_MODEL = "llama-3.3-70b-versatile";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -61,46 +61,57 @@ export async function analyzePositionPaper(documentText: string): Promise<Positi
     throw new Error("AI analysis is not configured (missing GROQ_API_KEY).");
   }
 
-  const prompt = `You are an expert Model United Nations (MUN) position paper analyst. Analyze the following text and return a JSON object with exactly these fields (use snake_case):
+  const systemPrompt = `You are a senior Model United Nations (MUN) position paper analyst for BILLMUN, a high-school MUN conference. You have deep expertise in:
+- UN committee procedures (GA, ECOSOC, Security Council, specialized agencies)
+- International law, treaties, and multilateral frameworks
+- Country foreign policy stances and voting records
+- MUN position paper format: heading (committee, topic, country, delegate), country background, policy stance, proposed solutions
+- Academic writing standards for high-school level MUN
+
+You must be precise, fair, and constructive. Score strictly — a perfect 100 should be rare. Typical high-school papers score 40-75. Only exceptional papers score above 85.
+For AI detection: flag generic, overly polished language lacking specific policy details or personal analysis voice.`;
+
+  const prompt = `Analyze the following MUN position paper and return a JSON object with exactly these fields (use snake_case):
 
 {
   "overall_score": <0-100 integer>,
-  "argument_strength": <0-100 integer>,
-  "diplomatic_language": <0-100 integer>,
-  "writing_clarity": <0-100 integer>,
-  "policy_alignment": <0-100 integer>,
-  "format_adherence": <0-100 integer>,
-  "persuasiveness": <0-100 integer>,
-  "research_depth": <0-100 integer>,
+  "argument_strength": <0-100 integer — logical flow, evidence-based claims>,
+  "diplomatic_language": <0-100 integer — formal register, MUN-appropriate tone>,
+  "writing_clarity": <0-100 integer — structure, grammar, readability>,
+  "policy_alignment": <0-100 integer — does the stance match the assigned country's real foreign policy?>,
+  "format_adherence": <0-100 integer — proper MUN position paper structure>,
+  "persuasiveness": <0-100 integer — ability to convince other delegates>,
+  "research_depth": <0-100 integer — use of specific treaties, resolutions, data, precedents>,
   "summary": "<2-3 sentence summary of the analysis>",
-  "strengths": ["<specific strength 1>", "<specific strength 2>", "<specific strength 3>"],
-  "weaknesses": ["<specific weakness 1>", "<specific weakness 2>", "<specific weakness 3>"],
-  "suggestions": ["<actionable suggestion 1>", "<actionable suggestion 2>", "<actionable suggestion 3>"],
-  "annotated_segments": [{"text": "<passage>", "highlight": true, "severity": <0.1-1.0>, "comment": "<AI comment>"}],
-  "ai_detection_score": <0-100 integer estimating likelihood of AI generation>,
-  "ai_detection_phrases": ["<flagged phrase 1>", "<flagged phrase 2>"]
+  "strengths": ["<specific strength with quote or reference>", "<strength 2>", "<strength 3>"],
+  "weaknesses": ["<specific weakness with quote or reference>", "<weakness 2>", "<weakness 3>"],
+  "suggestions": ["<actionable, specific suggestion 1>", "<suggestion 2>", "<suggestion 3>"],
+  "annotated_segments": [{"text": "<exact passage from the paper>", "highlight": true, "severity": <0.1-1.0>, "comment": "<specific feedback on this passage>"}],
+  "ai_detection_score": <0-100 integer — likelihood text was AI-generated>,
+  "ai_detection_phrases": ["<exact flagged phrase from text>", "<phrase 2>"]
 }
 
-Evaluate based on:
-- Argument strength and logical flow
-- Diplomatic and formal language quality
-- Structural clarity and organization
-- Policy alignment with assigned country
-- MUN format adherence (committee, topic, country stance)
-- Persuasiveness and rhetorical effectiveness
-- Research depth and use of evidence
+Scoring guidelines:
+- 90-100: Exceptional — publishable quality, extensive real-world policy references
+- 75-89: Strong — well-structured, good research, minor gaps
+- 60-74: Adequate — meets basic requirements but lacks depth or specificity
+- 40-59: Below average — significant structural or content issues
+- 0-39: Poor — fails to meet basic MUN position paper standards
 
 Text to analyze:
-${text.substring(0, 8000)}
+${text.substring(0, 12000)}
 
-Return ONLY valid JSON. No markdown, no explanation.`;
+Return ONLY valid JSON. No markdown, no explanation, no wrapping.`;
 
   try {
     const completion = await groq.chat.completions.create({
       model: GROQ_CHAT_MODEL,
-      max_tokens: 4000,
-      temperature: 0.3,
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 4096,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt },
+      ],
     });
 
     const responseText = (completion.choices[0]?.message?.content || "") as string;

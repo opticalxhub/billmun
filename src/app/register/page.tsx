@@ -6,19 +6,24 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/button';
 import { Input, FormLabel, FormGroup, ErrorMessage, Select } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
-import { Check } from 'lucide-react';
+import { Check, ChevronLeft } from 'lucide-react';
+
+const REGISTRATION_PASSCODE = process.env.NEXT_PUBLIC_REGISTER_PASSCODE || 'MARLIC';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [committees, setCommittees] = useState<any[]>([]);
+  const [passcodeUnlocked, setPasscodeUnlocked] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
 
   useEffect(() => {
     const fetchCommittees = async () => {
       const { data } = await supabase.from('committees').select('*');
       if (data) setCommittees(data);
-    };
+    }; 
     fetchCommittees();
   }, []);
 
@@ -196,6 +201,57 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  const handlePasscodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcodeInput.trim().toUpperCase() === REGISTRATION_PASSCODE) {
+      setPasscodeUnlocked(true);
+      setPasscodeError('');
+    } else {
+      setPasscodeError('Incorrect passcode. Please try again.');
+    }
+  };
+
+  if (!passcodeUnlocked) {
+    return (
+      <div className="min-h-screen bg-bg-base flex items-center justify-center p-4 font-sans">
+        <div className="w-full max-w-md">
+          <div className="bg-bg-card border border-border-subtle rounded-lg p-8 sm:p-10 shadow-lg text-center">
+            <Link href="/" className="inline-block mb-8">
+              <img src="/billmun.png" alt="BILLMUN Logo" className="w-32 h-auto mx-auto dark:invert" />
+            </Link>
+            <h1 className="font-jotia text-2xl sm:text-3xl text-text-primary mb-2 uppercase tracking-tight">Registration</h1>
+            <p className="text-text-secondary text-sm mb-8">
+              Enter the registration passcode to continue.
+            </p>
+            <form onSubmit={handlePasscodeSubmit} className="space-y-4">
+              <input
+                type="text"
+                value={passcodeInput}
+                onChange={(e) => { setPasscodeInput(e.target.value); setPasscodeError(''); }}
+                placeholder="Enter passcode"
+                className="w-full h-12 rounded-input border border-border-input bg-bg-raised px-4 text-center text-lg font-bold uppercase tracking-[0.3em] text-text-primary placeholder:text-text-disabled focus:ring-2 focus:ring-text-primary focus:border-transparent outline-none transition-all"
+                autoFocus
+              />
+              {passcodeError && (
+                <p className="text-status-rejected-text text-sm font-medium">{passcodeError}</p>
+              )}
+              <button
+                type="submit"
+                className="w-full py-3 bg-text-primary text-bg-base font-bold uppercase tracking-widest text-sm rounded-full hover:opacity-90 transition-opacity"
+              >
+                Unlock Registration
+              </button>
+            </form>
+            <Link href="/" className="inline-flex items-center gap-2 text-xs text-text-tertiary hover:text-text-primary mt-6 uppercase tracking-widest">
+              <ChevronLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-base flex items-center justify-center p-3 sm:p-4 py-8 sm:py-12 font-sans">

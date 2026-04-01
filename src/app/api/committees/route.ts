@@ -12,6 +12,7 @@ export async function GET() {
     
     return NextResponse.json(data);
   } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to fetch committees', details: error.message }, { status: 500 });
+    console.error("[committees] error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, Badge, SectionLabel, Input, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { DashboardAnimatedTabPanel, DashboardTabBar } from "@/components/dashboard-shell";
 
 type TabName = "Delegates" | "Chair Assignment" | "Admin Assignment" | "Session History" | "Statistics";
@@ -178,8 +179,9 @@ export default function ManageCommitteePage({ params }: { params: { id: string }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      <div className="flex items-center gap-4 text-xs font-bold text-text-dimmed uppercase tracking-widest cursor-pointer hover:text-text-primary w-fit" onClick={() => router.back()}>
-        &larr; Back to Committees
+      <div className="inline-flex items-center gap-2 text-xs font-bold text-text-dimmed uppercase tracking-widest cursor-pointer hover:text-text-primary" onClick={() => router.back()}>
+        <ChevronLeft className="w-4 h-4" />
+        Back to Committees
       </div>
 
       <Card className="p-6 bg-bg-card border-border-subtle relative">

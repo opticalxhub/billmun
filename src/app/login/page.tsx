@@ -104,10 +104,6 @@ export default function LoginPage() {
             <Button type="submit" className="w-full mt-4 bg-primary hover:bg-primary/90 text-white" disabled={loading || success}>
               {success ? 'Redirecting...' : loading ? 'Logging in...' : 'Sign In'}
             </Button>
-            
-            <div className="text-center mt-6 text-sm text-text-secondary">
-              Don&apos;t have an account? <Link href="/register" className="text-primary hover:underline">Register</Link>
-            </div>
           </form>
         </div>
       </div>

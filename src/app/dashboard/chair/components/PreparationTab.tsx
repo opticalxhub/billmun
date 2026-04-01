@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Card, SectionLabel, Input, Textarea } from '@/components/ui';
 import { Button } from '@/components/button';
 import type { ChairContext } from '../page';
@@ -39,36 +38,40 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
 
   const loadData = async () => {
     if (!ctx.committee?.id) return;
-    const { data } = await supabase
-      .from('chair_preparation')
-      .select('*')
-      .eq('committee_id', ctx.committee.id)
-      .eq('chair_id', ctx.user.id)
-      .single();
+    try {
+      const res = await fetch(`/api/chair/preparation?committee_id=${ctx.committee.id}`, { cache: 'no-store' });
+      const json = await res.json();
+      const data = json.data;
 
-    if (data) {
-      setChecklist(data.checklist || {});
-      setResearchNotes(data.research_notes || []);
-      
-      // Initialize country positions from delegates if saved data is empty
-      const savedPositions = data.country_positions || [];
-      if (savedPositions.length > 0) {
-        setCountryPositions(savedPositions);
+      if (data) {
+        setChecklist(data.checklist || {});
+        setResearchNotes(data.research_notes || []);
+        
+        const savedPositions = data.country_positions || [];
+        if (savedPositions.length > 0) {
+          setCountryPositions(savedPositions);
+        } else {
+          setCountryPositions(ctx.delegates.map(d => ({
+            country: d.country || 'Unknown',
+            stance: '',
+            notes: '',
+          })));
+        }
       } else {
-        setCountryPositions(ctx.delegates.map(d => ({
+        const positions = ctx.delegates.map(d => ({
           country: d.country || 'Unknown',
           stance: '',
           notes: '',
-        })));
+        }));
+        setCountryPositions(positions);
       }
-    } else {
-      // Initialize country positions from delegate assignments
-      const positions = ctx.delegates.map(d => ({
+    } catch {
+      // Initialize with defaults on error
+      setCountryPositions(ctx.delegates.map(d => ({
         country: d.country || 'Unknown',
         stance: '',
         notes: '',
-      }));
-      setCountryPositions(positions);
+      })));
     }
   };
 
@@ -78,14 +81,20 @@ export default function PreparationTab({ ctx }: { ctx: ChairContext }) {
     const rn = newNotes || researchNotes;
     const cp = newPositions || countryPositions;
 
-    await supabase.from('chair_preparation').upsert({
-      committee_id: ctx.committee.id,
-      chair_id: ctx.user.id,
-      checklist: cl,
-      research_notes: rn,
-      country_positions: cp,
-      updated_at: new Date().toISOString(),
-    });
+    try {
+      await fetch('/api/chair/preparation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          committee_id: ctx.committee.id,
+          checklist: cl,
+          research_notes: rn,
+          country_positions: cp,
+        }),
+      });
+    } catch {
+      // silent fail
+    }
 
     setSaving(false);
   };

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Card, Input, Badge, SectionLabel, Textarea } from "@/components/ui";
 import { Button } from "@/components/button";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
+import { displayRole, formatLabel } from '@/lib/roles';
 import { X } from "lucide-react";
 
 export default function LiveMonitorPage() {
@@ -221,12 +222,12 @@ export default function LiveMonitorPage() {
                     <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_8px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
                   </td>
                   <td className="p-3 font-medium text-text-primary">{row.full_name}</td>
-                  <td className="p-3"><Badge variant="default">{row.role.replace('_', ' ')}</Badge></td>
+                  <td className="p-3"><Badge variant="default">{displayRole(row.role)}</Badge></td>
                   <td className="p-3 text-text-secondary">
                     {row.committee_assignments?.[0]?.committees?.name || "-"} 
                     {row.committee_assignments?.[0]?.country ? ` (${row.committee_assignments[0].country})` : ""}
                   </td>
-                  <td className="p-3"><Badge variant={row.physical_status === 'CHECKED_IN' ? 'approved' : 'default'}>{row.physical_status.replace('_', ' ')}</Badge></td>
+                  <td className="p-3"><Badge variant={row.physical_status === 'CHECKED_IN' ? 'approved' : 'default'}>{formatLabel(row.physical_status)}</Badge></td>
                   <td className="p-3 text-text-dimmed text-[12px]">{new Date(row.last_activity).toLocaleString()}</td>
                 </tr>
               );

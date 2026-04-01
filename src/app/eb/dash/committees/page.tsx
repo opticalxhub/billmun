@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Card, Badge } from "@/components/ui";
 import { DashboardLoadingState } from "@/components/dashboard-shell";
+import { ChevronRight } from "lucide-react";
 
 export default function CommitteesDashPage() {
   const [committees, setCommittees] = useState<Record<string, any>[]>([]);
@@ -68,11 +69,12 @@ export default function CommitteesDashPage() {
                 <span className="text-[10px] uppercase text-text-dimmed block mb-1">Delegates</span>
                 <span className="text-xl font-bold">{c.delegate_count}</span>
               </div>
-              <Link 
-                href={`/eb/dash/committees/${c.id}`} 
-                className="text-xs font-bold uppercase tracking-widest hover:text-text-primary text-text-secondary transition-colors"
+              <Link
+                href={`/eb/dash/committees/${c.id}`}
+                className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest hover:text-text-primary text-text-secondary transition-colors"
               >
-                Manage &rarr;
+                Manage
+                <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
           </Card>

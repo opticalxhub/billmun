@@ -19,6 +19,9 @@ import EBInternalWorkspacePage from "./internal-workspace/page";
 import EBWhatsAppPage from "./whatsapp/page";
 import EBReportsPage from "./reports/page";
 import EBSchedulePage from "./schedule/page";
+import ConferenceControlPage from "./conference/page";
+import EBMediaPRPage from "./media-pr/page";
+import EBContactPage from "./contact/page";
 
 function EBDashInner() {
   const searchParams = useSearchParams();
@@ -45,12 +48,15 @@ function EBDashInner() {
       case 'documents': return <EBDocumentsPage />;
       case 'security': return <EBSecurityPage />;
       case 'communications': return <CommunicationsPage />;
+      case 'contact': return <EBContactPage />;
+      case 'media-pr': return <EBMediaPRPage />;
       case 'settings': return <SettingsPage />;
       case 'audit': return <EBAuditLogPage />;
       case 'internal-workspace': return <EBInternalWorkspacePage />;
       case 'whatsapp': return <EBWhatsAppPage />;
       case 'reports': return <EBReportsPage />;
       case 'schedule': return <EBSchedulePage />;
+      case 'conference': return <ConferenceControlPage />;
       default: return <EBDashOverview />;
     }
   };

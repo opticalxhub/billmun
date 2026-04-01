@@ -74,14 +74,15 @@ export async function POST(req: NextRequest) {
       .eq("id", documentId);
 
     if (upErr) {
-      return NextResponse.json({ error: upErr.message }, { status: 500 });
+      console.error("[documents/apply-review] update error:", upErr);
+      return NextResponse.json({ error: "Failed to update document" }, { status: 500 });
     }
 
     void runOnDocumentStatusChanged(documentId, doc.user_id, newStatus, feedback, context.userId);
 
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[documents/apply-review] error:", e);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

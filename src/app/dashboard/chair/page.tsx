@@ -68,7 +68,7 @@ export default function ChairDashboard() {
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
           id: 'emergency-actor',
-          email: 'emergency@billmun.com',
+          email: 'emergency@billmun.gomarai.com',
           full_name: 'Engineer (Emergency)',
           role: 'EXECUTIVE_BOARD',
           status: 'APPROVED',
@@ -141,7 +141,7 @@ export default function ChairDashboard() {
         .eq('committee_id', committee!.id);
       
       return (data || [])
-        .filter((a: any) => a.user?.status === 'APPROVED')
+        .filter((a: any) => a.user?.status === 'APPROVED' && a.user?.role === 'DELEGATE')
         .map((a: any) => ({
           ...a.user,
           user_id: a.user_id,

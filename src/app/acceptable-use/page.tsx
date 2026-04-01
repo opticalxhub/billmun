@@ -102,7 +102,7 @@ export default function AcceptableUsePage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">11. REPORTING SYSTEM AND WHISTLEBLOWER PROTECTION</h2>
-            <p>11.1. If you encounter any behavior or content that you believe violates this Acceptable Use Policy, please report it immediately to our team at compliance@billmun.com or through the platform&apos;s reporting features. We take all reports seriously and will investigate them thoroughly.</p>
+            <p>11.1. If you encounter any behavior or content that you believe violates this Acceptable Use Policy, please report it immediately to our team at compliance@billmun.gomarai.com or through the platform&apos;s reporting features. We take all reports seriously and will investigate them thoroughly.</p>
             <p>11.2. We provide protection for whistleblowers; reporting a violation in good faith will never result in disciplinary action against the reporter, even if the investigation finds no violation occurred.</p>
           </section>
 

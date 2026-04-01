@@ -8,6 +8,8 @@ import { Card, SectionLabel } from '@/components/ui';
 import { displayRole } from '@/lib/roles';
 import { DashboardHeader, DashboardLoadingState } from '@/components/dashboard-shell';
 import { FadeIn, HoverScale } from '@/components/gsap-animations';
+import { useConferenceGate } from '@/lib/use-conference-gate';
+import { ConferenceLockScreen } from '@/components/conference-lock-screen';
 
 export default function DashboardHub() {
   const router = useRouter();
@@ -66,8 +68,14 @@ export default function DashboardHub() {
     checkUser();
   }, [router]);
 
-  if (loading) {
+  const { data: confData, isLocked: confLocked, isLoading: confLoading } = useConferenceGate(userProfile?.role);
+
+  if (loading || confLoading) {
     return <DashboardLoadingState />;
+  }
+
+  if (confLocked && confData) {
+    return <ConferenceLockScreen data={confData} />;
   }
 
   // Define what panels a user can see based on role

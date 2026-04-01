@@ -10,12 +10,15 @@ export async function GET(req: NextRequest) {
     const q = (req.nextUrl.searchParams.get("q") || "").trim();
     if (!q) return NextResponse.json({ users: [] });
 
+    // Escape LIKE wildcard characters to prevent pattern injection
+    const safeQ = q.replace(/[%_\\]/g, (ch) => `\\${ch}`);
+
     const { data } = await supabaseAdmin
       .from("users")
       .select("id, full_name, role")
       .eq("status", "APPROVED")
       .neq("id", context.userId)
-      .ilike("full_name", `%${q}%`)
+      .ilike("full_name", `%${safeQ}%`)
       .limit(15);
     return NextResponse.json({ users: data || [] });
   } catch (err: any) {

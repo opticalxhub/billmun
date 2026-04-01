@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     const text = await extractTextFromDocumentUrl(url, mime);
     return NextResponse.json({ text });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("[documents/extract-text] error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
