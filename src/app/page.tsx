@@ -13,6 +13,7 @@ type GalleryItem = {
   media_url: string;
   caption: string | null;
   media_type: string | null;
+  status: string | null;
 };
 
 export default function LandingPage() {
@@ -209,9 +210,21 @@ export default function LandingPage() {
                           loading={isActive ? 'eager' : 'lazy'}
                         />
                       )}
-                      {isActive && item.caption && (
+                      {isActive && (
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                          <p className="text-xs text-white/90 truncate">{item.caption}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-white/90 truncate flex-1">{item.caption || 'No caption'}</p>
+                            {item.status && (
+                              <span className={`ml-2 px-2 py-1 text-xs rounded ${
+                                item.status === 'APPROVED' ? 'bg-green-500/80 text-white' :
+                                item.status === 'PENDING' ? 'bg-yellow-500/80 text-white' :
+                                item.status === 'REJECTED' ? 'bg-red-500/80 text-white' :
+                                'bg-gray-500/80 text-white'
+                              }`}>
+                                {item.status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

@@ -7,8 +7,7 @@ export async function GET(_req: NextRequest) {
   try {
     const { data, error } = await supabaseAdmin
       .from("media_gallery")
-      .select("id, media_url, caption, media_type, created_at, uploader_id")
-      .eq("status", "APPROVED")
+      .select("id, media_url, caption, media_type, status, created_at, uploader_id")
       .order("created_at", { ascending: false })
       .limit(200);
 
