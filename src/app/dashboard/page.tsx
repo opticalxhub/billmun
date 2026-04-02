@@ -36,7 +36,7 @@ export default function DashboardHub() {
         .from('users')
         .select('id, email, full_name, role, status, dietary_restrictions, preferred_committee, allocated_country')
         .eq('id', authUserId)
-        .single();
+        .maybeSingle();
 
       if (!profile) {
         router.push('/login');
@@ -87,7 +87,7 @@ export default function DashboardHub() {
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader 
         title="Conference Portal" 
-        subtitle={`Welcome, ${userProfile?.full_name || 'Delegate'}. Your conference dashboard is ready.`}
+        subtitle={`Welcome back, ${userProfile?.full_name || 'Delegate'}! 👋`}
         user={userProfile}
       />
 
@@ -128,8 +128,11 @@ export default function DashboardHub() {
               <HoverScale>
                 <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
                   <div>
-                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Delegate Dashboard</h3>
-                    <p className="text-sm text-text-dimmed">Submit position papers, join blocs, and participate in committee sessions.</p>
+                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
+                      Delegate Dashboard
+                      <span className="text-xs bg-status-approved-bg text-status-approved-text px-2 py-1 rounded-full">Your Main Hub</span>
+                    </h3>
+                    <p className="text-sm text-text-dimmed">Submit position papers, join blocs, participate in debates, and track your conference progress.</p>
                   </div>
                   <div className="mt-6 flex justify-end">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -147,8 +150,11 @@ export default function DashboardHub() {
               <HoverScale>
                 <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
                   <div>
-                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Chair Dashboard</h3>
-                    <p className="text-sm text-text-dimmed">Lead debate sessions, manage speakers, and oversee committee proceedings.</p>
+                    <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
+                      Chair Dashboard
+                      <span className="text-xs bg-status-warning-bg text-status-warning-text px-2 py-1 rounded-full">Committee Lead</span>
+                    </h3>
+                    <p className="text-sm text-text-dimmed">Lead debates, manage speaker lists, run voting sessions, and oversee committee proceedings.</p>
                   </div>
                   <div className="mt-6 flex justify-end">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -164,8 +170,11 @@ export default function DashboardHub() {
           <Link href="/dashboard/press" className="group">
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Press Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Manage press coverage, media releases, and conference documentation.</p>
+                <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
+                  Press Dashboard
+                  <span className="text-xs bg-bg-raised text-text-primary px-2 py-1 rounded-full">Media Hub</span>
+                </h3>
+                <p className="text-sm text-text-dimmed">Manage press coverage, media releases, conference photography, and public communications.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -179,8 +188,11 @@ export default function DashboardHub() {
           <Link href="/dashboard/admin" className="group">
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Admin Logistics</h3>
-                <p className="text-sm text-text-dimmed">Handle delegate logistics, attendance tracking, and conference operations.</p>
+                <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
+                  Admin Logistics
+                  <span className="text-xs bg-status-pending-bg text-status-pending-text px-2 py-1 rounded-full">Operations</span>
+                </h3>
+                <p className="text-sm text-text-dimmed">Handle delegate logistics, attendance tracking, document reviews, and conference operations.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
@@ -194,8 +206,11 @@ export default function DashboardHub() {
           <Link href="/dashboard/security" className="group">
             <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
               <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline">Security Dashboard</h3>
-                <p className="text-sm text-text-dimmed">Ensure conference security, access control, and emergency response.</p>
+                <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
+                  Security Dashboard
+                  <span className="text-xs bg-status-rejected-bg text-status-rejected-text px-2 py-1 rounded-full">Safety</span>
+                </h3>
+                <p className="text-sm text-text-dimmed">Ensure conference security, access control, incident reporting, and emergency response.</p>
               </div>
               <div className="mt-6 flex justify-end">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>

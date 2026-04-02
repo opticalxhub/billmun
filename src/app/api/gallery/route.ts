@@ -9,7 +9,6 @@ export async function GET(_req: NextRequest) {
       .from("media_gallery")
       .select("id, media_url, caption, media_type, created_at, uploader_id")
       .eq("status", "APPROVED")
-      .eq("is_hidden", false)
       .order("created_at", { ascending: false })
       .limit(200);
 

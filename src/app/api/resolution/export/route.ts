@@ -14,7 +14,6 @@ export async function GET(req: NextRequest) {
   const format = searchParams.get('format');
 
   if (!resolutionId || !format) {
-    console.log('Missing params in resolution export: resolutionId=', resolutionId, 'format=', format, 'url=', req.url);
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
       .from('resolutions')
       .select('*, committees(name)')
       .eq('id', resolutionId)
-      .single();
+      .maybeSingle();
 
     if (resErr || !res) throw new Error('Resolution not found');
 

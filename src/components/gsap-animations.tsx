@@ -146,7 +146,7 @@ export function ScrollReveal({ children, delay = 0, duration = 0.8, from = 'bott
       center: { scale: 0.8, opacity: 0 },
     };
 
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       element,
       fromConfig[from],
       {
@@ -167,7 +167,9 @@ export function ScrollReveal({ children, delay = 0, duration = 0.8, from = 'bott
     );
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      const st = tween.scrollTrigger;
+      if (st) st.kill();
+      tween.kill();
     };
   }, [delay, duration, from]);
 

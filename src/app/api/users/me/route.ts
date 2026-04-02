@@ -19,7 +19,7 @@ export async function GET() {
       .from('users')
       .select('id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at')
       .eq('id', context.userId)
-      .single();
+      .maybeSingle();
 
     if (userError || !user) {
       return NextResponse.json(
@@ -57,7 +57,7 @@ export async function GET() {
     const { data: settings } = await supabaseAdmin
       .from('conference_settings')
       .select('*')
-      .single();
+      .maybeSingle();
 
     return NextResponse.json({
       user,

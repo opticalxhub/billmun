@@ -18,37 +18,9 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
     queryKey: ['committee-blocs', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
-      // Fetch blocs with members (separate messages query to avoid RLS join failures)
-      const { data, error } = await supabase
-        .from('blocs')
-        .select(`
-          *,
-          bloc_members(
-            id,
-            user_id,
-            joined_at,
-            users(full_name, allocated_country)
-          )
-        `)
-        .eq('committee_id', ctx.committee.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      const blocs = data || [];
-
-      // Fetch message counts per bloc separately (resilient to RLS)
-      const blocIds = blocs.map((b: any) => b.id);
-      if (blocIds.length > 0) {
-        const { data: msgs } = await supabase
-          .from('bloc_messages')
-          .select('bloc_id, id')
-          .in('bloc_id', blocIds);
-        const msgCounts: Record<string, number> = {};
-        (msgs || []).forEach((m: any) => { msgCounts[m.bloc_id] = (msgCounts[m.bloc_id] || 0) + 1; });
-        blocs.forEach((b: any) => { b._message_count = msgCounts[b.id] || 0; });
-      }
-
-      return blocs;
+      const res = await fetch(`/api/chair/blocs?committeeId=${ctx.committee.id}`);
+      if (!res.ok) throw new Error('Failed to load blocs');
+      return await res.json();
     },
     staleTime: 30 * 1000,
   });

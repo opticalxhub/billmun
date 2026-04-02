@@ -159,7 +159,7 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
         "id, email, full_name, role, preferred_committee, allocated_country, status",
       )
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     if (!user || user.status !== "APPROVED") return;
 
     const committeeId =
@@ -217,8 +217,18 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
     }
 
     if (EB_ROLES.includes(user.role as (typeof EB_ROLES)[number])) {
-      for (const id of await allChannelIds()) {
-        await addChannelMember(id, userId);
+      const ebChannelIds = await allChannelIds();
+      if (ebChannelIds.length) {
+        const now = new Date().toISOString();
+        await supabaseAdmin.from("channel_members").upsert(
+          ebChannelIds.map((channel_id) => ({
+            channel_id,
+            user_id: userId,
+            role: "MEMBER",
+            last_read_at: now,
+          })),
+          { onConflict: "channel_id,user_id" },
+        );
       }
     }
 
@@ -326,8 +336,13 @@ export async function runOnRoleChange(
     }
 
     if (EB_ROLES.includes(oldRole as (typeof EB_ROLES)[number])) {
-      for (const cid of await allChannelIds()) {
-        await removeChannelMember(cid, userId);
+      const oldEbIds = await allChannelIds();
+      if (oldEbIds.length) {
+        await supabaseAdmin
+          .from("channel_members")
+          .delete()
+          .eq("user_id", userId)
+          .in("channel_id", oldEbIds);
       }
     }
 
@@ -342,8 +357,18 @@ export async function runOnRoleChange(
     }
 
     if (EB_ROLES.includes(newRole as (typeof EB_ROLES)[number])) {
-      for (const id of await allChannelIds()) {
-        await addChannelMember(id, userId);
+      const newEbIds = await allChannelIds();
+      if (newEbIds.length) {
+        const now = new Date().toISOString();
+        await supabaseAdmin.from("channel_members").upsert(
+          newEbIds.map((channel_id) => ({
+            channel_id,
+            user_id: userId,
+            role: "MEMBER",
+            last_read_at: now,
+          })),
+          { onConflict: "channel_id,user_id" },
+        );
       }
     }
 
@@ -434,7 +459,7 @@ export async function runOnDocumentUploaded(
       .from("documents")
       .select("*")
       .eq("id", documentId)
-      .single();
+      .maybeSingle();
 
     if (doc) {
       // 3. Run Anti-AI Checker
@@ -662,7 +687,7 @@ export async function runOnCommitteeCreated(committeeId: string, actorId: string
       .from("committees")
       .select("name, abbreviation")
       .eq("id", committeeId)
-      .single();
+      .maybeSingle();
     const name = committee?.abbreviation || committee?.name || "Committee";
     await supabaseAdmin.from("channels").insert({
       name,
@@ -675,7 +700,7 @@ export async function runOnCommitteeCreated(committeeId: string, actorId: string
 
 export async function runOnBlocCreated(blocId: string, creatorId: string): Promise<void> {
   await safeRun("runOnBlocCreated", async () => {
-    const { data: bloc } = await supabaseAdmin.from("blocs").select("name").eq("id", blocId).single();
+    const { data: bloc } = await supabaseAdmin.from("blocs").select("name").eq("id", blocId).maybeSingle();
     const { data: ch, error } = await supabaseAdmin
       .from("channels")
       .insert({
@@ -732,7 +757,7 @@ export async function runOnRollCallCompleted(
       .from("roll_call_records")
       .select("id, committee_id, session_id")
       .eq("id", rollCallId)
-      .single();
+      .maybeSingle();
     if (!record) return;
 
     const { data: entries } = await supabaseAdmin

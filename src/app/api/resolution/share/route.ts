@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       .from('resolutions')
       .select('id, user_id, title')
       .eq('id', resolutionId)
-      .single();
+      .maybeSingle();
 
     if (resErr || !res) return NextResponse.json({ error: 'Resolution not found' }, { status: 404 });
 

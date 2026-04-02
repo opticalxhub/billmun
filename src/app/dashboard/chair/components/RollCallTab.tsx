@@ -41,7 +41,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   }, [timerRunning]);
 
   const loadSettings = async () => {
-    const { data } = await supabase.from('conference_settings').select('*').eq('id', '1').single();
+    const { data } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
     if (data?.quorum_threshold) setQuorumThreshold(data.quorum_threshold);
   };
 

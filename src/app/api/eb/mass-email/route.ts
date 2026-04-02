@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build query for matching users
-    let query = supabaseAdmin.from("users").select("id, full_name, email, role, status, committee_assignments!committee_assignments_user_id_fkey(committee_id)");
+    let query = supabaseAdmin.from("users").select("id, full_name, email, role, status");
 
     if (filters.status && filters.status !== "ALL") {
       query = query.eq("status", filters.status);
@@ -47,15 +47,19 @@ export async function POST(req: NextRequest) {
 
     let matchedUsers = users || [];
     if (filters.committee_id && filters.committee_id !== "ALL") {
-      matchedUsers = matchedUsers.filter((u: any) => 
-        (Array.isArray(u.committee_assignments) ? u.committee_assignments : [u.committee_assignments])
-          .some((ca: any) => ca?.committee_id === filters.committee_id)
-      );
+      // Get users assigned to specific committee
+      const { data: committeeAssignments } = await supabaseAdmin
+        .from("committee_assignments")
+        .select("user_id")
+        .eq("committee_id", filters.committee_id);
+      
+      const committeeUserIds = committeeAssignments?.map(ca => ca.user_id) || [];
+      matchedUsers = matchedUsers.filter((u: any) => committeeUserIds.includes(u.id));
     }
 
     // Test email mode: send only to the requesting EB member
     if (testEmail) {
-      const { data: sender } = await supabaseAdmin.from("users").select("email, full_name").eq("id", ebUserId).single();
+      const { data: sender } = await supabaseAdmin.from("users").select("email, full_name").eq("id", ebUserId).maybeSingle();
       if (!sender?.email) return NextResponse.json({ error: "Could not find your email" }, { status: 400 });
 
       const htmlContent = generateEmailHTML(subject, emailBody, sender.full_name);

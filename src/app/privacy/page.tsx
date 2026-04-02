@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">2. DATA CONTROLLER AND DATA PROTECTION OFFICER</h2>
             <p>2.1. BILLMUN acts as the Data Controller for the Personal Data processed through the Platform. We have appointed a Data Protection Officer (DPO) who is responsible for overseeing questions in relation to this privacy policy. If you have any questions about this privacy policy, including any requests to exercise your legal rights, please contact the DPO using the details set out below.</p>
-            <p>2.2. Contact Email: dpo@billmun.gomarai.com</p>
+            <p>2.2. Contact Email: dpo@billmun.com</p>
           </section>
 
           <section>

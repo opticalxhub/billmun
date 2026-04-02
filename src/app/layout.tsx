@@ -1,9 +1,9 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
-import OnboardingManager from "@/components/onboarding/OnboardingManager";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import { PressReleasesBanner } from "@/components/press-releases-banner";
+import { safeMetadataBaseUrl } from "@/lib/safe-url";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "Model United Nations",
     "MUN Saudi Arabia",
     "MUN Khobar",
-    "Rowad Al Khaleej MUN",
+    "Yarmook Elementary Private School Dhahran MUN",
     "student diplomacy",
     "BILLMUN apply",
     "BILLMUN gallery",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   authors: [{ name: "BILLMUN" }],
   creator: "BILLMUN",
   publisher: "BILLMUN",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://billmun.sa"),
+  metadataBase: safeMetadataBaseUrl(),
   icons: {
     icon: [
       { url: '/billmun.png', sizes: 'any' },
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://billmun.sa",
+    url: "https://billmun.com",
     title: "BILLMUN",
     description: "BILLMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
     siteName: "BILLMUN",
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     }
   },
   alternates: {
-    canonical: "https://billmun.sa",
+    canonical: "https://billmun.com",
   },
 };
 
@@ -103,8 +103,8 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "Organization",
               "name": "BILLMUN",
-              "url": "https://billmun.sa",
-              "logo": "https://billmun.sa/billmun.png",
+              "url": "https://billmun.com",
+              "logo": "https://billmun.com/billmun.png",
               "description": "BILLMUN is a student-led Model United Nations conference.",
               "sameAs": [
                 "https://www.instagram.com/billmun.sa"
@@ -117,10 +117,10 @@ export default function RootLayout({
                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
                 "location": {
                   "@type": "Place",
-                  "name": "Rowad Al Khaleej International Schools",
+                  "name": "Yarmook Elementary Private School Dhahran",
                   "address": {
                     "@type": "PostalAddress",
-                    "addressLocality": "Khobar",
+                    "addressLocality": "Dhahran",
                     "addressCountry": "SA"
                   }
                 },
@@ -153,6 +153,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://billmun.sa" />
         <link rel="dns-prefetch" href="https://qmmgugalvcgaxvgsfslp.supabase.co" />
+        <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/billmun.png" sizes="any" />
         <link rel="icon" href="/billmun.png" sizes="32x32" />
         <link rel="icon" href="/billmun.png" sizes="16x16" />
@@ -164,7 +165,6 @@ export default function RootLayout({
         <Providers>
           <PressReleasesBanner />
           {children}
-          <OnboardingManager />
           <Toaster
             theme="dark"
             position="bottom-right"

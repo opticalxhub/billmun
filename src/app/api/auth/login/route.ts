@@ -5,17 +5,27 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const raw = await request.text();
+    if (!raw?.trim()) {
+      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    }
+    let body: { email?: string; password?: string };
+    try {
+      body = JSON.parse(raw) as { email?: string; password?: string };
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    // Build response object so SSR client can set cookies on it
     const response = NextResponse.json({ success: true });
-  response.headers.set('RateLimit-Limit', '10');
-  response.headers.set('RateLimit-Remaining', '9');
-  response.headers.set('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60));
+    response.headers.set('RateLimit-Limit', '10');
+    response.headers.set('RateLimit-Remaining', '9');
+    response.headers.set('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 60));
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +54,13 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (profileRow?.password_hash) {
-      const match = await bcrypt.compare(password, profileRow.password_hash);
+      let match = false;
+      try {
+        match = await bcrypt.compare(password, profileRow.password_hash as string);
+      } catch (e) {
+        console.error('[login] bcrypt compare failed:', e);
+        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+      }
       if (!match) {
         return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
       }

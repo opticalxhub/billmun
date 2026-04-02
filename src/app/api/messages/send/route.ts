@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
         .from("users")
         .select("full_name")
         .eq("id", context.userId)
-        .single();
+        .maybeSingle();
 
       const notifs = members.map(m => ({
         user_id: m.user_id,

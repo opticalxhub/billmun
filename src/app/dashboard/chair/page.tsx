@@ -19,7 +19,10 @@ import BlocsTab from './components/BlocsTab';
 import PreparationTab from './components/PreparationTab';
 import CommitteeScheduleTab from './components/CommitteeScheduleTab';
 import WhatsAppTab from '@/components/whatsapp-tab';
+import ICJCaseManagementTab from './components/ICJCaseManagementTab';
+import CrisisControlTab from './components/CrisisControlTab';
 import { Notepad } from '@/components/notepad';
+import InteractiveOnboarding from '@/components/interactive-onboarding';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import {
   DashboardAnimatedTabPanel,
@@ -27,8 +30,10 @@ import {
   DashboardLoadingState,
   DashboardTabBar,
 } from '@/components/dashboard-shell';
+import { useConferenceGate } from '@/lib/use-conference-gate';
+import { ConferenceLockScreen } from '@/components/conference-lock-screen';
 
-const TABS = [
+const DEFAULT_TABS = [
   'Command Center',
   'Roll Call',
   'Timers',
@@ -45,7 +50,41 @@ const TABS = [
   'WhatsApp',
 ] as const;
 
-type TabName = (typeof TABS)[number];
+const ICJ_CHAIR_TABS = [
+  'Command Center',
+  'Roll Call',
+  'Timers',
+  'Speakers List',
+  'Case Management',
+  'Delegate Stats',
+  'Documents',
+  'Delegates',
+  'Analytics',
+  'AI Tools',
+  'Preparation',
+  'Committee Schedule',
+  'WhatsApp',
+] as const;
+
+const CRISIS_CHAIR_TABS = [
+  'Command Center',
+  'Crisis Control',
+  'Roll Call',
+  'Timers',
+  'Speakers List',
+  'Points & Motions',
+  'Blocs & Resolutions',
+  'Delegate Stats',
+  'Documents',
+  'Delegates',
+  'Analytics',
+  'AI Tools',
+  'Preparation',
+  'Committee Schedule',
+  'WhatsApp',
+] as const;
+
+type TabName = string;
 
 export interface ChairContext {
   user: any;
@@ -58,7 +97,8 @@ export interface ChairContext {
 export default function ChairDashboard() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<TabName>('Command Center');
+  const [activeTab, setActiveTab] = useState<string>('Command Center');
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // useQuery for User Profile
   const { data: user, isLoading: userLoading } = useQuery({
@@ -67,8 +107,8 @@ export default function ChairDashboard() {
       // Emergency Override Check
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
-          id: 'emergency-actor',
-          email: 'emergency@billmun.gomarai.com',
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'emergency@billmun.com',
           full_name: 'Engineer (Emergency)',
           role: 'EXECUTIVE_BOARD',
           status: 'APPROVED',
@@ -82,7 +122,7 @@ export default function ChairDashboard() {
         .from('users')
         .select('id, email, full_name, role, status, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -111,7 +151,7 @@ export default function ChairDashboard() {
         .maybeSingle();
       
       if (assignData) {
-        const { data: c } = await supabase.from('committees').select('*').eq('id', assignData.committee_id).single();
+        const { data: c } = await supabase.from('committees').select('*').eq('id', assignData.committee_id).maybeSingle();
         return c;
       }
       return null;
@@ -161,8 +201,10 @@ export default function ChairDashboard() {
         .from('committee_sessions')
         .select('*')
         .eq('committee_id', committee!.id)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error;
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
       return data;
     },
     staleTime: 5 * 60 * 1000,
@@ -258,8 +300,21 @@ export default function ChairDashboard() {
     ]);
   }, [queryClient, user?.id, committee?.id]);
 
-  if (loading) {
+  useEffect(() => {
+    if (user && !user.has_completed_onboarding && user.id !== '00000000-0000-0000-0000-000000000000') {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+
+  // Conference gate – lock non-EB users when portal is closed
+  const { data: confData, isLocked: confLocked, isLoading: confLoading } = useConferenceGate(user?.role);
+
+  if (loading || confLoading) {
     return <DashboardLoadingState type="overview" />;
+  }
+
+  if (confLocked && confData) {
+    return <ConferenceLockScreen data={confData} />;
   }
 
   if (!user && !userLoading) {
@@ -275,6 +330,9 @@ export default function ChairDashboard() {
     refreshData,
   };
 
+  const committeeAbbr = committee?.abbreviation?.toUpperCase() || '';
+  const TABS: readonly string[] = committeeAbbr === 'ICJ' ? ICJ_CHAIR_TABS : committeeAbbr === 'CRISIS' ? CRISIS_CHAIR_TABS : DEFAULT_TABS;
+
   return (
     <div className="min-h-screen bg-bg-base">
       <DashboardHeader
@@ -283,7 +341,7 @@ export default function ChairDashboard() {
         committeeName={ctx.committee?.name || 'No Committee'}
         user={user}
       />
-      <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <DashboardTabBar tabs={TABS as any} activeTab={activeTab} onChange={setActiveTab} />
 
       <AnnouncementBanner user={user} committeeId={committee?.id} />
 
@@ -297,6 +355,8 @@ export default function ChairDashboard() {
             {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
             {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
             {activeTab === 'Blocs & Resolutions' && <BlocsTab ctx={ctx} />}
+            {activeTab === 'Case Management' && <ICJCaseManagementTab ctx={ctx} />}
+            {activeTab === 'Crisis Control' && <CrisisControlTab ctx={ctx} />}
             {activeTab === 'Delegate Stats' && <DelegateStatsSpreadsheet committee={ctx.committee} />}
             {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
             {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
@@ -312,6 +372,20 @@ export default function ChairDashboard() {
           <Notepad dashboardKey="CHAIR" userId={user?.id} />
         </div>
       </div>
+      
+      {showOnboarding && user && (
+        <InteractiveOnboarding
+          userRole={user.role}
+          userName={user.full_name || 'Chair'}
+          dashboardType="chair"
+          onComplete={async () => {
+            setShowOnboarding(false);
+            try {
+              await supabase.from('users').update({ has_completed_onboarding: true }).eq('id', user.id);
+            } catch {}
+          }}
+        />
+      )}
     </div>
   );
 }

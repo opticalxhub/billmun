@@ -1,11 +1,52 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const EB_ROLES = ['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'];
+
+/** Paths that never require authentication */
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/privacy',
+  '/terms',
+  '/acceptable-use',
+  '/gallery',
+  '/socials',
+  '/contact',
+  '/maintenance',
+  '/911',
+  '/dev/test',
+];
+
+function isPublicPath(path: string) {
+  if (path.startsWith('/api')) return true;          // API routes handle own auth
+  if (path.startsWith('/_next')) return true;
+  return PUBLIC_PATHS.some(p => path === p || path.startsWith(p + '/'));
+}
+
+/** Portal paths = everything under /dashboard, /eb, /messages, /documents, /committees, /ai-feedback, /admin */
+function isPortalPath(path: string) {
+  return (
+    path.startsWith('/dashboard') ||
+    path.startsWith('/eb') ||
+    path.startsWith('/messages') ||
+    path.startsWith('/documents') ||
+    path.startsWith('/committees') ||
+    path.startsWith('/ai-feedback') ||
+    path.startsWith('/admin')
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Middleware
+// ---------------------------------------------------------------------------
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   })
 
   const supabase = createServerClient(
@@ -17,46 +58,23 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
   )
 
   const { data: { user } } = await supabase.auth.getUser()
+  const path = request.nextUrl.pathname;
 
-  // Check for emergency token (no DB call if no token)
+  // ── Emergency access ────────────────────────────────────────────────
   const emergencyToken = request.cookies.get('emergency_token')?.value;
   let hasValidEmergencyAccess = false;
 
@@ -65,18 +83,17 @@ export async function middleware(request: NextRequest) {
       .from('emergency_sessions')
       .select('expires_at')
       .eq('id', emergencyToken)
-      .single();
-
+      .maybeSingle();
     if (emergencySession && new Date(emergencySession.expires_at) > new Date()) {
       hasValidEmergencyAccess = true;
     }
   }
 
-  // Only fetch profile + settings when needed (authenticated user on protected paths)
-  let userProfile = null;
-  let settings = null;
+  // ── Fetch profile + settings when we have a user ────────────────────
+  let userProfile: { status: string; role: string } | null = null;
+  let settings: { maintenance_mode: boolean } | null = null;
+
   if (user) {
-    // Batch both queries in parallel to cut latency in half
     const [profileRes, settingsRes] = await Promise.all([
       supabase.from('users').select('status, role').eq('id', user.id).maybeSingle(),
       supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle(),
@@ -84,94 +101,90 @@ export async function middleware(request: NextRequest) {
     userProfile = profileRes.data;
     settings = settingsRes.data;
   } else {
-    // For unauthenticated users, only fetch settings if needed for maintenance check
     const { data } = await supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle();
     settings = data;
   }
 
-  const path = request.nextUrl.pathname;
-
-  // Maintenance mode block (only allow EB and admins through, unless emergency access is active)
+  // ── Maintenance mode ────────────────────────────────────────────────
   if (settings?.maintenance_mode && !hasValidEmergencyAccess) {
-    const isExempt = userProfile && ['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(userProfile.role);
+    const isExempt = userProfile && EB_ROLES.includes(userProfile.role);
     if (
-      !isExempt && 
-      !path.startsWith('/maintenance') && 
-      !path.startsWith('/login') && 
+      !isExempt &&
+      !path.startsWith('/maintenance') &&
+      !path.startsWith('/login') &&
       !path.startsWith('/api/auth') &&
       !path.startsWith('/privacy') &&
       !path.startsWith('/terms') &&
-      !path.startsWith('/acceptable-use')
+      !path.startsWith('/acceptable-use') &&
+      !path.startsWith('/911')
     ) {
       return NextResponse.redirect(new URL('/maintenance', request.url));
     }
   }
 
-  // 1. Unauthenticated users (and no emergency access) - allow public pages, no forced redirect
+  // ── Unauthenticated users ───────────────────────────────────────────
   if (!user && !hasValidEmergencyAccess) {
-    if (
-      !path.startsWith('/login') &&
-      !path.startsWith('/register') &&
-      !path.startsWith('/privacy') &&
-      !path.startsWith('/terms') &&
-      !path.startsWith('/acceptable-use') &&
-      !path.startsWith('/api') &&
-      !path.startsWith('/911') &&
-      !path.startsWith('/dev/test') &&
-      !path.startsWith('/gallery') &&
-      !path.startsWith('/socials') &&
-      !path.startsWith('/contact') &&
-      path !== '/' &&
-      !path.startsWith('/dashboard') &&
-      !path.startsWith('/eb') &&
-      !path.startsWith('/messages') &&
-      !path.startsWith('/pending') &&
-      !path.startsWith('/rejected')
-    ) {
+    // Require login for protected paths
+    if (!isPublicPath(path) && !path.startsWith('/pending') && !path.startsWith('/rejected')) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     return response;
   }
 
-  // 2. Authenticated users (Role/Status Protection)
+  // ── Authenticated user guards ───────────────────────────────────────
   if (userProfile) {
-    // Redirect based on status
-    if (userProfile.status === 'PENDING' && !path.startsWith('/pending') && !path.startsWith('/api') && !path.startsWith('/911') && !path.startsWith('/dev/test') && path !== '/') {
-      return NextResponse.redirect(new URL('/pending', request.url));
-    }
-    if (userProfile.status === 'REJECTED' && !path.startsWith('/rejected') && !path.startsWith('/api') && !path.startsWith('/911') && !path.startsWith('/dev/test') && path !== '/') {
-      return NextResponse.redirect(new URL('/rejected', request.url));
-    }
-
-    // Role protection
-    const isEB = ['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(userProfile.role);
+    const isEB = EB_ROLES.includes(userProfile.role);
     const isAdmin = userProfile.role === 'ADMIN';
     const isChair = ['CHAIR', 'CO_CHAIR'].includes(userProfile.role);
     const isSecurity = userProfile.role === 'SECURITY';
     const isMedia = ['MEDIA', 'PRESS'].includes(userProfile.role);
 
+    // Allow public paths, API, /911 for everyone
+    const alwaysAllowed =
+      isPublicPath(path) ||
+      path.startsWith('/pending') ||
+      path.startsWith('/rejected');
+
+    // ── Status-based redirects ──────────────────────────────────────
+    if (!alwaysAllowed && userProfile.status === 'PENDING') {
+      return NextResponse.redirect(new URL('/pending', request.url));
+    }
+    if (!alwaysAllowed && userProfile.status === 'REJECTED') {
+      return NextResponse.redirect(new URL('/rejected', request.url));
+    }
+
+    // ── EB can ONLY access /eb/dash and /911 (not other dashboards) ─
+    if (isEB && !hasValidEmergencyAccess) {
+      if (path.startsWith('/dashboard')) {
+        // EB clicking /dashboard gets redirected to /eb/dash
+        return NextResponse.redirect(new URL('/eb/dash', request.url));
+      }
+    }
+
+    // ── Non-EB cannot access EB dashboard ───────────────────────────
     if (path.startsWith('/eb/dash') && !isEB && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (path.startsWith('/dashboard/admin') && !isAdmin && !isEB && !hasValidEmergencyAccess) {
+    // ── Role-specific dashboard guards ──────────────────────────────
+    if (path.startsWith('/dashboard/admin') && !isAdmin && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (path.startsWith('/dashboard/chair') && !isChair && !isAdmin && !isEB && !hasValidEmergencyAccess) {
+    if (path.startsWith('/dashboard/chair') && !isChair && !isAdmin && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (path.startsWith('/dashboard/security') && !isSecurity && !isEB && !hasValidEmergencyAccess) {
+    if (path.startsWith('/dashboard/security') && !isSecurity && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    if (path.startsWith('/dashboard/press') && !isMedia && !isEB && !hasValidEmergencyAccess) {
+    if (path.startsWith('/dashboard/press') && !isMedia && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 
-  // If they have emergency access, we can set a header so pages know
+  // ── Emergency access header ─────────────────────────────────────────
   if (hasValidEmergencyAccess) {
     response.headers.set('x-emergency-access', 'true');
   }

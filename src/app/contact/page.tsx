@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Footer } from '@/components/footer';
 import { PublicNavbar } from '@/components/public-navbar';
+import { FadeIn, ScrollReveal, ScaleIn } from '@/components/gsap-animations';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
@@ -40,25 +41,32 @@ export default function ContactPage() {
     <div className="min-h-screen bg-bg-base text-text-primary font-inter flex flex-col">
       <PublicNavbar />
       <div className="flex-1 max-w-3xl mx-auto px-6 md:px-10 pt-32 pb-24 w-full">
-        <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-8">
-          <ChevronLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+        <FadeIn delay={0.1} from="left">
+          <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-8">
+            <ChevronLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
+        </FadeIn>
 
-        <h1 className="font-jotia text-5xl md:text-6xl mb-3">Contact Us</h1>
-        <div className="space-y-3 mb-10">
-          <p className="text-text-secondary max-w-lg">
-            Have a question about BILLMUN? Reach out to our team.
-          </p>
-          <a
-            href="mailto:pr@billmun.gomarai.com"
-            className="text-text-primary font-bold text-lg hover:underline inline-block"
-          >
-            pr@billmun.gomarai.com
-          </a>
-        </div>
+        <FadeIn delay={0.2} from="bottom">
+          <h1 className="font-jotia text-5xl md:text-6xl mb-3">Contact Us</h1>
+        </FadeIn>
+        <FadeIn delay={0.35} from="bottom">
+          <div className="space-y-3 mb-10">
+            <p className="text-text-secondary max-w-lg">
+              Have a question about BILLMUN? Reach out to our team.
+            </p>
+            <a
+              href="mailto:pr@billmun.gomarai.com"
+              className="text-text-primary font-bold text-lg hover:underline inline-block"
+            >
+              pr@billmun.gomarai.com
+            </a>
+          </div>
+        </FadeIn>
 
         {success ? (
+          <ScaleIn delay={0.1} from={0.9}>
           <div className="mt-8 p-8 border-2 border-status-approved-border rounded-2xl bg-status-approved-bg/10 text-center">
             <svg className="w-12 h-12 mx-auto mb-4 text-status-approved-text" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -72,7 +80,9 @@ export default function ContactPage() {
               Send Another
             </button>
           </div>
+          </ScaleIn>
         ) : (
+          <ScrollReveal delay={0.4} from="bottom">
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -138,6 +148,7 @@ export default function ContactPage() {
               {submitting ? 'Sending...' : 'Send Message'}
             </button>
           </form>
+          </ScrollReveal>
         )}
       </div>
 

@@ -1,11 +1,35 @@
 /** @type {import('next').NextConfig} */
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+let supabaseHost;
+try {
+  if (supabaseUrl) supabaseHost = new URL(supabaseUrl).hostname;
+} catch {
+  supabaseHost = undefined;
+}
+
+const imageRemotePatterns = [
+  { protocol: 'https', hostname: 'billmun.com', pathname: '/**' },
+  { protocol: 'http', hostname: 'localhost', pathname: '/**' },
+];
+if (supabaseHost) {
+  imageRemotePatterns.push({
+    protocol: 'https',
+    hostname: supabaseHost,
+    pathname: '/**',
+  });
+}
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // Avoid Next 15 devtools "SegmentViewNode" / client manifest errors during `next dev`
+    devtoolSegmentExplorer: false,
+  },
   // CDN and image optimization
   images: {
-    domains: ['billmun.com', 'localhost'],
+    remotePatterns: imageRemotePatterns,
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 31536000, // 1 year
     dangerouslyAllowSVG: true,
@@ -20,6 +44,13 @@ const nextConfig = {
   },
   // Asset optimization
   assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || undefined,
+  // Windows: webpack's persistent dev cache can corrupt .next (ENOENT manifests). Disable in dev.
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
   // Headers for caching
   async headers() {
     return [
@@ -49,6 +80,20 @@ const nextConfig = {
         source: '/_next/static/(.*)',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/billeb.mp4',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'Content-Type', value: 'video/mp4' },
+        ],
+      },
+      {
+        source: '/(.*).mp4',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          { key: 'Content-Type', value: 'video/mp4' },
         ],
       },
     ];

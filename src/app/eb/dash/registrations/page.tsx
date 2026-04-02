@@ -205,7 +205,7 @@ export default function RegistrationsPage() {
             `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments!committee_assignments_user_id_fkey(id, committee_id, country, seat_number, committees(id, name))`,
           )
           .eq("id", selectedUser.id)
-          .single();
+          .maybeSingle();
         if (refreshedUser) await openDrawer(refreshedUser);
       } else {
         const j = await res.json().catch(() => ({}));
@@ -244,7 +244,7 @@ export default function RegistrationsPage() {
             `id, email, full_name, role, status, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions, preferred_committee, allocated_country, created_at, committee_assignments!committee_assignments_user_id_fkey(id, committee_id, country, seat_number, committees(id, name))`,
           )
           .eq("id", selectedUser.id)
-          .single();
+          .maybeSingle();
         if (refreshedUser) await openDrawer(refreshedUser);
       } else {
         const j = await res.json().catch(() => ({}));

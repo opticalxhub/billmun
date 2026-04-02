@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
@@ -19,7 +19,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').single();
+      const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -63,7 +63,7 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['committee-chair', ctx.committee?.chair_id],
     enabled: !!ctx.committee?.chair_id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('users').select('id, full_name, email').eq('id', ctx.committee.chair_id).single();
+      const { data, error } = await supabase.from('users').select('id, full_name, email').eq('id', ctx.committee.chair_id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -90,7 +90,17 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';
-  const conferenceNotStarted = conferenceDate && conferenceDate.getTime() > Date.now();
+  const [conferenceNotStarted, setConferenceNotStarted] = useState(false);
+  
+  // Set conference status on client side only to avoid hydration mismatch
+  useEffect(() => {
+    if (conferenceDate != null) { 
+    setConferenceNotStarted(
+        conferenceDate.getTime() > Date.now(),
+      );
+    }
+  }, [conferenceDate]);
+  
   const statusCfg = conferenceNotStarted && sessionStatus === 'ADJOURNED'
     ? { label: 'Conference Not Started', color: 'bg-text-tertiary' }
     : (STATUS_CONFIG[sessionStatus] || STATUS_CONFIG.ADJOURNED);

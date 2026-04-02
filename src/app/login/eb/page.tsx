@@ -43,7 +43,7 @@ export default function EBLoginPage() {
         .from('users')
         .select('status, role')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         setError('Failed to load profile');

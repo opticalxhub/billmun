@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     let query = supabaseAdmin
       .from("users")
-      .select("id, role, status, committee_assignments!committee_assignments_user_id_fkey(committee_id)");
+      .select("id, role, status");
 
     if (status && status !== "ALL") {
       query = query.eq("status", status);
@@ -42,12 +42,14 @@ export async function POST(req: NextRequest) {
     let users = data || [];
 
     if (committee_id && committee_id !== "ALL") {
-      users = users.filter((u: any) => {
-        const assignments = u.committee_assignments;
-        if (!assignments) return false;
-        const arr = Array.isArray(assignments) ? assignments : [assignments];
-        return arr.some((ca: any) => ca?.committee_id === committee_id);
-      });
+      // Get users assigned to specific committee
+      const { data: committeeAssignments } = await supabaseAdmin
+        .from("committee_assignments")
+        .select("user_id")
+        .eq("committee_id", committee_id);
+      
+      const committeeUserIds = committeeAssignments?.map(ca => ca.user_id) || [];
+      users = users.filter((u: any) => committeeUserIds.includes(u.id));
     }
 
     return NextResponse.json({ count: users.length });

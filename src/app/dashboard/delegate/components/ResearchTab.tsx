@@ -27,7 +27,7 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
         .from('country_research')
         .select('*')
         .eq('user_id', ctx.user.id)
-        .single();
+        .maybeSingle();
       
       if (data) {
         setCountryNotes(data.country_notes || '');

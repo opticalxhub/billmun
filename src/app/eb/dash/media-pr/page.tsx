@@ -30,11 +30,40 @@ export default function EBMediaPRPage() {
       if (!res.ok) throw new Error('Failed to update');
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eb-media-pr'] });
-      toast.success('Media updated successfully');
+    onMutate: async ({ id, status }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['eb-media-pr'] });
+      
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(['eb-media-pr']);
+      
+      // Optimistically update
+      queryClient.setQueryData(['eb-media-pr'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          media: old.media.map((item: any) => 
+            item.id === id ? { ...item, status } : item
+          )
+        };
+      });
+      
+      return { previousData };
     },
-    onError: () => toast.error('Failed to update media')
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['eb-media-pr'], context.previousData);
+      }
+      toast.error('Failed to update media');
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ['eb-media-pr'] });
+    },
+    onSuccess: () => {
+      toast.success('Media updated successfully');
+    }
   });
 
   const approvePressMutation = useMutation({
@@ -47,11 +76,34 @@ export default function EBMediaPRPage() {
       if (!res.ok) throw new Error('Failed to update');
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['eb-media-pr'] });
-      toast.success('Press release updated successfully');
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['eb-media-pr'] });
+      const previousData = queryClient.getQueryData(['eb-media-pr']);
+      
+      queryClient.setQueryData(['eb-media-pr'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pressReleases: old.pressReleases.map((item: any) => 
+            item.id === id ? { ...item, status } : item
+          )
+        };
+      });
+      
+      return { previousData };
     },
-    onError: () => toast.error('Failed to update press release')
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['eb-media-pr'], context.previousData);
+      }
+      toast.error('Failed to update press release');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['eb-media-pr'] });
+    },
+    onSuccess: () => {
+      toast.success('Press release updated successfully');
+    }
   });
 
   const hideMediaMutation = useMutation({
@@ -212,7 +264,7 @@ export default function EBMediaPRPage() {
                     <div className="p-3">
                       <p className="text-xs font-semibold truncate">{item.title || item.caption || 'Untitled'}</p>
                       <p className="text-[10px] text-text-dimmed mt-1">
-                        Uploaded by: {item.uploader?.full_name || item.uploader?.email || 'Unknown'}
+                        Uploaded by: {item.users?.full_name || item.users?.email || 'Unknown'}
                       </p>
                       <div className="flex items-center justify-between mt-2">
                         <Badge variant="approved">APPROVED</Badge>
@@ -294,7 +346,7 @@ export default function EBMediaPRPage() {
                       <div className="flex-1">
                         <p className="font-semibold">{item.title}</p>
                         <p className="text-xs text-text-dimmed mt-1">
-                          By: {item.author?.full_name || item.author?.email || 'Unknown'}
+                          By: {item.users?.full_name || item.users?.email || 'Unknown'}
                         </p>
                         <p className="text-xs text-text-dimmed mt-1">{item.body.substring(0, 100)}...</p>
                       </div>

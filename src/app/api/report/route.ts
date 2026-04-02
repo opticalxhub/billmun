@@ -1,36 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { sendReportEmail } from "@/lib/email";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { getRequestUserContext } from "@/lib/auth-context";
 
 export async function POST(req: NextRequest) {
-  const response = NextResponse.next();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          req.cookies.set({ name, value, ...options });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          req.cookies.set({ name, value: "", ...options });
-          response.cookies.set({ name, value: "", ...options });
-        },
-      },
-    }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const { context, error: authErr, status: authStatus } = await getRequestUserContext();
+    if (!context) return NextResponse.json({ error: authErr }, { status: authStatus || 401 });
     const body = await req.json();
     const { category, issue_type, description, user_id, user_details, metadata } = body;
 

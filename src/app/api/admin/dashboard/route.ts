@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     .from("users")
     .select("id, full_name, email, role, status")
     .eq("id", adminUserId)
-    .single();
+    .maybeSingle();
 
   if (!committee_id) {
     return NextResponse.json({
@@ -38,8 +38,6 @@ export async function GET(req: NextRequest) {
     { data: sessionRow },
     { data: delegates },
     { data: statuses },
-    { data: documentsQueue },
-    { data: reviewedDocs },
     { data: announcements },
     { data: resources },
     { data: attendance },
@@ -69,20 +67,6 @@ export async function GET(req: NextRequest) {
         .from("delegate_presence_statuses")
         .select("*")
         .eq("committee_id", committee_id),
-      supabaseAdmin
-        .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, users:user_id(full_name)")
-        .eq("committee_id", committee_id)
-        .in("status", ["SUBMITTED", "REVISION_REQUESTED"])
-        .order("uploaded_at", { ascending: true })
-        .limit(50),
-      supabaseAdmin
-        .from("documents")
-        .select("id, user_id, title, type, status, uploaded_at, reviewed_at, users:user_id(full_name)")
-        .eq("committee_id", committee_id)
-        .in("status", ["APPROVED", "REJECTED"])
-        .order("reviewed_at", { ascending: false })
-        .limit(50),
       supabaseAdmin
         .from("announcements")
         .select("*")
@@ -243,7 +227,6 @@ export async function GET(req: NextRequest) {
       current_topic: sessionRow?.debate_topic || null,
       present_count: presentCount,
       total_delegates: delegateRows.length,
-      pending_document_reviews: (documentsQueue || []).length,
       delegate_status_alerts: alerts.length,
       unread_committee_messages: unreadCommitteeMessages,
       open_incidents: openIncidents ?? 0,
@@ -256,8 +239,6 @@ export async function GET(req: NextRequest) {
     alerts,
     attendance: attendance || [],
     roll_call_history: rollCallHistory || [],
-    documents_queue: documentsQueue || [],
-    reviewed_documents: reviewedDocs || [],
     announcements: announcements || [],
     resources: resources || [],
     votes: voteRecords || [],

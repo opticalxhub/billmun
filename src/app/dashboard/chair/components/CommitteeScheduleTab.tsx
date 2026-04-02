@@ -14,16 +14,19 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 interface CommitteeScheduleTabProps {
   committee: { id: string; name: string };
   user: { id: string };
 }
 
-export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTabProps) {
+export default function CommitteeScheduleTab({ committee, user }: CommitteeScheduleTabProps) {
   const [events, setEvents] = useState<any[]>([]);
+  const [defaultEvents, setDefaultEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sessionType, setSessionType] = useState<'session' | 'break'>('session');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -32,19 +35,29 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
     end_time: '',
     location: '',
     description: '',
-    committee_id: committee?.id
+    committee_id: committee?.id,
+    event_type: 'session'
   });
 
   const fetchEvents = async () => {
     if (!committee?.id) return;
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Fetch committee-specific events (chair-added)
+    const { data: committeeData, error: committeeError } = await supabase
       .from('committee_schedules')
       .select('*')
       .eq('committee_id', committee.id)
       .order('start_time', { ascending: true });
     
-    if (!error && data) setEvents(data);
+    // Fetch default conference events
+    const { data: defaultData, error: defaultError } = await supabase
+      .from('schedule_events')
+      .select('*')
+      .order('start_time', { ascending: true });
+    
+    if (!committeeError && committeeData) setEvents(committeeData);
+    if (!defaultError && defaultData) setDefaultEvents(defaultData);
     setLoading(false);
   };
 
@@ -58,7 +71,8 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
     setSaving(true);
     const { error } = await supabase.from('committee_schedules').insert({
       ...formData,
-      committee_id: committee.id
+      committee_id: committee.id,
+      event_type: sessionType
     });
     if (!error) {
       setIsModalOpen(false);
@@ -68,8 +82,10 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
         end_time: '',
         location: '',
         description: '',
-        committee_id: committee.id
+        committee_id: committee.id,
+        event_type: 'session'
       });
+      setSessionType('session');
       fetchEvents();
     }
     setSaving(false);
@@ -86,56 +102,116 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-jotia-bold text-2xl text-text-primary">Committee Schedule</h2>
-          <p className="text-text-dimmed text-sm">Manage specific sessions and breaks for {committee?.name}.</p>
+          <p className="text-text-dimmed text-sm">Default conference events plus committee-specific sessions and breaks for {committee?.name}.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Add Session
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => { setSessionType('session'); setIsModalOpen(true); }} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Session
+          </Button>
+          <Button onClick={() => { setSessionType('break'); setIsModalOpen(true); }} variant="outline" className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Break
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {loading ? (
-          <div className="py-20 flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-text-tertiary" />
-          </div>
-        ) : events.length === 0 ? (
-          <Card className="py-20 text-center">
-            <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-20" />
-            <p className="text-text-dimmed">No committee sessions scheduled yet.</p>
-          </Card>
-        ) : (
-          events.map((event) => (
-            <Card key={event.id} className="p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-4">
-                  <h3 className="font-bold text-lg text-text-primary">{event.event_name}</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <Clock className="w-4 h-4 text-text-tertiary" />
-                      {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <MapPin className="w-4 h-4 text-text-tertiary" />
-                      {event.location || 'Committee Room'}
+      <div className="space-y-8">
+        {/* Default Conference Events */}
+        <div>
+          <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Default Conference Schedule</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {loading ? (
+              <div className="py-20 flex justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-text-tertiary" />
+              </div>
+            ) : defaultEvents.length === 0 ? (
+              <Card className="py-20 text-center">
+                <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-20" />
+                <p className="text-text-dimmed">No conference events published yet.</p>
+              </Card>
+            ) : (
+              defaultEvents.map((event) => (
+                <Card key={event.id} className="p-6 border-border-subtle/50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 rounded bg-text-primary/10 text-text-primary text-[10px] font-black uppercase tracking-widest border border-border-emphasized">
+                          {event.day_label}
+                        </span>
+                        <h3 className="font-bold text-lg text-text-primary">{event.event_name}</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                          <Clock className="w-4 h-4 text-text-tertiary" />
+                          {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                          <MapPin className="w-4 h-4 text-text-tertiary" />
+                          {event.location || 'TBD'}
+                        </div>
+                      </div>
+
+                      {event.description && (
+                        <p className="text-sm text-text-dimmed leading-relaxed">{event.description}</p>
+                      )}
                     </div>
                   </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
 
-                  {event.description && (
-                    <p className="text-sm text-text-dimmed leading-relaxed">{event.description}</p>
-                  )}
-                </div>
-                <button 
-                  onClick={() => deleteEvent(event.id)}
-                  className="p-2 text-text-dimmed hover:text-status-rejected-text transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            </Card>
-          ))
-        )}
+        {/* Committee-Specific Sessions/Breaks */}
+        <div>
+          <h3 className="font-jotia-bold text-lg text-text-primary mb-4">Committee Sessions & Breaks</h3>
+          <div className="grid grid-cols-1 gap-4">
+            {events.length === 0 ? (
+              <Card className="py-20 text-center">
+                <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-20" />
+                <p className="text-text-dimmed">No committee-specific sessions or breaks scheduled yet.</p>
+              </Card>
+            ) : (
+              events.map((event) => (
+                <Card key={event.id} className="p-6 border-border-emphasized/30">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <span className="px-2 py-0.5 rounded bg-bg-raised text-text-primary text-[10px] font-black uppercase tracking-widest border border-border-emphasized">
+                          {event.event_type === 'break' ? 'BREAK' : 'SESSION'}
+                        </span>
+                        <h3 className="font-bold text-lg text-text-primary">{event.event_name}</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                          <Clock className="w-4 h-4 text-text-tertiary" />
+                          {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-text-secondary">
+                          <MapPin className="w-4 h-4 text-text-tertiary" />
+                          {event.location || 'Committee Room'}
+                        </div>
+                      </div>
+
+                      {event.description && (
+                        <p className="text-sm text-text-dimmed leading-relaxed">{event.description}</p>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => deleteEvent(event.id)}
+                      className="p-2 text-text-dimmed hover:text-status-rejected-text transition-colors"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -156,7 +232,9 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
             >
               <form onSubmit={handleSubmit}>
                 <div className="p-6 border-b border-border-subtle bg-bg-raised flex items-center justify-between">
-                  <h2 className="font-jotia text-xl uppercase tracking-tight text-text-primary">Add Committee Session</h2>
+                  <h2 className="font-jotia text-xl uppercase tracking-tight text-text-primary">
+                    Add {sessionType === 'break' ? 'Break' : 'Session'}
+                  </h2>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="text-text-dimmed hover:text-text-primary">
                     <X className="w-5 h-5" />
                   </button>
@@ -164,8 +242,10 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
                 
                 <div className="p-6 space-y-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Session/Event Name</label>
-                    <Input required value={formData.event_name} onChange={e => setFormData({...formData, event_name: e.target.value})} placeholder="e.g. Session 1: GSL" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">
+                      {sessionType === 'break' ? 'Break Name' : 'Session Name'}
+                    </label>
+                    <Input required value={formData.event_name} onChange={e => setFormData({...formData, event_name: e.target.value})} placeholder={sessionType === 'break' ? 'e.g. Coffee Break' : 'e.g. Session 1: GSL'} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -194,7 +274,7 @@ export default function CommitteeScheduleTab({ committee }: CommitteeScheduleTab
                   <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
                   <Button type="submit" disabled={saving} className="flex-1 gap-2">
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    Save Session
+                    Save {sessionType === 'break' ? 'Break' : 'Session'}
                   </Button>
                 </div>
               </form>

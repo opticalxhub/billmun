@@ -18,11 +18,10 @@ export async function POST(req: NextRequest) {
     const ebUserId = context.ebUserId;
 
     if (!action || !doc_id) {
-      console.log('Missing action or doc_id in eb documents action: action=', action, 'doc_id=', doc_id);
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const { data: doc } = await supabaseAdmin.from("documents").select("*, users(id, email)").eq("id", doc_id).single();
+    const { data: doc } = await supabaseAdmin.from("documents").select("*, users(id, email)").eq("id", doc_id).maybeSingle();
     if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
     const statusMap: Record<string, string> = {

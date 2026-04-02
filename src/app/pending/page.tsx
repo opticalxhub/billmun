@@ -18,7 +18,7 @@ export default function PendingPage() {
         .from('users')
         .select('status')
         .eq('id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (user?.status === 'APPROVED') {
         router.push('/dashboard');

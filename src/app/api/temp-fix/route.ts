@@ -4,6 +4,10 @@ import { getEBContext } from '@/lib/eb-auth';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_TEMP_FIX !== 'true') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const { context, error: authError, status: authStatus } = await getEBContext();
   if (!context) return NextResponse.json({ error: authError }, { status: authStatus || 401 });
 

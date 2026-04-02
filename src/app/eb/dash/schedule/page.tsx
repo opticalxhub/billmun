@@ -8,7 +8,6 @@ import {
   Trash2, 
   Clock, 
   MapPin, 
-  Users, 
   Save, 
   X,
   Calendar,
@@ -30,8 +29,7 @@ export default function EBSchedulePage() {
     start_time: '',
     end_time: '',
     location: '',
-    description: '',
-    applicable_roles: [] as string[]
+    description: ''
   });
 
   const fetchEvents = async () => {
@@ -67,8 +65,7 @@ export default function EBSchedulePage() {
         start_time: '',
         end_time: '',
         location: '',
-        description: '',
-        applicable_roles: []
+        description: ''
       });
       fetchEvents();
     }
@@ -81,7 +78,6 @@ export default function EBSchedulePage() {
     if (!error) fetchEvents();
   };
 
-  const roles = ['DELEGATE', 'CHAIR', 'ADMIN', 'SECURITY', 'MEDIA', 'EB'];
 
   if (fetchError) return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load schedule.</p><button onClick={() => fetchEvents()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
 
@@ -120,7 +116,7 @@ export default function EBSchedulePage() {
                     <h3 className="font-bold text-lg text-text-primary">{event.event_name}</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm text-text-secondary">
                       <Clock className="w-4 h-4 text-text-tertiary" />
                       {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -128,10 +124,6 @@ export default function EBSchedulePage() {
                     <div className="flex items-center gap-2 text-sm text-text-secondary">
                       <MapPin className="w-4 h-4 text-text-tertiary" />
                       {event.location || 'TBD'}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-text-secondary">
-                      <Users className="w-4 h-4 text-text-tertiary" />
-                      {event.applicable_roles?.length ? event.applicable_roles.join(', ') : 'All Roles'}
                     </div>
                   </div>
 
@@ -208,34 +200,6 @@ export default function EBSchedulePage() {
                     <Textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} placeholder="Optional event details..." />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Target Roles</label>
-                    <div className="flex flex-wrap gap-2">
-                      {roles.map(role => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => {
-                            const current = formData.applicable_roles;
-                            setFormData({
-                              ...formData,
-                              applicable_roles: current.includes(role) 
-                                ? current.filter(r => r !== role) 
-                                : [...current, role]
-                            });
-                          }}
-                          className={`px-3 py-1.5 rounded-pill text-[10px] font-bold uppercase tracking-widest border transition-all ${
-                            formData.applicable_roles.includes(role)
-                              ? 'bg-text-primary border-text-primary text-bg-base'
-                              : 'bg-bg-raised border-border-subtle text-text-dimmed hover:border-border-emphasized'
-                          }`}
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-text-tertiary italic">Leave empty for all participants.</p>
-                  </div>
                 </div>
 
                 <div className="p-6 bg-bg-raised border-t border-border-subtle flex gap-3">

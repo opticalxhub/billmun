@@ -19,7 +19,6 @@ type AdminTab =
   | 'overview'
   | 'delegate-logistics'
   | 'attendance'
-  | 'documents'
   | 'announcements'
   | 'resources'
   | 'session-support'
@@ -32,7 +31,6 @@ const TABS: { id: AdminTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'delegate-logistics', label: 'Delegate Logistics' },
   { id: 'attendance', label: 'Attendance' },
-  { id: 'documents', label: 'Documents' },
   { id: 'announcements', label: 'Announcements' },
   { id: 'resources', label: 'Resources' },
   { id: 'session-support', label: 'Session Support' },
@@ -82,12 +80,7 @@ export default function AdminDashboard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const resourceFileInputRef = useRef<HTMLInputElement>(null);
 
-  const [reviewDoc, setReviewDoc] = useState<any>(null);
-  const [reviewStatus, setReviewStatus] = useState('APPROVED');
-  const [reviewFeedback, setReviewFeedback] = useState('');
-
   const [sharedNote, setSharedNote] = useState('');
-  const [assignToChairNote, setAssignToChairNote] = useState('');
   const [quickMsgTitle, setQuickMsgTitle] = useState('');
   const [quickMsgBody, setQuickMsgBody] = useState('');
 
@@ -146,8 +139,6 @@ export default function AdminDashboard() {
 
   const delegates = useMemo(() => data?.delegates || [], [data?.delegates]);
   const attendance = useMemo(() => data?.attendance || [], [data?.attendance]);
-  const documentsQueue = useMemo(() => data?.documents_queue || [], [data?.documents_queue]);
-  const reviewedDocuments = useMemo(() => data?.reviewed_documents || [], [data?.reviewed_documents]);
   const announcements = useMemo(() => data?.announcements || [], [data?.announcements]);
   const resources = useMemo(() => data?.resources || [], [data?.resources]);
   const votes = useMemo(() => data?.votes || [], [data?.votes]);
@@ -229,19 +220,6 @@ export default function AdminDashboard() {
             event: '*',
             schema: 'public',
             table: 'committee_resources',
-            filter: `committee_id=eq.${data.committee.id}`,
-          },
-          debouncedInvalidate,
-        )
-        .subscribe(),
-      supabase
-        .channel('admin-documents')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'documents',
             filter: `committee_id=eq.${data.committee.id}`,
           },
           debouncedInvalidate,
@@ -464,11 +442,6 @@ export default function AdminDashboard() {
   };
 
 
-  const documentsWaitingOver24h = documentsQueue.filter((doc: any) => {
-    const uploaded = new Date(doc.uploaded_at).getTime();
-    return Date.now() - uploaded > 24 * 60 * 60 * 1000;
-  });
-
   if (isLoading && !data) return <DashboardLoadingState type="overview" />;
 
   return (
@@ -529,11 +502,6 @@ export default function AdminDashboard() {
               <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">Published for delegates</p>
             </Card>
 
-            <Card className="hover:border-border-emphasized transition-all cursor-pointer" onClick={() => setActiveTab('documents')}>
-              <SectionLabel className="mb-2">Doc Queue</SectionLabel>
-              <p className="text-3xl font-jotia-bold text-text-primary">{data?.overview?.pending_document_reviews ?? 0}</p>
-              <p className="text-[11px] text-text-dimmed mt-2 font-medium uppercase tracking-widest">Waiting for review</p>
-            </Card>
           </div>
         )}
 
@@ -698,84 +666,6 @@ export default function AdminDashboard() {
             </table>
           </div>
         </Card>
-      )}
-
-      {activeTab === 'documents' && (
-        <div className="space-y-6">
-          <Card>
-            <SectionLabel>Documents Queue</SectionLabel>
-            {documentsWaitingOver24h.length > 0 && (
-              <div className="mb-4 p-3 border border-border-strong rounded-card text-sm text-text-primary">
-                {documentsWaitingOver24h.length} document(s) waiting over 24 hours.
-              </div>
-            )}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="border-b border-border-subtle">
-                  <tr className="text-[11px] uppercase tracking-widest text-text-tertiary">
-                    <th className="py-3">Delegate</th>
-                    <th className="py-3">Title</th>
-                    <th className="py-3">Type</th>
-                    <th className="py-3">Submitted</th>
-                    <th className="py-3">Hours Waiting</th>
-                    <th className="py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documentsQueue.map((doc: any) => (
-                    <tr key={doc.id} className="border-b border-border-subtle">
-                      <td className="py-3 text-sm">{doc.users?.full_name || '-'}</td>
-                      <td className="py-3 text-sm">{doc.title}</td>
-                      <td className="py-3 text-sm">{formatLabel(doc.type)}</td>
-                      <td className="py-3 text-sm text-text-dimmed">{new Date(doc.uploaded_at).toLocaleString()}</td>
-                      <td className="py-3 text-sm text-text-dimmed">{Math.max(0, Math.floor((Date.now() - new Date(doc.uploaded_at).getTime()) / (1000 * 60 * 60)))}</td>
-                      <td className="py-3">
-                        <div className="flex gap-2">
-                          <button className="text-[10px] px-2 py-1 border border-border-subtle rounded" onClick={() => setReviewDoc(doc)}>
-                            Open for Review
-                          </button>
-                          <button
-                            className="text-[10px] px-2 py-1 border border-border-subtle rounded"
-                            onClick={async () => {
-                              await postAction({ action: 'assign_document_to_chair', document_id: doc.id, note: assignToChairNote || null });
-                            }}
-                          >
-                            Assign to Chair
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-          <Card>
-            <SectionLabel>Reviewed Documents</SectionLabel>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="border-b border-border-subtle">
-                  <tr className="text-[11px] uppercase tracking-widest text-text-tertiary">
-                    <th className="py-3">Delegate</th>
-                    <th className="py-3">Title</th>
-                    <th className="py-3">Outcome</th>
-                    <th className="py-3">Reviewed At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reviewedDocuments.map((doc: any) => (
-                    <tr key={doc.id} className="border-b border-border-subtle">
-                      <td className="py-3 text-sm">{doc.users?.full_name || '-'}</td>
-                      <td className="py-3 text-sm">{doc.title}</td>
-                      <td className="py-3 text-sm">{formatLabel(doc.status)}</td>
-                      <td className="py-3 text-sm text-text-dimmed">{doc.reviewed_at ? new Date(doc.reviewed_at).toLocaleString() : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
       )}
 
       {activeTab === 'announcements' && (
@@ -1128,77 +1018,6 @@ export default function AdminDashboard() {
         <WhatsAppTab />
       )}
       </div>
-
-    {reviewDoc && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-4xl bg-bg-card border border-border-subtle rounded-card p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="font-jotia text-2xl uppercase tracking-tight">{reviewDoc.title}</h2>
-              <button onClick={() => setReviewDoc(null)} className="text-text-dimmed hover:text-text-primary"><X className="w-5 h-5" /></button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="h-80 border border-border-subtle rounded-card overflow-hidden bg-bg-raised">
-                {reviewDoc.file_url ? (
-                  <iframe src={reviewDoc.file_url} className="w-full h-full border-0" />
-                ) : (
-                  <div className="h-full flex items-center justify-center text-sm text-text-dimmed">No preview URL</div>
-                )}
-              </div>
-              <div className="space-y-4">
-                <select
-                  value={reviewStatus}
-                  onChange={(e) => setReviewStatus(e.target.value)}
-                  className="h-10 w-full rounded-input border border-border-input bg-bg-raised px-3 text-sm"
-                >
-                  <option value="APPROVED">Approved</option>
-                  <option value="REVISION_REQUESTED">Request Revision</option>
-                  <option value="REJECTED">Rejected</option>
-                </select>
-                <Textarea value={reviewFeedback} onChange={(e) => setReviewFeedback(e.target.value)} placeholder="Feedback for delegate" />
-                <Input
-                  value={assignToChairNote}
-                  onChange={(e) => setAssignToChairNote(e.target.value)}
-                  placeholder="Optional note for Assign to Chair"
-                />
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-1"
-                    loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'review_document'}
-                    onClick={async () => {
-                      await postAction({
-                        action: 'review_document',
-                        document_id: reviewDoc.id,
-                        status: reviewStatus,
-                        feedback: reviewFeedback,
-                      });
-                      setReviewDoc(null);
-                      setReviewFeedback('');
-                    }}
-                  >
-                    Complete Review
-                  </Button>
-                  <Button variant="outline" onClick={() => setReviewDoc(null)}>Cancel</Button>
-                </div>
-                <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={async () => {
-                      await postAction({
-                        action: 'assign_document_to_chair',
-                        document_id: reviewDoc.id,
-                        note: assignToChairNote || null,
-                      });
-                      setReviewDoc(null);
-                    }}
-                    loading={actionMutation.isPending && (actionMutation.variables as any)?.action === 'assign_document_to_chair' && (actionMutation.variables as any)?.document_id === reviewDoc.id}
-                  >
-                    Assign to Chair
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-      )}
 
       {selectedDelegate && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">

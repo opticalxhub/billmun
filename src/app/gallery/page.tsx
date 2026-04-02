@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { FadeIn, ScaleIn, ScrollReveal, StaggerContainer, HoverScale } from '@/components/gsap-animations';
 import { Footer } from '@/components/footer';
 import { PublicNavbar } from '@/components/public-navbar';
 
@@ -49,32 +51,37 @@ export default function GalleryPage() {
       <PublicNavbar />
       <div className="max-w-7xl mx-auto px-6 md:px-10 pt-32 pb-24">
         <div className="mb-10">
-          <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-4">
-            <ChevronLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          <div className="max-w-7xl mx-auto">
-            <h1 className="font-jotia text-5xl md:text-6xl mb-3">Gallery</h1>
-            <p className="text-text-secondary mb-2 max-w-lg">
-              Browse photos and videos from BILLMUN — captured by our Media Team.
-            </p>
-          </div>
+          <FadeIn delay={0.2} from="top">
+            <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-4">
+              <ChevronLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
+          </FadeIn>
+          <ScaleIn delay={0.3} from={0.9}>
+            <div className="max-w-7xl mx-auto">
+              <h1 className="font-jotia text-5xl md:text-6xl mb-3">Gallery</h1>
+              <p className="text-text-secondary mb-2 max-w-lg">
+                Browse photos and videos from BILLMUN — captured by our Media Team.
+              </p>
+            </div>
+          </ScaleIn>
 
-          <div className="flex gap-2 mb-8">
+          <StaggerContainer stagger={0.1} delay={0.4} className="flex gap-2 mb-8">
             {(['all', 'image', 'video'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border transition-all ${
-                  filter === f
-                    ? 'bg-text-primary text-bg-base border-text-primary'
-                    : 'bg-transparent text-text-dimmed border-border-subtle hover:border-text-primary hover:text-text-primary'
-                }`}
-              >
-                {f === 'all' ? 'All' : f === 'image' ? 'Photos' : 'Videos'}
-              </button>
+              <HoverScale key={f} scale={1.05}>
+                <button
+                  onClick={() => setFilter(f)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest border transition-all ${
+                    filter === f
+                      ? 'bg-text-primary text-bg-base border-text-primary'
+                      : 'bg-transparent text-text-dimmed border-border-subtle hover:border-text-primary hover:text-text-primary'
+                  }`}
+                >
+                  {f === 'all' ? 'All' : f === 'image' ? 'Photos' : 'Videos'}
+                </button>
+              </HoverScale>
             ))}
-          </div>
+          </StaggerContainer>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -86,37 +93,41 @@ export default function GalleryPage() {
               <p className="text-text-tertiary text-sm mt-2">Check back during the conference!</p>
             </div>
           ) : (
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-              {filtered.map((item) => (
-                <div
-                  key={item.id}
-                  className="break-inside-avoid bg-bg-card border border-border-subtle rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-border-emphasized transition-all cursor-pointer group"
-                  onClick={() => setLightbox(item)}
-                >
-                  {item.media_type?.startsWith('video') ? (
-                    <video
-                      src={item.media_url}
-                      className="w-full object-cover"
-                      muted
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={item.media_url}
-                      alt={item.caption || 'Gallery image'}
-                      className="w-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  )}
-                  {item.caption && (
-                    <div className="p-3">
-                      <p className="text-xs text-text-secondary line-clamp-2">{item.caption}</p>
-                      <p className="text-[10px] text-text-tertiary mt-2 uppercase tracking-widest">Press Corps</p>
+            <ScrollReveal delay={0.5} from="bottom">
+              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+                {filtered.map((item) => (
+                  <HoverScale key={item.id} scale={1.02}>
+                    <div
+                      className="break-inside-avoid bg-bg-card border border-border-subtle rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-border-emphasized transition-all cursor-pointer group"
+                      onClick={() => setLightbox(item)}
+                    >
+                      {item.media_type?.startsWith('video') ? (
+                        <video
+                          src={item.media_url}
+                          className="w-full object-cover"
+                          muted
+                          controls={false}
+                          preload="metadata"
+                        />
+                      ) : (
+                        <img
+                          src={item.media_url}
+                          alt={item.caption || 'Gallery image'}
+                          className="w-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      )}
+                      {item.caption && (
+                        <div className="p-3">
+                          <p className="text-xs text-text-secondary line-clamp-2">{item.caption}</p>
+                          <p className="text-[10px] text-text-tertiary mt-2 uppercase tracking-widest">Press Corps</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </HoverScale>
+                ))}
+              </div>
+            </ScrollReveal>
           )}
         </div>
       </div>
@@ -135,7 +146,7 @@ export default function GalleryPage() {
             </svg>
           </button>
           <div className="max-w-5xl max-h-[90vh] relative" onClick={(e) => e.stopPropagation()}>
-            {lightbox.media_type?.startsWith('video') ? (
+            {lightbox?.media_type?.startsWith('video') ? (
               <video
                 src={lightbox.media_url}
                 controls
@@ -144,12 +155,12 @@ export default function GalleryPage() {
               />
             ) : (
               <img
-                src={lightbox.media_url}
-                alt={lightbox.caption || 'Gallery image'}
+                src={lightbox?.media_url}
+                alt={lightbox?.caption || 'Gallery image'}
                 className="max-w-full max-h-[80vh] rounded-lg object-contain"
               />
             )}
-            {lightbox.caption && (
+            {lightbox?.caption && (
               <div className="mt-4 text-center">
                 <p className="text-white/70 text-sm">{lightbox.caption}</p>
               </div>

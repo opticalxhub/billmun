@@ -67,8 +67,8 @@ export default function PressDashboard() {
       // Emergency Override Check
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
-          id: 'emergency-actor',
-          email: 'emergency@billmun.org',
+          id: '00000000-0000-0000-0000-000000000000',
+          email: 'emergency@billmun.com',
           full_name: 'Engineer (Emergency)',
           role: 'EXECUTIVE_BOARD',
           status: 'APPROVED',
@@ -78,7 +78,7 @@ export default function PressDashboard() {
 
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('No session');
-      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).single();
+      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', authUser.id).maybeSingle();
       return data;
     },
     staleTime: 5 * 60 * 1000,

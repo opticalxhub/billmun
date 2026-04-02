@@ -8,10 +8,54 @@ import { NotificationBell } from "./notification-bell";
 import { ReportIssueModal } from "./report-issue-modal";
 
 export function DashboardLoadingState({ type = "default" }: { type?: "default" | "overview" | "list" | "table" }) {
-  if (type === "overview" || type === "list" || type === "table") {
+  if (type === "overview") {
     return (
-      <div className={`flex-1 flex flex-col items-center justify-center ${type === 'table' ? 'py-20 h-full' : 'min-h-[400px]'} animate-in fade-in duration-500`}>
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
         <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (type === "list") {
+    return (
+      <div className="flex-1 flex flex-col gap-3 p-4 animate-in fade-in duration-500">
+        {/* Skeleton list items */}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="bg-bg-raised border border-border-subtle rounded-lg p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-border-subtle rounded-full" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-border-subtle rounded w-3/4" />
+                <div className="h-3 bg-border-subtle rounded w-1/2" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "table") {
+    return (
+      <div className="flex-1 p-6 animate-in fade-in duration-500">
+        {/* Skeleton table */}
+        <div className="bg-bg-raised border border-border-subtle rounded-lg overflow-hidden">
+          <div className="border-b border-border-subtle p-4">
+            <div className="h-6 bg-border-subtle rounded w-1/3 animate-pulse" />
+          </div>
+          <div className="divide-y divide-border-subtle">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="p-4 flex items-center gap-4">
+                <div className="w-8 h-8 bg-border-subtle rounded animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-border-subtle rounded w-2/3 animate-pulse" />
+                  <div className="h-3 bg-border-subtle rounded w-1/3 animate-pulse" />
+                </div>
+                <div className="w-20 h-8 bg-border-subtle rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

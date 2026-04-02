@@ -17,7 +17,7 @@ export default function OnboardingManager() {
         .from('users')
         .select('id,email,full_name,role,preferred_committee,has_completed_onboarding')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error || !data) return;
       setProfile(data);
@@ -41,10 +41,10 @@ export default function OnboardingManager() {
           // Handle sync
         })
         .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('User joined:', key, newPresences);
+          // User joined presence channel
         })
         .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('User left:', key, leftPresences);
+          // User left presence channel
         })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {

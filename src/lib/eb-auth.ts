@@ -75,7 +75,7 @@ export async function getEBContext(): Promise<{ context?: EBContext; error?: str
     .from("users")
     .select("id, role")
     .eq("id", authUser.id)
-    .single();
+    .maybeSingle();
 
   if (!user || !["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL", "ADMIN"].includes(user.role)) {
     return { error: "Forbidden", status: 403 };

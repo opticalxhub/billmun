@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
@@ -59,44 +58,38 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const [manualContent, setManualContent] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // useQuery for Resolutions
+  // useQuery for Resolutions – fetched via API route (service-role)
   const { data: resolutions, isLoading: resolutionsLoading, isError: resolutionsError, refetch: refetchResolutions } = useQuery({
     queryKey: ['resolutions', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('resolutions').select('*').eq('user_id', ctx.user.id).order('updated_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      const res = await fetch('/api/resolution');
+      if (!res.ok) throw new Error('Failed to load resolutions');
+      return await res.json();
     },
     staleTime: 60 * 1000,
   });
 
-  // useQuery for User Blocs
+  // useQuery for User Blocs – fetched via API route (service-role)
   const { data: userBlocs, isLoading: blocsLoading, isError: blocsError } = useQuery({
     queryKey: ['user-blocs', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('bloc_members')
-        .select('bloc_id, blocs(name)')
-        .eq('user_id', ctx.user.id);
-      if (error) throw error;
-      return (data || []).map((b: any) => ({
-        bloc_id: b.bloc_id,
-        blocs: b.blocs
-      }));
+      const res = await fetch('/api/delegate/blocs');
+      if (!res.ok) throw new Error('Failed to load blocs');
+      return await res.json();
     },
     staleTime: 5 * 60 * 1000,
   });
-
-  // useQuery for Clauses
+  
+  // useQuery for Clauses – fetched via API route (service-role)
   const { data: clauses, refetch: refetchClauses } = useQuery({
     queryKey: ['resolution-clauses', selectedId],
     enabled: !!selectedId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('resolution_clauses').select('*').eq('resolution_id', selectedId).order('order_index', { ascending: true });
-      if (error) throw error;
-      return (data || []) as Clause[];
+      const res = await fetch(`/api/resolution/clauses?resolutionId=${selectedId}`);
+      if (!res.ok) throw new Error('Failed to load clauses');
+      return (await res.json()) as Clause[];
     },
     staleTime: 30 * 1000,
   });
@@ -138,20 +131,23 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   }
 
   const createResolution = async () => {
-    const { data, error } = await supabase.from('resolutions').insert({
-      user_id: ctx.user.id,
-      committee_id: ctx.assignment?.committee_id || null,
-      title: 'Untitled Resolution',
-      topic: '',
-      co_sponsors: [],
-    }).select().single();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    if (data) { 
-      await refetchResolutions(); 
-      selectResolution(data); 
+    try {
+      const res = await fetch('/api/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          committee_id: ctx.assignment?.committee_id || null,
+          title: 'Untitled Resolution',
+          topic: '',
+          co_sponsors: [],
+        }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Create failed'); }
+      const data = await res.json();
+      await refetchResolutions();
+      selectResolution(data);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to create resolution');
     }
   };
 
@@ -159,9 +155,11 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     if (!selectedId) return;
     setSaving(true);
     try {
-      await supabase.from('resolutions').update({
-        title, topic, co_sponsors: coSponsors, updated_at: new Date().toISOString(),
-      }).eq('id', selectedId);
+      await fetch('/api/resolution', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedId, title, topic, co_sponsors: coSponsors, is_manual: isManual, manual_content: manualContent }),
+      });
       queryClient.invalidateQueries({ queryKey: ['resolutions', ctx.user?.id] });
     } finally {
       setSaving(false);
@@ -171,8 +169,8 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
   const deleteResolution = async (id: string) => {
     if (!confirm('Delete this resolution draft?')) return;
     try {
-      const { error } = await supabase.from('resolutions').delete().eq('id', id);
-      if (error) throw error;
+      const res = await fetch(`/api/resolution?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
       if (selectedId === id) { 
         setSelectedId(null); 
       }
@@ -196,22 +194,24 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
       .filter((c: Clause) => c.type === addingType && !c.parent_clause_id)
       .reduce((m: number, c: Clause) => Math.max(m, c.order_index), -1);
     
-    const { data, error } = await supabase.from('resolution_clauses').insert({
-      resolution_id: selectedId,
-      type: addingType,
-      opening_phrase: addingPhrase,
-      content: addingContent.trim(),
-      order_index: maxOrder + 1,
-      parent_clause_id: addingParent,
-    }).select().single();
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    if (data) {
+    try {
+      const res = await fetch('/api/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_clause',
+          resolution_id: selectedId,
+          type: addingType,
+          opening_phrase: addingPhrase,
+          content: addingContent.trim(),
+          order_index: maxOrder + 1,
+          parent_clause_id: addingParent,
+        }),
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Add clause failed'); }
       queryClient.invalidateQueries({ queryKey: ['resolution-clauses', selectedId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to add clause');
     }
     setAddingType(null);
     setAddingPhrase('');
@@ -221,8 +221,12 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
 
   const deleteClause = async (id: string) => {
     try {
-      const { error } = await supabase.from('resolution_clauses').delete().eq('id', id);
-      if (error) throw error;
+      const res = await fetch('/api/resolution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_clause', clause_id: id, resolution_id: selectedId }),
+      });
+      if (!res.ok) throw new Error('Delete clause failed');
       queryClient.invalidateQueries({ queryKey: ['resolution-clauses', selectedId] });
     } catch {
       toast.error('Failed to delete clause');
@@ -239,9 +243,17 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
     const swapIdx = idx + direction;
     if (swapIdx < 0 || swapIdx >= siblings.length) return;
 
-    const tempOrder = clause.order_index;
-    await supabase.from('resolution_clauses').update({ order_index: siblings[swapIdx].order_index }).eq('id', id);
-    await supabase.from('resolution_clauses').update({ order_index: tempOrder }).eq('id', siblings[swapIdx].id);
+    await fetch('/api/resolution', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'move_clause',
+        clause_id: id,
+        swap_clause_id: siblings[swapIdx].id,
+        new_order: siblings[swapIdx].order_index,
+        swap_order: clause.order_index,
+      }),
+    });
     refetchClauses();
   };
 
@@ -298,7 +310,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Resolution List */}
         <div className="lg:w-64 shrink-0 space-y-2">
-          {(resolutions || []).map(r => (
+          {(resolutions || []).map((r: any) => (
             <div key={r.id} onClick={() => selectResolution(r)} className={`rounded-card p-3 cursor-pointer transition-colors border ${selectedId === r.id ? 'bg-bg-raised border-border-emphasized' : 'bg-bg-card border-border-subtle hover:bg-bg-hover'}`}>
               <p className="font-jotia text-text-primary text-sm truncate">{r.title}</p>
               <p className="font-jotia text-text-tertiary text-xs">{new Date(r.updated_at).toLocaleDateString()}</p>
@@ -560,7 +572,7 @@ export default function ResolutionBuilderTab({ ctx }: { ctx: DelegateContext }) 
               className="w-full bg-bg-raised border border-border-input rounded-input px-3 h-10 font-jotia text-sm text-text-primary"
             >
               <option value="">Select a bloc...</option>
-              {(userBlocs || []).map(b => (
+              {(userBlocs || []).map((b: any) => (
                 <option key={b.bloc_id} value={b.bloc_id}>{b.blocs?.name}</option>
               ))}
             </select>

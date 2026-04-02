@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       .from("users")
       .select("id, email, full_name, role, status, has_completed_onboarding, badge_status, ai_analyses_today, created_at, updated_at")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (userError) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         .from("committees")
         .select("*")
         .eq("id", assignment.committee_id)
-        .single();
+        .maybeSingle();
       committee = committeeData;
 
       const { data: sessionData } = await supabaseAdmin

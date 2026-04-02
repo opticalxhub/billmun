@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         "id, email, full_name, role, status, preferred_committee, allocated_country, date_of_birth, grade, phone_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, dietary_restrictions",
       )
       .eq("id", user_id)
-      .single();
+      .maybeSingle();
     if (uErr || !targetUser) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
     const logAudit = async (desc: string, metadata: Record<string, unknown> | null = null) => {
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
         .from("user_field_history")
         .select("*")
         .eq("id", history_id)
-        .single();
+        .maybeSingle();
       if (hErr || !hist || hist.user_id !== user_id) {
         return NextResponse.json({ error: "History entry not found" }, { status: 404 });
       }
@@ -236,7 +236,7 @@ export async function POST(req: NextRequest) {
         .from("users")
         .select(field)
         .eq("id", user_id)
-        .single();
+        .maybeSingle();
 
       const oldVal = before?.[field as keyof typeof before];
       const revertTo = hist.old_value ?? "";
@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
         .from("users")
         .select(EDITABLE_FIELDS.join(","))
         .eq("id", user_id)
-        .single();
+        .maybeSingle();
       if (currentErr || !currentRaw) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
       const current = currentRaw as unknown as Record<EditableField, string | null | undefined>;

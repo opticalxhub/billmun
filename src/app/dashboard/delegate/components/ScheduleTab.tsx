@@ -18,15 +18,15 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').single();
+      const { data, error } = await supabase.from('conference_settings').select('conference_date').eq('id', '1').maybeSingle();
       if (error) throw error;
       return data;
     },
     staleTime: 10 * 60 * 1000,
   });
 
-  // useQuery for Events
-  const { data: events, isLoading: eventsLoading, isError: eventsError } = useQuery({
+  // useQuery for Default Conference Events
+  const { data: defaultEvents, isLoading: defaultEventsLoading, isError: defaultEventsError } = useQuery({
     queryKey: ['schedule-events'],
     queryFn: async () => {
       const { data, error } = await supabase.from('schedule_events').select('*').order('start_time', { ascending: true });
@@ -54,7 +54,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   // useQuery for Committee Schedule
-  const { data: committeeSchedule } = useQuery({
+  const { data: committeeSchedule, isLoading: committeeScheduleLoading, isError: committeeScheduleError } = useQuery({
     queryKey: ['committee-schedule', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
@@ -130,16 +130,16 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
     }
   });
 
-  if (settingsLoading || eventsLoading || tasksLoading) {
+  if (settingsLoading || defaultEventsLoading || committeeScheduleLoading || tasksLoading) {
     return <LoadingSpinner className="py-20" />;
   }
-  if (settingsError || eventsError || tasksError) {
+  if (settingsError || defaultEventsError || committeeScheduleError || tasksError) {
     return <QueryErrorState message="Failed to load schedule data." />;
   }
 
-  // Group events by day
+  // Group default events by day
   const eventsByDay: Record<string, any[]> = {};
-  (events || []).forEach((e: any) => {
+  (defaultEvents || []).forEach((e: any) => {
     if (!eventsByDay[e.day_label]) eventsByDay[e.day_label] = [];
     eventsByDay[e.day_label].push(e);
   });
@@ -168,7 +168,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
         </div>
       </div>
 
-      {/* Official Schedule */}
+      {/* Default Conference Schedule */}
       <div>
         <h2 className="font-jotia-bold text-xl text-text-primary mb-4">Conference Schedule</h2>
         {Object.keys(eventsByDay).length === 0 ? (
@@ -194,15 +194,6 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
                           {ev.location && <p className="font-jotia text-text-dimmed text-xs">{ev.location}</p>}
                           {ev.description && <p className="font-jotia text-text-dimmed text-xs mt-1">{ev.description}</p>}
                         </div>
-                        {ev.applicable_roles && ev.applicable_roles.length > 0 && (
-                          <div className="flex flex-wrap gap-1 shrink-0">
-                            {ev.applicable_roles.map((role: string) => (
-                              <span key={role} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs bg-bg-raised text-text-secondary border border-border-subtle">
-                                {role}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -216,10 +207,10 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
       {/* Committee Schedule */}
       {ctx.committee?.id && (
         <div>
-          <h2 className="font-jotia-bold text-xl text-text-primary mb-4">{ctx.committee.name} Schedule</h2>
+          <h2 className="font-jotia-bold text-xl text-text-primary mb-4">{ctx.committee.name} Sessions & Breaks</h2>
           {(committeeSchedule || []).length === 0 ? (
             <div className="bg-bg-card border border-border-subtle rounded-card p-8 text-center">
-              <p className="text-text-dimmed font-jotia text-sm">No committee-specific sessions scheduled yet.</p>
+              <p className="text-text-dimmed font-jotia text-sm">No committee-specific sessions or breaks scheduled yet.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -232,7 +223,12 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
                       </p>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-jotia-bold text-text-primary text-sm">{ev.event_name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-0.5 rounded bg-bg-raised text-text-primary text-[10px] font-black uppercase tracking-widest border border-border-emphasized">
+                          {ev.event_type === 'break' ? 'BREAK' : 'SESSION'}
+                        </span>
+                        <p className="font-jotia-bold text-text-primary text-sm">{ev.event_name}</p>
+                      </div>
                       {ev.location && <p className="font-jotia text-text-dimmed text-xs">{ev.location}</p>}
                       {ev.description && <p className="font-jotia text-text-dimmed text-xs mt-1">{ev.description}</p>}
                     </div>

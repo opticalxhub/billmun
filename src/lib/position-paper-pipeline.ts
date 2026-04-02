@@ -22,7 +22,7 @@ export async function runPositionPaperAnalysisPipeline(
     .from("users")
     .select("ai_analyses_today, ai_analyses_reset_date")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (userErr || !user) {
     return { ok: false, error: "User profile not found", status: 404 };

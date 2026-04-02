@@ -22,7 +22,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   const { data: settings, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useQuery({
     queryKey: ['conference-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('conference_settings').select('*').eq('id', '1').single();
+      const { data, error } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -195,7 +195,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
         .from('users')
         .select('id, full_name, email, role, status')
         .eq('id', ctx.committee.chair_id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -251,7 +251,13 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
   }
 
   const sessionStatus = ctx.session?.status || 'ADJOURNED';
-  const conferenceNotStarted = conferenceDate && conferenceDate.getTime() > Date.now();
+  const [conferenceNotStarted, setConferenceNotStarted] = useState(false);
+  
+  // Set conference status on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setConferenceNotStarted(conferenceDate && conferenceDate.getTime() > Date.now());
+  }, [conferenceDate]);
+  
   const statusCfg = conferenceNotStarted && sessionStatus === 'ADJOURNED'
     ? { label: 'Conference Not Started', color: 'bg-text-tertiary' }
     : (STATUS_CONFIG[sessionStatus] || STATUS_CONFIG.ADJOURNED);

@@ -143,7 +143,7 @@ export default function LiveMonitorPage() {
       setNoteContent("");
       await load();
       // Add the foreign key constraint reference in the select query
-      const { data: refreshedUser } = await supabase.from("users").select(`*, committee_assignments!committee_assignments_user_id_fkey(id, country, seat_number, committees(id, name))`).eq("id", selectedUser.id).single() ;
+      const { data: refreshedUser } = await supabase.from("users").select(`*, committee_assignments!committee_assignments_user_id_fkey(id, country, seat_number, committees(id, name))`).eq("id", selectedUser.id).maybeSingle();
       if (refreshedUser) openDrawer(refreshedUser);
     }
   };

@@ -53,7 +53,7 @@ export async function getSecurityContext() {
     .from("users")
     .select("id, role")
     .eq("id", authUser.id)
-    .single();
+    .maybeSingle();
 
   if (!user) return { error: "Unauthorized", status: 401 };
   if (!["SECURITY", "EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(user.role)) {

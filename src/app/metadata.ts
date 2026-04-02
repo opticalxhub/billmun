@@ -2,12 +2,12 @@ import { Metadata } from 'next';
 
 export const homeMetadata: Metadata = {
   title: "Home | BILLMUN 2026",
-  description: "Welcome to BILLMUN 2026 - The premier Model United Nations conference at Rowad Al Khaleej. Register now for the ultimate diplomatic experience.",
+  description: "Welcome to BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Register now for the ultimate diplomatic experience.",
   keywords: [
     "BILLMUN 2026",
     "MUN Conference",
     "Model United Nations",
-    "Rowad Al Khaleej",
+    "Yarmook Elementary Private School Dhahran",
     "Diplomatic Simulation",
     "Student Leadership",
     "International Relations",
@@ -16,8 +16,8 @@ export const homeMetadata: Metadata = {
   ],
   openGraph: {
     title: "BILLMUN 2026 Home | Advanced MUN Platform",
-    description: "Welcome to BILLMUN 2026 - Join the premier Model United Nations conference at Rowad Al Khaleej for an unforgettable diplomatic experience.",
-    url: "https://billmun.sa",
+    description: "Welcome to BILLMUN 2026 - Join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran for an unforgettable diplomatic experience.",
+    url: "https://billmun.com",
     images: [
       {
         url: "/billmun.png",
@@ -30,7 +30,7 @@ export const homeMetadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "BILLMUN 2026 Home | Advanced MUN Platform",
-    description: "Join BILLMUN 2026 - The premier Model United Nations conference at Rowad Al Khaleej.",
+    description: "Join BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
     images: ["/billmun.png"]
   }
 };
@@ -69,7 +69,7 @@ export const loginMetadata: Metadata = {
 
 export const registerMetadata: Metadata = {
   title: "Register | BILLMUN 2026",
-  description: "Register for BILLMUN 2026 - The premier Model United Nations conference at Rowad Al Khaleej. Choose your role, select your committee, and start your diplomatic journey.",
+  description: "Register for BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Choose your role, select your committee, and start your diplomatic journey.",
   keywords: [
     "BILLMUN Registration",
     "MUN Register",
@@ -77,11 +77,11 @@ export const registerMetadata: Metadata = {
     "Delegate Registration",
     "Chair Application",
     "MUN Conference 2026",
-    "Rowad Al Khaleej"
+    "Yarmook Elementary Private School Dhahran"
   ],
   openGraph: {
     title: "Register | BILLMUN 2026",
-    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Rowad Al Khaleej.",
+    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
     url: "https://billmun.sa/register",
     images: [
       {
@@ -95,7 +95,7 @@ export const registerMetadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Register | BILLMUN 2026",
-    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Rowad Al Khaleej.",
+    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
     images: ["/billmun.png"]
   }
 };

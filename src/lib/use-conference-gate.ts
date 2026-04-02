@@ -23,6 +23,8 @@ export interface ConferenceStatusData {
 
 const BYPASS_ROLES = [
   'EXECUTIVE_BOARD',
+  'SECRETARY_GENERAL',
+  'DEPUTY_SECRETARY_GENERAL',
 ];
 
 export function useConferenceGate(userRole?: string) {

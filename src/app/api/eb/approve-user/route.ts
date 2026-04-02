@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('id, email, full_name, role, preferred_committee, allocated_country')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

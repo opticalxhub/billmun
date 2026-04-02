@@ -14,6 +14,8 @@ import ResolutionBuilderTab from './components/ResolutionBuilderTab';
 import ScheduleTab from './components/ScheduleTab';
 import ResearchTab from './components/ResearchTab';
 import WhatsAppTab from '@/components/whatsapp-tab';
+import ICJProceedingsTab from './components/ICJProceedingsTab';
+import CrisisUpdatesTab from './components/CrisisUpdatesTab';
 import { Notepad } from '@/components/notepad';
 import { AnnouncementBanner } from '@/components/announcement-banner';
 import {
@@ -22,9 +24,12 @@ import {
   DashboardLoadingState,
   DashboardTabBar,
 } from '@/components/dashboard-shell';
+import { useConferenceGate } from '@/lib/use-conference-gate';
+import { ConferenceLockScreen } from '@/components/conference-lock-screen';
+
 // LoadingSpinner available from loading-spinner if needed
 
-const TABS = [
+const DEFAULT_TABS = [
   'Overview',
   'My Committee',
   'Documents',
@@ -37,7 +42,33 @@ const TABS = [
   'WhatsApp',
 ] as const;
 
-type TabName = (typeof TABS)[number];
+const ICJ_TABS = [
+  'Overview',
+  'My Committee',
+  'Court Proceedings',
+  'Documents',
+  'AI Feedback',
+  'Speeches',
+  'Schedule',
+  'Research',
+  'WhatsApp',
+] as const;
+
+const CRISIS_TABS = [
+  'Overview',
+  'My Committee',
+  'Crisis Updates',
+  'Documents',
+  'AI Feedback',
+  'Speeches',
+  'Blocs',
+  'Resolution Builder',
+  'Schedule',
+  'Research',
+  'WhatsApp',
+] as const;
+
+type TabName = string;
 
 export interface DelegateContext {
   user: any;
@@ -60,7 +91,7 @@ export default function DelegateDashboard() {
         return {
           user: {
             id: '00000000-0000-0000-0000-000000000000',
-            email: 'emergency@billmun.gomarai.com',
+            email: 'emergency@billmun.com',
             full_name: 'MR. Abdulrahman',
             role: 'EXECUTIVE_BOARD',
             status: 'APPROVED',
@@ -146,8 +177,15 @@ export default function DelegateDashboard() {
     };
   }, [user, assignment, committee, committeeSession, refreshData]);
 
-  if (isInitialLoading) {
+  // Conference gate – lock non-EB delegates out when portal is closed
+  const { data: confData, isLocked: confLocked, isLoading: confLoading } = useConferenceGate(user?.role);
+
+  if (isInitialLoading || confLoading) {
     return <DashboardLoadingState type="overview" />;
+  }
+
+  if (confLocked && confData) {
+    return <ConferenceLockScreen data={confData} />;
   }
 
   if (!user && !userLoading) {
@@ -155,12 +193,17 @@ export default function DelegateDashboard() {
     return null;
   }
 
+  const committeeAbbr = committee?.abbreviation?.toUpperCase() || '';
+  const TABS: readonly string[] = committeeAbbr === 'ICJ' ? ICJ_TABS : committeeAbbr === 'CRISIS' ? CRISIS_TABS : DEFAULT_TABS;
+
   const renderTabContent = () => {
     if (!ctx) return null;
 
     switch (activeTab) {
       case 'Overview': return <OverviewTab ctx={ctx} onTabChange={(tab) => setActiveTab(tab as TabName)} />;
       case 'My Committee': return <MyCommitteeTab ctx={ctx} />;
+      case 'Court Proceedings': return <ICJProceedingsTab ctx={ctx} />;
+      case 'Crisis Updates': return <CrisisUpdatesTab ctx={ctx} />;
       case 'Documents': return <DocumentsTab ctx={ctx} />;
       case 'AI Feedback': return <AIFeedbackTab ctx={ctx} />;
       case 'Speeches': return <SpeechesTab ctx={ctx} />;
@@ -181,7 +224,7 @@ export default function DelegateDashboard() {
         subtitle={committee?.name || "Access your delegate workspace"}
         committeeName={committee?.name}
       />
-      <DashboardTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <DashboardTabBar tabs={TABS as any} activeTab={activeTab} onChange={setActiveTab} />
 
       <AnnouncementBanner user={user} committeeId={assignment?.committee_id} />
 
@@ -197,6 +240,8 @@ export default function DelegateDashboard() {
           <Notepad dashboardKey="DELEGATE" userId={user?.id} />
         </div>
       </div>
+      
+      {/* Onboarding temporarily disabled */}
     </div>
   );
 }

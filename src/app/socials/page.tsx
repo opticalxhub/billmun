@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Footer } from '@/components/footer';
 import { PublicNavbar } from '@/components/public-navbar';
+import { FadeIn, ScaleIn, HoverScale } from '@/components/gsap-animations';
 
 function InstagramIcon({ className }: { className?: string }) {
   return (
@@ -19,19 +20,24 @@ export default function SocialsPage() {
     <div className="min-h-screen bg-bg-base text-text-primary font-inter flex flex-col">
       <PublicNavbar />
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-24">
-        <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-12">
-          <ChevronLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+        <FadeIn delay={0.1} from="top">
+          <Link href="/" className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-text-tertiary hover:text-text-primary transition-colors mb-12">
+            <ChevronLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
+        </FadeIn>
 
-        <div className="text-center mb-16">
-          <h1 className="font-jotia text-5xl md:text-7xl mb-4 tracking-tight">Our Socials</h1>
-          <p className="text-text-secondary max-w-md mx-auto">
-            Stay connected with BILLMUN. Follow us for updates, highlights, and behind-the-scenes content.
-          </p>
-        </div>
+        <FadeIn delay={0.2} from="bottom">
+          <div className="text-center mb-16">
+            <h1 className="font-jotia text-5xl md:text-7xl mb-4 tracking-tight">Our Socials</h1>
+            <p className="text-text-secondary max-w-md mx-auto">
+              Stay connected with BILLMUN. Follow us for updates, highlights, and behind-the-scenes content.
+            </p>
+          </div>
+        </FadeIn>
 
         {/* BILLM[instagram]N styled title */}
+        <ScaleIn delay={0.4} from={0.85}>
         <div className="flex items-center justify-center gap-0 mb-12">
           <span className="font-jotia text-6xl md:text-8xl lg:text-9xl tracking-tight text-text-primary">BILLM</span>
           <a
@@ -44,8 +50,11 @@ export default function SocialsPage() {
           </a>
           <span className="font-jotia text-6xl md:text-8xl lg:text-9xl tracking-tight text-text-primary">N</span>
         </div>
+        </ScaleIn>
 
         {/* Large Instagram button */}
+        <FadeIn delay={0.6} from="bottom">
+        <HoverScale scale={1.05}>
         <a
           href="https://instagram.com/billmun.sa"
           target="_blank"
@@ -58,10 +67,14 @@ export default function SocialsPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </a>
+        </HoverScale>
+        </FadeIn>
 
+        <FadeIn delay={0.7} from="bottom">
         <p className="text-text-tertiary text-xs uppercase tracking-widest mt-8">
           @billmun on Instagram
         </p>
+        </FadeIn>
       </div>
 
       <Footer />

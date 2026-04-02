@@ -6,7 +6,7 @@ export async function GET() {
     const { data } = await supabaseAdmin
       .from("conference_settings")
       .select("conference_name, conference_date, conference_location, registration_open")
-      .single();
+      .maybeSingle();
 
     const response = NextResponse.json({
       conference_date: data?.conference_date || null,

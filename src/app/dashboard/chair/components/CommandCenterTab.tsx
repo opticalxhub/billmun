@@ -61,7 +61,7 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
         .eq('committee_id', ctx.committee.id)
         .order('started_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       if (!rc) return 0;
       const { count } = await supabase
         .from('roll_call_entries')
@@ -97,15 +97,19 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
 
   const loadSharedNote = async () => {
     if (!ctx.committee?.id) return;
-    const { data } = await supabase
-      .from('admin_chair_notes')
-      .select('note_text, updated_at')
-      .eq('committee_id', ctx.committee.id)
-      .maybeSingle();
+    try {
+      const { data } = await supabase
+        .from('admin_chair_notes')
+        .select('note_text, updated_at')
+        .eq('committee_id', ctx.committee.id)
+        .maybeSingle();
 
-    if (data) {
-      setSharedNote(data.note_text || "");
-      setLastNoteSaved(new Date(data.updated_at));
+      if (data) {
+        setSharedNote(data.note_text || "");
+        setLastNoteSaved(new Date(data.updated_at));
+      }
+    } catch {
+      // Table may not exist yet — gracefully ignore
     }
     setNoteIsLoading(false);
   };
@@ -113,18 +117,22 @@ export default function CommandCenterTab({ ctx }: { ctx: ChairContext }) {
   const saveSharedNote = async (val: string) => {
     if (!ctx.committee?.id) return;
     setSaving(true);
-    const { error } = await supabase
-      .from('admin_chair_notes')
-      .upsert({
-        committee_id: ctx.committee.id,
-        admin_user_id: ctx.committee.admin_id || ctx.user.id, // Fallback if no admin assigned yet
-        chair_user_id: ctx.user.id,
-        note_text: val,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'committee_id' });
+    try {
+      const { error } = await supabase
+        .from('admin_chair_notes')
+        .upsert({
+          committee_id: ctx.committee.id,
+          admin_user_id: ctx.committee.admin_id || ctx.user.id,
+          chair_user_id: ctx.user.id,
+          note_text: val,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'committee_id' });
 
-    if (!error) {
-      setLastNoteSaved(new Date());
+      if (!error) {
+        setLastNoteSaved(new Date());
+      }
+    } catch {
+      // Table may not exist yet
     }
     setSaving(false);
   };

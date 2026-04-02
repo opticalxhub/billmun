@@ -36,7 +36,7 @@ export default function ManageCommitteePage({ params }: { params: Promise<{ id: 
   const load = async () => {
     setLoading(true);
     try {
-      const { data: comm } = await supabase.from("committees").select("*, chair:chair_id(id, full_name, email)").eq("id", id).single();
+      const { data: comm } = await supabase.from("committees").select("*, chair:chair_id(id, full_name, email)").eq("id", id).maybeSingle();
       setCommittee(comm);
       setEditForm(comm);
 

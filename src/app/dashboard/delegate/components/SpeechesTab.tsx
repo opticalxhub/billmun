@@ -34,13 +34,20 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
 
   const saveSpeech = async () => {
     if (!selectedId || !title.trim() || !body.trim()) return;
+    
+    // Prevent saving speeches with emergency override user (fake UUID)
+    if (!ctx.user?.id || ctx.user.id === '00000000-0000-0000-0000-000000000000') {
+      toast.error('Cannot save speeches in emergency mode');
+      return;
+    }
+    
     setSaving(true);
     try {
       const { error } = await supabase.from('speeches').update({
         title: title.trim(),
         body: body.trim(),
         notes: notes.trim() || null,
-        word_count: body.trim().split(/\s+/).filter(w => w).length,
+        word_count: body.trim().split(/\s+/).filter(Boolean).length,
         updated_at: new Date().toISOString(),
       }).eq('id', selectedId);
       if (error) throw error;
@@ -54,6 +61,12 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
   };
 
   const createSpeech = async () => {
+    // Prevent creating speeches with emergency override user (fake UUID)
+    if (!ctx.user?.id || ctx.user.id === '00000000-0000-0000-0000-000000000000') {
+      toast.error('Cannot create speeches in emergency mode');
+      return;
+    }
+    
     const { data, error } = await supabase.from('speeches').insert({
       user_id: ctx.user.id,
       title: 'Untitled Speech',
@@ -83,6 +96,13 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
 
   const deleteSpeech = async (id: string) => {
     if (!confirm('Delete this speech draft?')) return;
+    
+    // Prevent deleting speeches with emergency override user (fake UUID)
+    if (!ctx.user?.id || ctx.user.id === '00000000-0000-0000-0000-000000000000') {
+      toast.error('Cannot delete speeches in emergency mode');
+      return;
+    }
+    
     try {
       const { error } = await supabase.from('speeches').delete().eq('id', id);
       if (error) throw error;
@@ -135,7 +155,11 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
     <div className="animate-fade-in">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-jotia-bold text-xl text-text-primary">Speeches</h2>
-        <button onClick={createSpeech} className="px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px]">
+        <button 
+          onClick={createSpeech} 
+          disabled={!ctx.user?.id || ctx.user.id === '00000000-0000-0000-0000-000000000000'}
+          className="px-4 py-2 text-sm font-jotia bg-text-primary text-bg-base rounded-button hover:opacity-90 min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           New Speech
         </button>
       </div>

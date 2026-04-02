@@ -38,8 +38,8 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
     // Emergency Override Check
     if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
       setUser({
-        id: 'emergency-actor',
-        email: 'emergency@billmun.gomarai.com',
+        id: '00000000-0000-0000-0000-000000000000',
+        email: 'emergency@billmun.com',
         full_name: 'Engineer (Emergency)',
         role: 'EXECUTIVE_BOARD',
         status: 'APPROVED',
@@ -50,7 +50,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
 
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        supabase.from('users').select('id, email, full_name, role, status, has_completed_onboarding, profile_image_url, phone_number').eq('id', data.user.id).single().then(({ data: userData }) => {
+        supabase.from('users').select('id, email, full_name, role, status, has_completed_onboarding, profile_image_url, phone_number').eq('id', data.user.id).maybeSingle().then(({ data: userData }) => {
           setUser(userData);
         });
       }

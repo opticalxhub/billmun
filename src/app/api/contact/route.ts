@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+export async function GET(req: NextRequest) {
+  try {
+    return NextResponse.json({ 
+      message: "Contact API is working",
+      methods: ["POST"],
+      endpoint: "/api/contact"
+    });
+  } catch (err: any) {
+    console.error("[contact] GET error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     let body;

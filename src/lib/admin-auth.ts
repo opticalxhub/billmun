@@ -105,7 +105,7 @@ export async function getAdminContext(): Promise<{ context?: AdminContext; error
     .from("users")
     .select("id, role")
     .eq("id", adminUserId)
-    .single();
+    .maybeSingle();
 
   if (profileError || !profile) {
     return { error: "Unauthorized", status: 401 };

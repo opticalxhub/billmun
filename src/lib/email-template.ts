@@ -10,10 +10,10 @@ const BORDER_COLOR = "#222222";
 const TEXT_PRIMARY = "#ffffff";
 const TEXT_SECONDARY = "#999999";
 const TEXT_MUTED = "#666666";
-const LOGO_URL = "https://billmun.gomarai.com/billmun.png";
-const SITE_URL = "https://billmun.gomarai.com";
+const LOGO_URL = "https://billmun.com/billmun.png";
+const SITE_URL = "https://billmun.com";
 const INSTAGRAM_URL = "https://www.instagram.com/billmun.sa";
-const CONTACT_EMAIL = "pr@billmun.gomarai.com";
+const CONTACT_EMAIL = "noreply@billmun.com";
 
 function sanitizeText(text: string): string {
   return text
@@ -94,7 +94,7 @@ ${bodyHtml}
 <p style="margin:0 0 8px 0;font-size:12px;color:${TEXT_MUTED};text-align:center;">
 <a href="${INSTAGRAM_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">Instagram</a>
 &nbsp;&middot;&nbsp;
-<a href="${SITE_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">billmun.sa</a>
+<a href="${SITE_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">billmun.com</a>
 </p>
 <p style="margin:0;font-size:11px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
 This email was sent because you registered for BILLMUN.<br/>

@@ -233,9 +233,9 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
   };
 
   const loadStrategy = async (bloc_id: string) => {
-    const { data: board } = await supabase.from('strategy_board').select('*, editor:last_edited_by_id(full_name)').eq('bloc_id', bloc_id).single();
+    const { data: board } = await supabase.from('strategy_board').select('*, editor:last_edited_by_id(full_name)').eq('bloc_id', bloc_id).maybeSingle();
     if (board) { setSharedStrategy(board.shared_content); setLastEditor(board.editor ? { name: board.editor.full_name, at: board.last_edited_at } : null); }
-    const { data: priv } = await supabase.from('strategy_board_private').select('content').eq('bloc_id', bloc_id).eq('user_id', ctx.user.id).single();
+    const { data: priv } = await supabase.from('strategy_board_private').select('content').eq('bloc_id', bloc_id).eq('user_id', ctx.user.id).maybeSingle();
     setPrivateStrategy(priv?.content || '');
   };
 
