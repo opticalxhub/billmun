@@ -145,6 +145,9 @@ export default function LandingPage() {
                 <p ref={subtitleRef} className="text-xl sm:text-2xl text-text-secondary mt-6 max-w-2xl">
                   Join us for BILLMUN I, the inaugural conference that sets a new standard for Model United Nations in the region.
                 </p>
+                <p className="mt-4 italic font-bold text-zinc-200 drop-shadow-md">
+                  By Alaa Abbadi & Kenan Nezar
+                </p>
               </div>
               <div className="hidden lg:block w-64 h-64 text-text-primary/60 shrink-0">
                 <ASCII8Ball className="w-full h-full" />
