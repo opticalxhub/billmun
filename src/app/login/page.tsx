@@ -155,11 +155,18 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Back link */}
-            <div className="mt-6 text-center">
-              <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors">
-                Back to Home
-              </Link>
+            {/* Links */}
+            <div className="mt-6 text-center space-y-4">
+              <div>
+                <Link href="/register" className="text-sm font-bold uppercase tracking-[0.1em] text-white/90 hover:text-white hover:underline transition-all">
+                  Register for an account
+                </Link>
+              </div>
+              <div>
+                <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors">
+                  Back to Home
+                </Link>
+              </div>
             </div>
           </div>
         </div>

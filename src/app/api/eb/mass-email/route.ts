@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       const textContent = generateEmailPlainText(subject, emailBody, sender.full_name);
 
       await resend.emails.send({
-        from: "BILLMUN <billmun@gomarai.com>",
+        from: "BILLMUN <billmun@billmun.com>",
         to: [sender.email],
         subject: `[TEST] ${subject}`,
         html: htmlContent,
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         const htmlContent = generateEmailHTML(subject, emailBody, u.full_name);
         const textContent = generateEmailPlainText(subject, emailBody, u.full_name);
         return resend.emails.send({
-          from: "BILLMUN <billmun@gomarai.com>",
+          from: "BILLMUN <billmun@billmun.com>",
           to: [u.email],
           subject,
           html: htmlContent,

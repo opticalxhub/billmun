@@ -57,10 +57,10 @@ export default function ContactPage() {
               Have a question about BILLMUN? Reach out to our team.
             </p>
             <a
-              href="mailto:pr@billmun.gomarai.com"
+              href="mailto:pr@billmun.com"
               className="text-text-primary font-bold text-lg hover:underline inline-block"
             >
-              pr@billmun.gomarai.com
+              pr@billmun.com
             </a>
           </div>
         </FadeIn>

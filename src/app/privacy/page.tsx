@@ -151,7 +151,7 @@ export default function PrivacyPage() {
               <li>Request transfer of your Personal Data.</li>
               <li>Right to withdraw consent.</li>
             </ul>
-            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@billmun.gomarai.com.</p>
+            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@billmun.com.</p>
             <p>10.3. You will not have to pay a fee to access your Personal Data (or to exercise any of the other rights). However, we may charge a reasonable fee if your request is clearly unfounded, repetitive or excessive. Alternatively, we may refuse to comply with your request in these circumstances.</p>
           </section>
 
