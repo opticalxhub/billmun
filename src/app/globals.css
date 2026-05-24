@@ -1,15 +1,9 @@
-@import url('https://db.onlinewebfonts.com/c/09fc87e1ac5bbdeb5c42b2c1ec4f780f?family=Jotia+W00+Regular');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-@font-face { 
-    font-family: "Jotia W00 Regular"; 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot"); 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot?#iefix")format("embedded-opentype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff2")format("woff2"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff")format("woff"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.ttf")format("truetype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.svg#Jotia W00 Regular")format("svg"); 
-} 
+/*
+ * NXTMUN — Investigative Noir Design System
+ * Single dark theme. No light mode. No steel-blue tertiary.
+ * All BILLMUN-era token names are preserved as aliases so the
+ * 300+ existing dashboard files inherit the new theme without edits.
+ */
 
 @tailwind base;
 @tailwind components;
@@ -17,96 +11,95 @@
 
 @layer base {
   :root {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
-    --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #E8F5E9;
-    --status-approved-text: #1B5E20;
-    --status-approved-border: #C8E6C9;
-    --status-pending-bg: #FFF3E0;
-    --status-pending-text: #E65100;
-    --status-pending-border: #FFE0B2;
-    --status-rejected-bg: #FFEBEE;
-    --status-rejected-text: #B71C1C;
-    --status-rejected-border: #FFCDD2;
+    /* === NXTMUN core palette === */
+    --nxt-ink: #0B0A09;          /* near-black warm grey, primary surface */
+    --nxt-ink-2: #121110;        /* card */
+    --nxt-ink-3: #1A1816;        /* raised */
+    --nxt-ink-4: #221F1C;        /* hover */
+    --nxt-line: #2A2724;         /* hairline */
+    --nxt-line-2: #3A3530;       /* emphasized hairline */
+    --nxt-line-3: #4A443D;       /* strong hairline */
+
+    --nxt-paper: #D4C5A9;        /* aged paper off-white — primary text + sole tertiary accent */
+    --nxt-paper-soft: #B8A98C;   /* dimmed paper */
+    --nxt-paper-mute: #8A7E68;   /* muted paper */
+    --nxt-paper-faint: #5C5346;  /* faintest paper */
+
+    --nxt-blood: #8B0E0E;        /* dried blood red, primary accent */
+    --nxt-blood-bright: #B01818; /* hover/active */
+    --nxt-blood-deep: #5C0808;   /* pressed / borders */
+    --nxt-blood-wash: rgba(139, 14, 14, 0.12);
+
+    --nxt-stamp: #7A1212;        /* stamp / classified red */
+
+    /* === Legacy aliases (BILLMUN era) — keep names, swap values === */
+    --bg-base: var(--nxt-ink);
+    --bg-card: var(--nxt-ink-2);
+    --bg-raised: var(--nxt-ink-3);
+    --bg-hover: var(--nxt-ink-4);
+    --bg-dropdown: var(--nxt-ink-2);
+
+    --border-subtle: var(--nxt-line);
+    --border-emphasized: var(--nxt-line-2);
+    --border-strong: var(--nxt-line-3);
+    --border-input: var(--nxt-line-2);
+    --border-dropdown: var(--nxt-line-2);
+
+    --text-primary: var(--nxt-paper);
+    --text-secondary: var(--nxt-paper-soft);
+    --text-tertiary: var(--nxt-paper-mute);
+    --text-disabled: var(--nxt-paper-faint);
+    --text-dimmed: var(--nxt-paper-soft);
+
+    --white-pure: var(--nxt-paper);
+    --white-accent: var(--nxt-paper);
+
+    /* Status — paper-only neutral, blood-only critical, deeper paper for pending.
+       NO blue, NO green, NO orange. */
+    --status-approved-bg: rgba(212, 197, 169, 0.08);
+    --status-approved-text: var(--nxt-paper);
+    --status-approved-border: rgba(212, 197, 169, 0.35);
+    --status-pending-bg: rgba(184, 169, 140, 0.08);
+    --status-pending-text: var(--nxt-paper-soft);
+    --status-pending-border: rgba(184, 169, 140, 0.30);
+    --status-rejected-bg: rgba(176, 24, 24, 0.10);
+    --status-rejected-text: #E26A6A;
+    --status-rejected-border: rgba(176, 24, 24, 0.45);
+
+    /* shadcn-style semantic tokens (some components reference these) */
+    --background: var(--nxt-ink);
+    --foreground: var(--nxt-paper);
+    --card: var(--nxt-ink-2);
+    --card-foreground: var(--nxt-paper);
+    --popover: var(--nxt-ink-2);
+    --popover-foreground: var(--nxt-paper);
+    --primary: var(--nxt-paper);
+    --primary-foreground: var(--nxt-ink);
+    --secondary: var(--nxt-ink-3);
+    --secondary-foreground: var(--nxt-paper);
+    --muted: var(--nxt-ink-3);
+    --muted-foreground: var(--nxt-paper-mute);
+    --accent: var(--nxt-blood);
+    --accent-foreground: var(--nxt-paper);
+    --destructive: var(--nxt-blood-bright);
+    --destructive-foreground: var(--nxt-paper);
+    --border: var(--nxt-line);
+    --input: var(--nxt-line-2);
+    --ring: var(--nxt-paper);
+    --radius: 2px;
   }
 
   .dark {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
-    --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #112211;
-    --status-approved-text: #4ade80;
-    --status-approved-border: #166534;
-    --status-pending-bg: #221100;
-    --status-pending-text: #fb923c;
-    --status-pending-border: #9a3412;
-    --status-rejected-bg: #220000;
-    --status-rejected-text: #f87171;
-    --status-rejected-border: #991b1b;
+    color-scheme: dark;
   }
 }
 
-@layer utilities {
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
-  }
-  .text-balance {
-    text-wrap: balance;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/*
- * ALL element-level defaults MUST go inside @layer base
- * so that Tailwind utility classes can always override them.
- * Placing them outside @layer causes them to beat utilities.
- */
+/* ============================================================
+   Base elements
+   ============================================================ */
 @layer base {
   * {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -117,79 +110,175 @@
   }
 
   body {
-    @apply bg-bg-base text-text-primary font-inter;
+    @apply bg-bg-base text-text-primary;
+    font-family: var(--font-mono), ui-monospace, "JetBrains Mono", "Menlo", monospace;
     min-height: 100vh;
   }
 
-  /* Typography defaults — utility classes will override these */
-  h1 {
-    @apply font-jotia text-heading-1 text-text-primary;
+  /* Display headings → editorial serif */
+  h1, h2, h3 {
+    font-family: var(--font-serif), "Bodoni Moda", "Bodoni 72", Didot, "Times New Roman", serif;
+    color: var(--nxt-paper);
+    letter-spacing: -0.01em;
   }
-  h2 {
-    @apply font-jotia text-2xl text-text-primary;
-  }
-  h3 {
-    @apply font-jotia text-xl text-text-primary;
-  }
+  h1 { @apply text-4xl md:text-5xl leading-[1.05]; font-weight: 600; }
+  h2 { @apply text-2xl md:text-3xl leading-[1.1]; font-weight: 600; }
+  h3 { @apply text-xl leading-[1.15]; font-weight: 600; }
+
+  /* Paragraphs → mono for technical/dossier feel, but readable size */
   p {
-    @apply font-inter text-text-primary leading-relaxed;
+    color: var(--nxt-paper-soft);
+    line-height: 1.65;
   }
 
-  /* Button defaults */
-  button {
-    @apply transition-all duration-150 ease-out;
-  }
-  button:disabled {
-    @apply opacity-35 cursor-not-allowed;
-  }
+  button { @apply transition-all duration-150 ease-out; }
+  button:disabled { @apply opacity-40 cursor-not-allowed; }
+  a { @apply transition-colors; }
 
-  /* Link defaults — utility classes like text-text-secondary WILL override */
-  a {
-    @apply transition-colors;
-  }
-
-  /* Form defaults */
   input, textarea, select {
-    @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
+    background-color: var(--nxt-ink-2);
+    color: var(--nxt-paper);
+    border: 1px solid var(--nxt-line-2);
+    border-radius: 2px;
+    font-family: var(--font-mono), ui-monospace, monospace;
   }
-  input::placeholder,
-  textarea::placeholder,
-  select::placeholder {
-    @apply text-text-disabled;
+  input::placeholder, textarea::placeholder, select::placeholder {
+    color: var(--nxt-paper-faint);
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--nxt-paper);
+    outline: none;
   }
   select option {
-    background-color: var(--bg-card);
-    color: var(--text-primary);
+    background-color: var(--nxt-ink-2);
+    color: var(--nxt-paper);
   }
 
-  /* Lists */
-  ul, ol {
-    @apply list-none;
-  }
+  ul, ol { @apply list-none; }
 
-  /* Selection */
   ::selection {
-    @apply bg-text-dimmed text-white-pure;
+    background: var(--nxt-blood);
+    color: var(--nxt-paper);
   }
 }
 
-/* Scrollbar styling (pseudo-elements, not affected by utility override concerns) */
-::-webkit-scrollbar {
-  @apply w-2;
+/* ============================================================
+   NXTMUN utilities
+   ============================================================ */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Mono label — small caps, wide-tracked technical caption */
+  .mono-label {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--nxt-paper-mute);
+    font-weight: 500;
+  }
+
+  /* Stamp/classified red label */
+  .stamp-label {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--nxt-blood-bright);
+    font-weight: 700;
+  }
+
+  /* Editorial display class for explicit serif use */
+  .font-display {
+    font-family: var(--font-serif), "Bodoni Moda", Didot, "Times New Roman", serif;
+  }
+
+  /* Hairline rule */
+  .nxt-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--nxt-line-2) 20%, var(--nxt-line-2) 80%, transparent 100%);
+  }
+
+  /* Film grain overlay (apply on absolute layer) */
+  .nxt-grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+    background-size: 240px 240px;
+    opacity: 0.06;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* Faint scanlines */
+  .nxt-scanlines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(212, 197, 169, 0.02) 0px,
+      rgba(212, 197, 169, 0.02) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+  }
+
+  /* Old-paper / cartography vignette (very subtle) */
+  .nxt-vignette {
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+  }
+
+  /* Redacted text bar */
+  .redacted {
+    background: var(--nxt-ink);
+    color: transparent;
+    padding: 0 4px;
+    border-radius: 1px;
+  }
+
+  /* Classified-card paper texture */
+  .nxt-paper-card {
+    background:
+      linear-gradient(135deg, rgba(212,197,169,0.02), rgba(212,197,169,0.005)),
+      var(--nxt-ink-2);
+  }
 }
-::-webkit-scrollbar-track {
-  @apply bg-bg-card;
+
+@layer utilities {
+  @keyframes nxt-flicker {
+    0%, 100% { opacity: 1; }
+    48% { opacity: 1; }
+    50% { opacity: 0.85; }
+    52% { opacity: 1; }
+  }
+  .nxt-flicker { animation: nxt-flicker 6s infinite; }
+
+  @keyframes nxt-marquee {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { @apply w-1.5; }
+::-webkit-scrollbar-track { background: var(--nxt-ink); }
 ::-webkit-scrollbar-thumb {
-  @apply bg-border-subtle hover:bg-border-emphasized rounded-full;
+  background: var(--nxt-line-2);
+  border-radius: 0;
 }
+::-webkit-scrollbar-thumb:hover { background: var(--nxt-paper-mute); }
 
 @media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-  }
-  input, textarea, select {
-    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
