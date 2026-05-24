@@ -235,13 +235,13 @@ export function ASCII8Ball({ className = '' }: { className?: string }) {
         NXTMUN
       </text>
 
-      {/* Tiny "BUILD · INSPIRE · LEAD" */}
+      {/* Tiny "NEGOTIATE · EXCHANGE · TRANSFORM" */}
       <text
         x="150" y="238"
         textAnchor="middle" fill="currentColor"
         fontSize="4.5" fontFamily="monospace" letterSpacing="1.5" opacity="0.1"
       >
-        BUILD · INSPIRE · LEAD
+        NEGOTIATE · EXCHANGE · TRANSFORM
       </text>
     </svg>
   );

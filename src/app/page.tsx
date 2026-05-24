@@ -133,14 +133,14 @@ export default function LandingPage() {
       {/* Hero Section with Gallery Carousel */}
       <section ref={heroRef} className="relative min-h-screen pt-40 pb-20 px-6 sm:px-10">
         <div className="max-w-7xl mx-auto">
-          {/* BUILD. INSPIRE. LEAD. Header + 8-Ball */}
+          {/* NEGOTIATE. EXCHANGE. TRANSFORM. Header + 8-Ball */}
           <ScaleIn delay={0.2} from={0.8}>
             <div className="mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
               <div>
                 <h1 className="font-jotia text-6xl sm:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight">
-                  <div ref={el => { headingRefs.current[0] = el; }}>BUILD.</div>
-                  <div ref={el => { headingRefs.current[1] = el; }}>INSPIRE.</div>
-                  <div ref={el => { headingRefs.current[2] = el; }}>LEAD.</div>
+                  <div ref={el => { headingRefs.current[0] = el; }}>NEGOTIATE.</div>
+                  <div ref={el => { headingRefs.current[1] = el; }}>EXCHANGE.</div>
+                  <div ref={el => { headingRefs.current[2] = el; }}>TRANSFORM.</div>
                 </h1>
                 <p ref={subtitleRef} className="text-xl sm:text-2xl text-text-secondary mt-6 max-w-2xl">
                   Join us for NXTMUN I, the inaugural conference that sets a new standard for Model United Nations in the region.
@@ -277,17 +277,17 @@ export default function LandingPage() {
         <section id="about" className="py-20 px-6 sm:px-10 bg-bg-card/30">
           <div className="max-w-4xl mx-auto">
             <p className="font-jotia text-lg leading-relaxed mb-6">
-              <strong>NXTMUN</strong> is a student led Model United Nations initiative built around the idea of <strong>Build Inspire Lead</strong>. These three words represent our approach to conference design and student development.
+              <strong>NXTMUN</strong> is a student led Model United Nations initiative built around the idea of <strong>Negotiate, Exchange, Transform</strong>. These three words represent our approach to conference design and student development.
             </p>
             <div className="space-y-4 mb-6">
               <p className="font-jotia text-lg leading-relaxed">
-                <strong>Build</strong> reflects our belief that every delegate should have the opportunity to grow.
+                <strong>Negotiate</strong> reflects the diplomatic core of every committee — disciplined debate, sharp argument, and the pursuit of consensus.
               </p>
               <p className="font-jotia text-lg leading-relaxed">
-                <strong>Inspire</strong> stands for the professional environment we work to create in every committee room.
+                <strong>Exchange</strong> stands for the meeting of perspectives, cultures, and ideas that makes Model UN matter beyond the resolution.
               </p>
               <p className="font-jotia text-lg leading-relaxed">
-                <strong>Lead</strong> represents our commitment to encouraging new ideas, new leaders and new perspectives.
+                <strong>Transform</strong> represents what delegates carry forward — sharper thinking, stronger leadership, and a wider view of the world.
               </p>
             </div>
             <p className="font-jotia text-lg leading-relaxed mb-12">

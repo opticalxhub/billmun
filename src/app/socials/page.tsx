@@ -36,10 +36,10 @@ export default function SocialsPage() {
           </div>
         </FadeIn>
 
-        {/* BILLM[instagram]N styled title */}
+        {/* NXTM[instagram]N styled title */}
         <ScaleIn delay={0.4} from={0.85}>
         <div className="flex items-center justify-center gap-0 mb-12">
-          <span className="font-jotia text-6xl md:text-8xl lg:text-9xl tracking-tight text-text-primary">BILLM</span>
+          <span className="font-jotia text-6xl md:text-8xl lg:text-9xl tracking-tight text-text-primary">NXTM</span>
           <a
             href="https://instagram.com/nxtmun.sa"
             target="_blank"
@@ -62,7 +62,7 @@ export default function SocialsPage() {
           className="group relative inline-flex items-center gap-4 px-12 py-6 bg-text-primary text-bg-base rounded-full font-black uppercase tracking-widest text-lg hover:scale-105 active:scale-95 transition-all shadow-2xl"
         >
           <InstagramIcon className="w-7 h-7" />
-          <span>Follow @nxtmun</span>
+          <span>Follow @nxtmun.sa</span>
           <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
@@ -72,7 +72,7 @@ export default function SocialsPage() {
 
         <FadeIn delay={0.7} from="bottom">
         <p className="text-text-tertiary text-xs uppercase tracking-widest mt-8">
-          @nxtmun on Instagram
+          @nxtmun.sa on Instagram
         </p>
         </FadeIn>
       </div>
