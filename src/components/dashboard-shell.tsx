@@ -1,32 +1,53 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LoadingSpinner } from "./loading-spinner";
 import { LogOut, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { NotificationBell } from "./notification-bell";
 import { ReportIssueModal } from "./report-issue-modal";
 
-export function DashboardLoadingState({ type = "default" }: { type?: "default" | "overview" | "list" | "table" }) {
+/* ─────────────────────────────────────────────────────────────────────
+   DashboardLoadingState — scanline-style loading with rust pulse
+   ───────────────────────────────────────────────────────────────────── */
+export function DashboardLoadingState({
+  type = "default",
+}: {
+  type?: "default" | "overview" | "list" | "table";
+}) {
   if (type === "overview") {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] animate-in fade-in duration-500">
-        <LoadingSpinner size="lg" />
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
+        <PulseSpinner />
       </div>
     );
   }
 
   if (type === "list") {
     return (
-      <div className="flex-1 flex flex-col gap-3 p-4 animate-in fade-in duration-500">
-        {/* Skeleton list items */}
+      <div className="flex-1 flex flex-col gap-3 p-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-bg-raised border border-border-subtle rounded-lg p-4 animate-pulse">
+          <div
+            key={i}
+            className="rounded-sm p-4"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-subtle)",
+              animation: "pulse 1.4s ease-in-out infinite",
+              animationDelay: `${i * 0.1}s`,
+            }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-border-subtle rounded-full" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-border-subtle rounded w-3/4" />
-                <div className="h-3 bg-border-subtle rounded w-1/2" />
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  backgroundColor: "var(--border-subtle)",
+                }}
+              />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ height: 12, backgroundColor: "var(--border-subtle)", borderRadius: 2, width: "70%" }} />
+                <div style={{ height: 10, backgroundColor: "var(--border-subtle)", borderRadius: 2, width: "45%" }} />
               </div>
             </div>
           </div>
@@ -37,46 +58,140 @@ export function DashboardLoadingState({ type = "default" }: { type?: "default" |
 
   if (type === "table") {
     return (
-      <div className="flex-1 p-6 animate-in fade-in duration-500">
-        {/* Skeleton table */}
-        <div className="bg-bg-raised border border-border-subtle rounded-lg overflow-hidden">
-          <div className="border-b border-border-subtle p-4">
-            <div className="h-6 bg-border-subtle rounded w-1/3 animate-pulse" />
+      <div className="flex-1 p-6">
+        <div
+          style={{
+            backgroundColor: "var(--bg-card)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "2px",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ borderBottom: "1px solid var(--border-subtle)", padding: "16px" }}>
+            <div
+              style={{
+                height: 16,
+                backgroundColor: "var(--border-subtle)",
+                borderRadius: 2,
+                width: "28%",
+                animation: "pulse 1.4s ease-in-out infinite",
+              }}
+            />
           </div>
-          <div className="divide-y divide-border-subtle">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="p-4 flex items-center gap-4">
-                <div className="w-8 h-8 bg-border-subtle rounded animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-border-subtle rounded w-2/3 animate-pulse" />
-                  <div className="h-3 bg-border-subtle rounded w-1/3 animate-pulse" />
-                </div>
-                <div className="w-20 h-8 bg-border-subtle rounded animate-pulse" />
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                borderBottom: "1px solid var(--border-subtle)",
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  backgroundColor: "var(--border-subtle)",
+                  borderRadius: 2,
+                  animation: "pulse 1.4s ease-in-out infinite",
+                  animationDelay: `${i * 0.08}s`,
+                }}
+              />
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ height: 12, backgroundColor: "var(--border-subtle)", borderRadius: 2, width: "60%", animation: "pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.08}s` }} />
+                <div style={{ height: 10, backgroundColor: "var(--border-subtle)", borderRadius: 2, width: "35%", animation: "pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.08 + 0.05}s` }} />
               </div>
-            ))}
-          </div>
+              <div style={{ width: 64, height: 28, backgroundColor: "var(--border-subtle)", borderRadius: 2, animation: "pulse 1.4s ease-in-out infinite", animationDelay: `${i * 0.08}s` }} />
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
+  /* Default — full page centered spinner */
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center px-6">
-      <LoadingSpinner size="xl" />
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-6 px-6"
+      style={{ backgroundColor: "var(--bg-base)" }}
+    >
+      <PulseSpinner />
+      <p
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "10px",
+          color: "var(--text-tertiary)",
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+        }}
+      >
+        AUTHENTICATING...
+      </p>
     </div>
   );
 }
 
+/* Internal pulsing rust spinner */
+function PulseSpinner() {
+  return (
+    <div className="relative w-10 h-10">
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          border: "2px solid var(--border-subtle)",
+        }}
+      />
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          border: "2px solid transparent",
+          borderTopColor: "var(--rust-400)",
+          animation: "spin 0.9s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   DashboardErrorState
+   ───────────────────────────────────────────────────────────────────── */
 export function DashboardErrorState({ message }: { message: string }) {
   return (
-    <div className="min-h-screen bg-bg-base flex items-center justify-center px-6">
-      <div className="max-w-lg w-full p-6 border border-border-subtle rounded-card bg-bg-card">
-        <p className="text-sm text-text-primary">{message}</p>
+    <div
+      className="min-h-screen flex items-center justify-center px-6"
+      style={{ backgroundColor: "var(--bg-base)" }}
+    >
+      <div
+        style={{
+          maxWidth: 480,
+          width: "100%",
+          padding: "24px",
+          backgroundColor: "var(--bg-card)",
+          border: "1px solid var(--border-emphasized)",
+          borderRadius: "2px",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: "var(--font-barlow)",
+            fontSize: "14px",
+            color: "var(--text-primary)",
+          }}
+        >
+          {message}
+        </p>
       </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   DashboardHeader — top bar used across all role dashboards
+   ───────────────────────────────────────────────────────────────────── */
 export function DashboardHeader({
   title,
   subtitle,
@@ -88,6 +203,7 @@ export function DashboardHeader({
   subtitle?: string;
   rightContent?: React.ReactNode;
   committeeName?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user?: any;
 }) {
   const router = useRouter();
@@ -97,47 +213,95 @@ export function DashboardHeader({
     router.push("/login");
   };
 
-  // Get honorific based on user's full_name
-  const getHonorific = (name: string) => {
-    if (!name) return "";
-    // Simple heuristic - can be enhanced later
-    return "Mr./Ms.";
-  };
-
-  const userGreeting = user?.full_name 
-    ? `Hello, ${getHonorific(user.full_name)} ${user.full_name.split(' ').pop()}`
-    : null;
-
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 pt-4 sm:pt-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-4">
+    <div
+      className="max-w-7xl mx-auto px-4 md:px-6 pt-5 pb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3"
+      style={{ borderBottom: "1px solid var(--border-subtle)" }}
+    >
+      {/* Left — title block */}
       <div className="min-w-0">
-        {userGreeting && (
-          <p className="text-xs sm:text-sm text-text-secondary font-medium mb-1">{userGreeting}</p>
-        )}
-        <h1 className="font-jotia text-2xl sm:text-3xl md:text-4xl uppercase tracking-tight text-text-primary truncate">{title}</h1>
-        {subtitle ? <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-text-dimmed truncate">{subtitle}</p> : null}
-      </div>
-      <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-        <div className="flex items-center gap-2 sm:gap-3">
-          {user && <ReportIssueModal user={user} committeeName={committeeName} />}
-          {user && <NotificationBell userId={user.id} />}
-        </div>
-        <div className="h-6 w-px bg-border-subtle mx-1 sm:mx-2" />
-        <div className="flex items-center gap-2 sm:gap-3">
-          {rightContent}
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-3 sm:px-4 h-9 sm:h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
+        {user?.full_name ? (
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "9px",
+              color: "var(--text-rust)",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              marginBottom: "6px",
+            }}
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Log Out</span>
-          </button>
-        </div>
+            {String(user.full_name).split(" ").pop()}
+          </p>
+        ) : null}
+        <h1
+          className="truncate"
+          style={{
+            fontFamily: "var(--font-barlow-condensed)",
+            fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)",
+            fontWeight: 800,
+            letterSpacing: "0.04em",
+            color: "var(--text-primary)",
+            textTransform: "uppercase",
+            lineHeight: 1.05,
+          }}
+        >
+          {title}
+        </h1>
+        {subtitle ? (
+          <p
+            className="mt-1 truncate"
+            style={{
+              fontFamily: "var(--font-barlow)",
+              fontSize: "13px",
+              color: "var(--text-secondary)",
+            }}
+          >
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+
+      {/* Right — actions */}
+      <div className="flex items-center gap-3 shrink-0">
+        {user && (
+          <ReportIssueModal user={user} committeeName={committeeName} />
+        )}
+        {user && <NotificationBell userId={String(user.id)} />}
+
+        <div
+          style={{ width: "1px", height: "24px", backgroundColor: "var(--border-subtle)" }}
+        />
+
+        {rightContent}
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-3 h-9 transition-all"
+          style={{
+            fontFamily: "var(--font-barlow-condensed)",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--status-rejected-text)",
+            backgroundColor: "var(--status-rejected-bg)",
+            border: "1px solid var(--status-rejected-border)",
+            borderRadius: "3px",
+          }}
+          aria-label="Log out"
+        >
+          <LogOut className="w-3.5 h-3.5" aria-hidden />
+          <span className="hidden sm:inline">Log Out</span>
+        </button>
       </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   DashboardTabBar — horizontal tab navigation row
+   ───────────────────────────────────────────────────────────────────── */
 export function DashboardTabBar<T extends string>({
   tabs,
   activeTab,
@@ -150,29 +314,58 @@ export function DashboardTabBar<T extends string>({
   rightContent?: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-40 bg-bg-base/95 backdrop-blur-sm border-b border-border-subtle mt-4 sm:mt-6">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <nav className="flex gap-1 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => onChange(tab)}
-              className={`shrink-0 h-9 sm:h-10 px-2.5 sm:px-3 text-[9px] sm:text-[10px] font-semibold uppercase tracking-widest transition-colors border rounded-input whitespace-nowrap ${
-                activeTab === tab
-                  ? "border-text-primary text-text-primary bg-bg-card"
-                  : "border-border-subtle text-text-dimmed hover:text-text-primary hover:border-border-emphasized"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+    <div
+      className="sticky top-0 z-40 backdrop-blur-sm"
+      style={{
+        backgroundColor: "rgba(10, 9, 7, 0.95)",
+        borderBottom: "1px solid var(--border-subtle)",
+        marginTop: "1px",
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <nav
+          className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 flex-wrap"
+          aria-label="Dashboard tabs"
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => onChange(tab)}
+                aria-selected={isActive}
+                role="tab"
+                className="shrink-0 h-9 px-3 transition-all whitespace-nowrap"
+                style={{
+                  fontFamily: "var(--font-barlow-condensed)",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  borderRadius: "3px",
+                  border: isActive
+                    ? "1px solid var(--rust-600)"
+                    : "1px solid var(--border-subtle)",
+                  color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
+                  backgroundColor: isActive ? "var(--rust-900)" : "transparent",
+                }}
+              >
+                {tab}
+              </button>
+            );
+          })}
         </nav>
-        {rightContent ? <div className="flex items-center justify-end">{rightContent}</div> : null}
+        {rightContent ? (
+          <div className="flex items-center justify-end">{rightContent}</div>
+        ) : null}
       </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   DashboardAnimatedTabPanel — animated content switcher
+   ───────────────────────────────────────────────────────────────────── */
 class TabErrorBoundary extends React.Component<
   { activeKey: string; children: React.ReactNode },
   { hasError: boolean; error: Error | null }
@@ -196,12 +389,47 @@ class TabErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <AlertTriangle className="w-10 h-10 text-status-rejected-text" />
-          <p className="text-text-primary font-jotia text-sm">Something went wrong loading this tab.</p>
-          <p className="text-text-dimmed font-jotia text-xs max-w-md text-center">{this.state.error?.message}</p>
+          <AlertTriangle
+            className="w-10 h-10"
+            style={{ color: "var(--status-rejected-text)" }}
+          />
+          <p
+            style={{
+              fontFamily: "var(--font-barlow-condensed)",
+              fontSize: "14px",
+              color: "var(--text-primary)",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Error loading this tab
+          </p>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              color: "var(--text-secondary)",
+              maxWidth: 420,
+              textAlign: "center",
+            }}
+          >
+            {this.state.error?.message}
+          </p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-bg-raised border border-border-subtle rounded-button text-text-primary hover:bg-bg-hover transition-colors"
+            className="px-4 py-2 transition-colors"
+            style={{
+              fontFamily: "var(--font-barlow-condensed)",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--text-primary)",
+              backgroundColor: "var(--bg-raised)",
+              border: "1px solid var(--border-emphasized)",
+              borderRadius: "3px",
+            }}
           >
             Try Again
           </button>
@@ -224,15 +452,40 @@ export function DashboardAnimatedTabPanel({
       <AnimatePresence mode="popLayout">
         <motion.div
           key={activeKey}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
           className="w-full"
         >
-          {children || <div className="py-20 flex justify-center"><LoadingSpinner size="lg" /></div>}
+          {children ?? (
+            <div className="py-20 flex justify-center">
+              <PulseSpinner />
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
     </TabErrorBoundary>
   );
 }
+
+/* Re-export PulseSpinner for use in tab panels */
+function PulseSpinnerExported() {
+  return (
+    <div className="relative w-8 h-8">
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{ border: "2px solid var(--border-subtle)" }}
+      />
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          border: "2px solid transparent",
+          borderTopColor: "var(--rust-400)",
+          animation: "spin 0.9s linear infinite",
+        }}
+      />
+    </div>
+  );
+}
+export { PulseSpinnerExported as DashboardSpinner };

@@ -1,9 +1,32 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { Barlow_Condensed, Barlow, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Toaster } from "sonner";
 import { PressReleasesBanner } from "@/components/press-releases-banner";
 import { safeMetadataBaseUrl } from "@/lib/safe-url";
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
+const barlow = Barlow({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-barlow",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -94,7 +117,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
+    <html
+      lang="en"
+      className={`dark bg-bg-base ${barlowCondensed.variable} ${barlow.variable} ${jetbrainsMono.variable}`}
+      style={{ colorScheme: "dark" }}
+    >
       <head>
         <script
           type="application/ld+json"
@@ -161,7 +188,7 @@ export default function RootLayout({
         <link rel="shortcut icon" href="/billmun.png" />
         <meta name="theme-color" content="#000000" />
       </head>
-      <body className="min-h-screen bg-bg-base text-text-primary font-inter text-rendering-optimizeLegibility">
+      <body className="min-h-screen bg-bg-base text-text-primary font-sans antialiased">
         <Providers>
           <PressReleasesBanner />
           {children}
@@ -173,7 +200,7 @@ export default function RootLayout({
                 background: 'var(--bg-raised)',
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-primary)',
-                fontFamily: 'var(--font-jotia), serif',
+                fontFamily: 'var(--font-barlow-condensed), sans-serif',
               },
             }}
           />

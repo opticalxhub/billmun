@@ -1,15 +1,10 @@
-@import url('https://db.onlinewebfonts.com/c/09fc87e1ac5bbdeb5c42b2c1ec4f780f?family=Jotia+W00+Regular');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* ─────────────────────────────────────────────────────────────────────
+   BILLMUN — Design System Tokens
+   Palette: near-black surfaces · burnt rust accent · warm off-white text
+   Aesthetic: dark espionage corkboard · cinematic · editorial · no cold tones
+   ───────────────────────────────────────────────────────────────────── */
 
-@font-face { 
-    font-family: "Jotia W00 Regular"; 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot"); 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot?#iefix")format("embedded-opentype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff2")format("woff2"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff")format("woff"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.ttf")format("truetype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.svg#Jotia W00 Regular")format("svg"); 
-} 
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Barlow:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,179 +12,321 @@
 
 @layer base {
   :root {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
-    --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #E8F5E9;
-    --status-approved-text: #1B5E20;
-    --status-approved-border: #C8E6C9;
-    --status-pending-bg: #FFF3E0;
-    --status-pending-text: #E65100;
-    --status-pending-border: #FFE0B2;
-    --status-rejected-bg: #FFEBEE;
-    --status-rejected-text: #B71C1C;
-    --status-rejected-border: #FFCDD2;
+    /* ── Surfaces ─────────────────────────────────────────────────── */
+    --bg-base:       #0a0907;   /* near-black, warm tinted             */
+    --bg-card:       #111008;   /* card surface — warm dark            */
+    --bg-raised:     #191510;   /* elevated surface                    */
+    --bg-hover:      #211c14;   /* hover state                         */
+    --bg-dropdown:   #111008;   /* dropdown/popover                    */
+    --bg-cork:       #1a1409;   /* corkboard backing                   */
+
+    /* ── Borders ─────────────────────────────────────────────────── */
+    --border-subtle:     #261f13;  /* barely visible                   */
+    --border-emphasized: #352a18;  /* visible separation               */
+    --border-strong:     #4a3820;  /* strong separation                */
+    --border-input:      #352a18;  /* form inputs                      */
+    --border-rust:       #7a3d16;  /* rust-tinted border               */
+
+    /* ── Text ────────────────────────────────────────────────────── */
+    --text-primary:   #f2ede6;  /* warm near-white                     */
+    --text-secondary: #a09180;  /* warm muted                          */
+    --text-tertiary:  #6e5f50;  /* dim                                 */
+    --text-disabled:  #4a3c30;  /* disabled state                      */
+    --text-dimmed:    #a09180;  /* alias for secondary                 */
+    --text-rust:      #c97b45;  /* rust accent text                    */
+
+    /* ── Accent — Rust / Terracotta ─────────────────────────────── */
+    --rust-900:    #2d1508;
+    --rust-800:    #4a2210;
+    --rust-700:    #6b3318;
+    --rust-600:    #8b4513;  /* dark rust — brand anchor             */
+    --rust-500:    #a0522d;  /* mid rust                             */
+    --rust-400:    #c1622a;  /* bright rust — primary accent         */
+    --rust-300:    #d4784a;  /* light rust — hover                   */
+    --rust-200:    #e8a882;  /* pale rust — subtle fills             */
+    --rust-100:    #f5e0d0;  /* near-white rust — lightest           */
+
+    /* ── Special / White ─────────────────────────────────────────── */
+    --white-pure:   #ffffff;
+    --white-accent: #f2ede6;
+
+    /* ── Status — warm palette family ───────────────────────────── */
+    --status-approved-bg:     #0f1f10;
+    --status-approved-text:   #7bc47e;   /* warm olive-green           */
+    --status-approved-border: #1d4020;
+
+    --status-pending-bg:      #1e1608;
+    --status-pending-text:    #d4a44a;   /* amber-ochre                */
+    --status-pending-border:  #3d2e0e;
+
+    --status-rejected-bg:     #1e0e08;
+    --status-rejected-text:   #c06040;   /* deep rust-orange           */
+    --status-rejected-border: #4a2010;
+
+    --status-warning-bg:      #1e1608;
+    --status-warning-text:    #d4a44a;
+    --status-warning-border:  #3d2e0e;
+
+    /* ── Corkboard System ────────────────────────────────────────── */
+    --pin-rust:        #b54a1a;   /* thumbtack color                  */
+    --pin-shadow:      rgba(0,0,0,0.6);
+    --string-color:    rgba(185, 130, 70, 0.45); /* connecting string  */
+    --paper-aged:      #1c1710;   /* aged paper card bg               */
+    --paper-border:    #352a18;   /* aged paper border                */
+    --paper-shadow:    rgba(0,0,0,0.5);
+    --stamp-red:       #8b2020;   /* classified stamp color           */
+    --stamp-opacity:   0.85;
+
+    /* ── Grain / Texture ─────────────────────────────────────────── */
+    --grain-opacity:   0.035;
   }
 
+  /* Dark is always on — no toggle */
   .dark {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
-    --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #112211;
-    --status-approved-text: #4ade80;
-    --status-approved-border: #166534;
-    --status-pending-bg: #221100;
-    --status-pending-text: #fb923c;
-    --status-pending-border: #9a3412;
-    --status-rejected-bg: #220000;
-    --status-rejected-text: #f87171;
-    --status-rejected-border: #991b1b;
+    /* same as :root — dark only app */
   }
 }
 
 @layer utilities {
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+  /* Grain overlay texture */
+  .grain-overlay {
+    position: relative;
   }
-  .text-balance {
-    text-wrap: balance;
+  .grain-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    opacity: var(--grain-opacity, 0.035);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
   }
+
+  /* Corkboard texture background */
+  .cork-texture {
+    background-color: var(--bg-cork);
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(139, 69, 19, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(160, 82, 45, 0.03) 0%, transparent 60%);
+  }
+
+  /* Polaroid / aged paper card */
+  .paper-card {
+    background-color: var(--paper-aged);
+    border: 1px solid var(--paper-border);
+    box-shadow: 0 4px 20px var(--paper-shadow), 0 1px 3px rgba(0,0,0,0.4);
+  }
+
+  /* Rust pin dot */
+  .pin-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d4602a, var(--pin-rust));
+    box-shadow: 0 2px 6px var(--pin-shadow), inset 0 1px 0 rgba(255,255,255,0.15);
+    flex-shrink: 0;
+  }
+
+  /* String connector */
+  .string-line {
+    background: var(--string-color);
+    height: 1px;
+    transform-origin: left center;
+  }
+
+  /* Classified stamp effect */
+  .stamp-classified {
+    border: 2px solid var(--stamp-red);
+    color: var(--stamp-red);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    opacity: var(--stamp-opacity);
+    transform: rotate(-8deg);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  /* Scanline loading animation */
+  .scanline {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(194, 98, 42, 0.03) 2px,
+      rgba(194, 98, 42, 0.03) 4px
+    );
+  }
+
+  /* Text utilities */
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty;  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Rust underline for active states */
+  .underline-rust {
+    text-decoration: underline;
+    text-decoration-color: var(--rust-400);
+    text-underline-offset: 3px;
   }
 }
 
-/*
- * ALL element-level defaults MUST go inside @layer base
- * so that Tailwind utility classes can always override them.
- * Placing them outside @layer causes them to beat utilities.
- */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%);  }
+}
+
+@keyframes scanline-sweep {
+  0%   { background-position: 0 0;   }
+  100% { background-position: 0 100px; }
+}
+
+@keyframes pin-drop {
+  0%   { transform: translateY(-12px) scale(0.8); opacity: 0; }
+  60%  { transform: translateY(2px)   scale(1.05); opacity: 1; }
+  100% { transform: translateY(0)     scale(1);   opacity: 1; }
+}
+
+@keyframes card-reveal {
+  0%   { transform: rotate(var(--card-rotate, -1deg)) translateY(10px); opacity: 0; }
+  100% { transform: rotate(var(--card-rotate, -1deg)) translateY(0);    opacity: 1; }
+}
+
+@keyframes string-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes stamp-press {
+  0%   { transform: rotate(-8deg) scale(1.3); opacity: 0; }
+  60%  { transform: rotate(-8deg) scale(0.95); opacity: 0.9; }
+  100% { transform: rotate(-8deg) scale(1);   opacity: var(--stamp-opacity); }
+}
+
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-rust {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 @layer base {
   * {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    @apply focus-visible:outline-none;
     -webkit-tap-highlight-color: transparent;
   }
 
+  *:focus-visible {
+    outline: 2px solid var(--rust-400);
+    outline-offset: 2px;
+  }
+
   html {
-    @apply bg-bg-base text-text-primary;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
+    font-feature-settings: "kern" 1, "liga" 1;
   }
 
   body {
-    @apply bg-bg-base text-text-primary font-inter;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
     min-height: 100vh;
+    font-family: var(--font-barlow), 'Barlow', sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography defaults — utility classes will override these */
-  h1 {
-    @apply font-jotia text-heading-1 text-text-primary;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-barlow-condensed), 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+    letter-spacing: 0.01em;
   }
-  h2 {
-    @apply font-jotia text-2xl text-text-primary;
-  }
-  h3 {
-    @apply font-jotia text-xl text-text-primary;
-  }
+
+  h1 { font-size: clamp(2.5rem, 6vw, 5rem); }
+  h2 { font-size: clamp(1.8rem, 4vw, 3rem); }
+  h3 { font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
+
   p {
-    @apply font-inter text-text-primary leading-relaxed;
+    color: var(--text-primary);
+    line-height: 1.6;
   }
 
-  /* Button defaults */
   button {
-    @apply transition-all duration-150 ease-out;
+    transition: all 150ms ease-out;
+    cursor: pointer;
   }
   button:disabled {
-    @apply opacity-35 cursor-not-allowed;
+    opacity: 0.35;
+    cursor: not-allowed;
   }
 
-  /* Link defaults — utility classes like text-text-secondary WILL override */
   a {
-    @apply transition-colors;
+    transition: color 150ms ease-out;
+    color: inherit;
+    text-decoration: none;
   }
 
-  /* Form defaults */
   input, textarea, select {
-    @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
+    font-family: var(--font-barlow), 'Barlow', sans-serif;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-input);
+    border-radius: 4px;
   }
   input::placeholder,
-  textarea::placeholder,
-  select::placeholder {
-    @apply text-text-disabled;
+  textarea::placeholder {
+    color: var(--text-disabled);
   }
   select option {
     background-color: var(--bg-card);
     color: var(--text-primary);
   }
 
-  /* Lists */
-  ul, ol {
-    @apply list-none;
+  code, pre, .mono {
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
   }
 
-  /* Selection */
+  ul, ol { list-style: none; }
+
   ::selection {
-    @apply bg-text-dimmed text-white-pure;
+    background-color: var(--rust-700);
+    color: var(--text-primary);
   }
 }
 
-/* Scrollbar styling (pseudo-elements, not affected by utility override concerns) */
-::-webkit-scrollbar {
-  @apply w-2;
-}
-::-webkit-scrollbar-track {
-  @apply bg-bg-card;
-}
+/* Scrollbars */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-card); }
 ::-webkit-scrollbar-thumb {
-  @apply bg-border-subtle hover:bg-border-emphasized rounded-full;
+  background: var(--border-emphasized);
+  border-radius: 9999px;
 }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
 @media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-  }
-  input, textarea, select {
-    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
