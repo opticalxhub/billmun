@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { FadeIn, ScaleIn, ScrollReveal, StaggerContainer, TextReveal, HoverScale } from '@/components/gsap-animations';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Menu, X, Play } from 'lucide-react';
 import { Footer } from '@/components/footer';
-import { ASCII8Ball } from '@/components/ascii-8ball';
 import gsap from 'gsap';
 
 type GalleryItem = {
@@ -23,7 +21,6 @@ export default function LandingPage() {
   const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [galleryLoaded, setGalleryLoaded] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const headingRefs = useRef<(HTMLDivElement | null)[]>([]);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -31,22 +28,17 @@ export default function LandingPage() {
   useEffect(() => {
     setMounted(true);
 
-    // GSAP hero entrance animations
     const ctx = gsap.context(() => {
-      // Stagger heading lines
       gsap.from(headingRefs.current.filter(Boolean), {
-        y: 60,
+        y: 40,
         opacity: 0,
-        duration: 0.9,
-        stagger: 0.15,
+        duration: 1.1,
+        stagger: 0.12,
         ease: 'power3.out',
-        delay: 0.2,
+        delay: 0.1,
       });
-
-      // Subtitle fade in
       if (subtitleRef.current) {
         gsap.from(subtitleRef.current, {
-          y: 30,
           opacity: 0,
           duration: 0.8,
           ease: 'power2.out',
@@ -57,13 +49,12 @@ export default function LandingPage() {
 
     fetch('/api/gallery')
       .then(r => r.json())
-      .then(d => { setGallery(d.items || []); setGalleryLoaded(true); })
-      .catch(() => setGalleryLoaded(true));
+      .then(d => { setGallery(d.items || []); })
+      .catch(() => {});
 
     return () => ctx.revert();
   }, []);
 
-  // Auto-advance carousel — pause when video is playing
   useEffect(() => {
     if (gallery.length <= 1 || playingVideo) return;
     autoPlayRef.current = setInterval(() => {
@@ -82,7 +73,6 @@ export default function LandingPage() {
     setActiveIndex(prev => (prev + 1) % gallery.length);
   }, [gallery.length]);
 
-  // Show up to 5 unique items centered around activeIndex
   const visibleItems = useMemo(() => {
     if (gallery.length === 0) return [];
     const count = Math.min(gallery.length, 5);
@@ -102,260 +92,213 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-bg-base text-text-primary font-jotia flex flex-col">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-5 backdrop-blur-md bg-bg-base/80 border-b border-border-subtle">
+      <nav className="fixed top-0 left-0 right-0 z-50 px-6 sm:px-10 py-5 bg-bg-base/85 backdrop-blur-md border-b border-border-subtle">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-jotia text-2xl tracking-[0.2em] uppercase">
+          <Link href="/" className="font-jotia text-xl tracking-[0.2em] uppercase">
             NXTMUN
           </Link>
-          <div className="hidden sm:flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-text-secondary">
+          <div className="hidden sm:flex items-center gap-8 text-[11px] uppercase tracking-[0.2em] text-text-secondary">
             <a href="#about" className="hover:text-text-primary transition-colors">About</a>
             <Link href="/gallery" className="hover:text-text-primary transition-colors">Gallery</Link>
             <Link href="/socials" className="hover:text-text-primary transition-colors">Socials</Link>
             <Link href="/contact" className="hover:text-text-primary transition-colors">Contact</Link>
-            <Link href="/login" className="hover:text-text-primary transition-colors">Portal</Link>
+            <Link href="/login" className="hover:text-rust-500 transition-colors">Portal</Link>
           </div>
-          <button className="sm:hidden p-2" onClick={() => setMobileMenu(!mobileMenu)}>
+          <button className="sm:hidden p-2" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Menu">
             {mobileMenu ? <X /> : <Menu />}
           </button>
         </div>
         {mobileMenu && (
-          <div className="sm:hidden mt-4 border-t pt-4 space-y-3">
-            <a href="#about" onClick={() => setMobileMenu(false)} className="block text-sm uppercase">About</a>
-            <Link href="/gallery" onClick={() => setMobileMenu(false)} className="block text-sm uppercase">Gallery</Link>
-            <Link href="/socials" onClick={() => setMobileMenu(false)} className="block text-sm uppercase">Socials</Link>
-            <Link href="/contact" onClick={() => setMobileMenu(false)} className="block text-sm uppercase">Contact</Link>
-            <Link href="/login" onClick={() => setMobileMenu(false)} className="block text-sm uppercase">Portal</Link>
+          <div className="sm:hidden mt-4 border-t border-border-subtle pt-4 space-y-3">
+            <a href="#about" onClick={() => setMobileMenu(false)} className="block text-xs uppercase tracking-widest">About</a>
+            <Link href="/gallery" onClick={() => setMobileMenu(false)} className="block text-xs uppercase tracking-widest">Gallery</Link>
+            <Link href="/socials" onClick={() => setMobileMenu(false)} className="block text-xs uppercase tracking-widest">Socials</Link>
+            <Link href="/contact" onClick={() => setMobileMenu(false)} className="block text-xs uppercase tracking-widest">Contact</Link>
+            <Link href="/login" onClick={() => setMobileMenu(false)} className="block text-xs uppercase tracking-widest text-rust-500">Portal</Link>
           </div>
         )}
       </nav>
 
-      {/* Hero Section with Gallery Carousel */}
-      <section ref={heroRef} className="relative min-h-screen pt-40 pb-20 px-6 sm:px-10">
-        <div className="max-w-7xl mx-auto">
-          {/* NEGOTIATE. EXCHANGE. TRANSFORM. Header + 8-Ball */}
-          <ScaleIn delay={0.2} from={0.8}>
-            <div className="mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-              <div>
-                <h1 className="font-jotia text-6xl sm:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight">
-                  <div ref={el => { headingRefs.current[0] = el; }}>NEGOTIATE.</div>
-                  <div ref={el => { headingRefs.current[1] = el; }}>EXCHANGE.</div>
-                  <div ref={el => { headingRefs.current[2] = el; }}>TRANSFORM.</div>
-                </h1>
-                <p ref={subtitleRef} className="text-xl sm:text-2xl text-text-secondary mt-6 max-w-2xl">
-                  Join us for NXTMUN I, the inaugural conference that sets a new standard for Model United Nations in the region.
-                </p>
-                <p className="mt-4 italic font-bold text-zinc-200 drop-shadow-md">
-                  By Alaa Abbadi & Kenan Nezar
-                </p>
-              </div>
-              <div className="hidden lg:block w-64 h-64 text-text-primary/60 shrink-0">
-                <ASCII8Ball className="w-full h-full" />
-              </div>
-            </div>
-          </ScaleIn>
+      <section ref={heroRef} className="relative min-h-screen flex flex-col justify-center px-6 sm:px-10 pt-32 pb-24">
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="mb-10 flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-text-tertiary">
+            <span className="block w-8 h-px bg-rust-500" />
+            <span>NXTMUN I &mdash; III &amp; IV April</span>
+          </div>
 
-          {/* Gallery Carousel */}
-          {mounted && gallery.length > 0 && (
-            <ScrollReveal delay={0.6} from="bottom">
-              <div className="relative px-14">
-                {gallery.length > 1 && (
+          <h1 className="font-jotia font-bold leading-[0.92] tracking-tight text-[clamp(3.25rem,11vw,9.5rem)]">
+            <div ref={el => { headingRefs.current[0] = el; }}>NEGOTIATE.</div>
+            <div ref={el => { headingRefs.current[1] = el; }}>EXCHANGE.</div>
+            <div ref={el => { headingRefs.current[2] = el; }} className="text-rust-500">TRANSFORM.</div>
+          </h1>
+
+          <p
+            ref={subtitleRef}
+            className="mt-10 max-w-xl text-base sm:text-lg text-text-secondary leading-relaxed"
+          >
+            The inaugural Model United Nations conference setting a new standard for student-led diplomacy in the region.
+          </p>
+        </div>
+
+        <div className="absolute bottom-10 left-6 sm:left-10 flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-text-tertiary">
+          <span className="block w-8 h-px bg-text-tertiary" />
+          Scroll
+        </div>
+      </section>
+
+      {mounted && gallery.length > 0 && (
+        <section className="px-6 sm:px-10 py-20 border-t border-border-subtle">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-10 flex items-end justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-text-tertiary mb-3">Field Notes</p>
+                <h2 className="font-jotia text-3xl sm:text-4xl font-bold tracking-tight">From the floor.</h2>
+              </div>
+              {gallery.length > 1 && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); goToPrev(); }}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/70 border border-white/20 text-white hover:bg-black/90 transition-colors"
+                    onClick={goToPrev}
+                    className="p-3 border border-border-subtle hover:border-rust-500 hover:text-rust-500 transition-colors"
                     aria-label="Previous"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-4 h-4" />
                   </button>
-                )}
-                <div className="flex items-stretch justify-center gap-2 sm:gap-3 overflow-hidden">
-                  {visibleItems.map(({ item, position, isActive }) => (
-                    <div
-                      key={`${item.id}-${position}`}
-                      onClick={() => !isActive && setActiveIndex((activeIndex + position + gallery.length) % gallery.length)}
-                      className={`relative transition-all duration-500 cursor-pointer overflow-hidden rounded-xl flex-shrink-0 ${
-                        isActive
-                          ? 'w-[40%] sm:w-[36%] aspect-[4/3] z-10 ring-2 ring-accent-gold/40'
-                          : 'w-[15%] sm:w-[16%] aspect-[4/3] opacity-40 grayscale hover:opacity-60'
-                      }`}
-                    >
-                      {item.media_type?.startsWith('video') ? (
-                        <div className="relative w-full h-full bg-black">
-                          <video
-                            key={`video-${item.id}`}
-                            src={item.media_url}
-                            className="w-full h-full object-cover"
-                            muted={!isActive}
-                            autoPlay={isActive && playingVideo === item.id}
-                            controls={isActive && playingVideo === item.id}
-                            preload="none"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isActive) setPlayingVideo(item.id);
-                            }}
-                          />
-                          {isActive && playingVideo !== item.id && (
-                            <div
-                              className="absolute inset-0 flex items-center justify-center bg-black/40"
-                              onClick={(e) => { e.stopPropagation(); setPlayingVideo(item.id); }}
-                            >
-                              <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center hover:scale-110 transition-transform">
-                                <Play className="w-7 h-7 text-black ml-1" fill="currentColor" />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <img
-                          src={item.media_url}
-                          alt={item.caption || ''}
-                          className="w-full h-full object-cover"
-                          loading={isActive ? 'eager' : 'lazy'}
-                        />
-                      )}
-                      {isActive && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-white/90 truncate flex-1">{item.caption || 'No caption'}</p>
-                            {item.status && (
-                              <span className={`ml-2 px-2 py-1 text-xs rounded ${
-                                item.status === 'APPROVED' ? 'bg-green-500/80 text-white' :
-                                item.status === 'PENDING' ? 'bg-yellow-500/80 text-white' :
-                                item.status === 'REJECTED' ? 'bg-red-500/80 text-white' :
-                                'bg-gray-500/80 text-white'
-                              }`}>
-                                {item.status}
-                              </span>
-                            )}
+                  <button
+                    onClick={goToNext}
+                    className="p-3 border border-border-subtle hover:border-rust-500 hover:text-rust-500 transition-colors"
+                    aria-label="Next"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-stretch gap-3 overflow-hidden">
+              {visibleItems.map(({ item, position, isActive }) => (
+                <div
+                  key={`${item.id}-${position}`}
+                  onClick={() => !isActive && setActiveIndex((activeIndex + position + gallery.length) % gallery.length)}
+                  className={`relative transition-all duration-500 cursor-pointer overflow-hidden flex-shrink-0 ${
+                    isActive
+                      ? 'w-[58%] sm:w-[52%] aspect-[4/3]'
+                      : 'w-[14%] sm:w-[16%] aspect-[4/3] opacity-30 grayscale hover:opacity-60'
+                  }`}
+                >
+                  {item.media_type?.startsWith('video') ? (
+                    <div className="relative w-full h-full bg-black">
+                      <video
+                        key={`video-${item.id}`}
+                        src={item.media_url}
+                        className="w-full h-full object-cover"
+                        muted={!isActive}
+                        autoPlay={isActive && playingVideo === item.id}
+                        controls={isActive && playingVideo === item.id}
+                        preload="none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isActive) setPlayingVideo(item.id);
+                        }}
+                      />
+                      {isActive && playingVideo !== item.id && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black/30"
+                          onClick={(e) => { e.stopPropagation(); setPlayingVideo(item.id); }}
+                        >
+                          <div className="w-14 h-14 rounded-full bg-paper flex items-center justify-center">
+                            <Play className="w-6 h-6 text-bg-base ml-1" fill="currentColor" />
                           </div>
                         </div>
                       )}
                     </div>
-                  ))}
+                  ) : (
+                    <img
+                      src={item.media_url}
+                      alt={item.caption || ''}
+                      className="w-full h-full object-cover"
+                      loading={isActive ? 'eager' : 'lazy'}
+                    />
+                  )}
+                  {isActive && item.caption && (
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                      <p className="text-xs text-white/80 uppercase tracking-widest truncate">{item.caption}</p>
+                    </div>
+                  )}
                 </div>
-                {gallery.length > 1 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); goToNext(); }}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/70 border border-white/20 text-white hover:bg-black/90 transition-colors"
-                    aria-label="Next"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                )}
-                {/* Dot indicators */}
-                {gallery.length > 1 && (
-                  <div className="flex justify-center gap-1.5 mt-4">
-                    {gallery.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setActiveIndex(i)}
-                        className={`w-2 h-2 rounded-full transition-all ${i === activeIndex ? 'bg-accent-gold w-6' : 'bg-white/30 hover:bg-white/50'}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </ScrollReveal>
-          )}
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-          <FadeIn delay={0.8} from="bottom">
-            <p className="text-sm text-text-dimmed mt-8 uppercase tracking-widest text-center">
-              Yarmook Elementary Private School Dhahran • Model United Nations
+      <section id="about" className="py-32 px-6 sm:px-10 border-t border-border-subtle">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-text-tertiary mb-6">On NXTMUN</p>
+          <h2 className="font-jotia text-4xl sm:text-5xl font-bold tracking-tight leading-[1.05] mb-12">
+            A student-led Model UN built on three words.
+          </h2>
+
+          <div className="space-y-10 text-lg leading-relaxed text-text-secondary">
+            <p>
+              <span className="text-text-primary">Negotiate</span> &mdash; the diplomatic core of every committee. Disciplined debate, sharp argument, the pursuit of consensus.
             </p>
-          </FadeIn>
-        </div>
+            <p>
+              <span className="text-text-primary">Exchange</span> &mdash; the meeting of perspectives, cultures, and ideas that makes Model UN matter beyond the resolution.
+            </p>
+            <p>
+              <span className="text-text-primary">Transform</span> &mdash; what delegates carry forward. Sharper thinking, stronger leadership, a wider view of the world.
+            </p>
+          </div>
 
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <div className="w-6 h-10 border-2 border-text-dimmed rounded-full flex justify-center">
-            <div className="w-1 h-3 bg-text-dimmed rounded-full mt-2 animate-pulse"></div>
+          <div className="mt-24 pt-16 border-t border-border-subtle">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-rust-500 mb-6">NXTMUN I &mdash; III &amp; IV April</p>
+            <p className="text-lg leading-relaxed text-text-secondary max-w-2xl">
+              Our first edition is the foundation of a long-term vision: a leading platform for Model UN in the region.
+              Focused, well-regulated, academically strong &mdash; designed not to meet expectations, but to set the standard
+              every future NXTMUN initiative will be measured against.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* About Section */}
-      <ScrollReveal from="bottom">
-        <section id="about" className="py-20 px-6 sm:px-10 bg-bg-card/30">
-          <div className="max-w-4xl mx-auto">
-            <p className="font-jotia text-lg leading-relaxed mb-6">
-              <strong>NXTMUN</strong> is a student led Model United Nations initiative built around the idea of <strong>Negotiate, Exchange, Transform</strong>. These three words represent our approach to conference design and student development.
-            </p>
-            <div className="space-y-4 mb-6">
-              <p className="font-jotia text-lg leading-relaxed">
-                <strong>Negotiate</strong> reflects the diplomatic core of every committee — disciplined debate, sharp argument, and the pursuit of consensus.
-              </p>
-              <p className="font-jotia text-lg leading-relaxed">
-                <strong>Exchange</strong> stands for the meeting of perspectives, cultures, and ideas that makes Model UN matter beyond the resolution.
-              </p>
-              <p className="font-jotia text-lg leading-relaxed">
-                <strong>Transform</strong> represents what delegates carry forward — sharper thinking, stronger leadership, and a wider view of the world.
-              </p>
-            </div>
-            <p className="font-jotia text-lg leading-relaxed mb-12">
-              Our aim is to raise the standard of MUN in the region and provide a platform where students engage with international issues in a disciplined, well structured and academically strong setting.
-            </p>
-            <div className="mb-12">
-              <h2 className="font-jotia text-3xl font-bold mb-6">NXTMUN I</h2>
-              <p className="font-jotia text-lg leading-relaxed mb-4">
-                NXTMUN I, scheduled for <strong>3–4 April</strong>, marks the official launch of the conference. As our first edition, it represents the foundation of a long-term vision to establish a leading Model United Nations platform.
-              </p>
-              <p className="font-jotia text-lg leading-relaxed mb-4">
-                The conference is structured to deliver a focused and high-quality debate experience, bringing together delegates across multiple committees within a professional and well-regulated setting.
-              </p>
-              <p className="font-jotia text-lg leading-relaxed mb-4">
-                With an emphasis on clarity, organization and academic depth, NXTMUN I is designed not only to meet expectations, but to set a new benchmark for student-led conferences in the region.
-              </p>
-              <p className="font-jotia text-lg leading-relaxed">
-                This first conference is more than a starting point — it is the standard upon which all future NXTMUN initiatives will be built.
-              </p>
-            </div>
+      <section className="py-32 px-6 sm:px-10 border-t border-border-subtle">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-12">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-text-tertiary mb-4">The Executive Board</p>
+            <h2 className="font-jotia text-4xl sm:text-5xl font-bold tracking-tight">Meet the team.</h2>
           </div>
-        </section>
-      </ScrollReveal>
+          <div className="relative w-full overflow-hidden bg-black">
+            <video
+              key="team-video"
+              src="/billeb.mp4"
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full h-auto max-h-[75vh]"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </section>
 
-      {/* Announcements Section */}
-      <ScrollReveal from="bottom">
-        <section className="py-20 px-6 sm:px-10">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-jotia text-3xl sm:text-4xl font-bold mb-8 text-center">Latest Announcements</h2>
-            <div className="bg-bg-card/50 border border-border-subtle rounded-xl p-8 text-center">
-              <p className="text-text-secondary">Stay tuned for official announcements about NXTMUN I.</p>
-              <HoverScale scale={1.05}>
-                <Link
-                  href="/login"
-                  className="inline-block mt-6 px-8 py-3 bg-text-primary text-bg-base rounded-full font-bold uppercase tracking-widest hover:bg-text-primary/90 transition-colors"
-                >
-                  Enter Portal
-                </Link>
-              </HoverScale>
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
-
-      {/* Meet The Team Section */}
-      <ScrollReveal from="bottom">
-        <section className="py-24 px-6 sm:px-10 bg-bg-card/30">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-jotia text-4xl sm:text-5xl mb-12 tracking-tight text-center">MEET THE TEAM</h2>
-            <div className="relative w-full max-w-4xl mx-auto rounded-2xl overflow-hidden bg-black shadow-2xl">
-              <video
-                key="team-video"
-                src="/billeb.mp4"
-                controls
-                playsInline
-                preload="metadata"
-                className="w-full h-auto max-h-[70vh]"
-                style={{ display: 'block' }}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-            <p className="text-center text-text-secondary mt-8 text-sm uppercase tracking-widest">
-              Get to know the Executive Board behind NXTMUN
-            </p>
-          </div>
-        </section>
-      </ScrollReveal>
+      <section className="py-32 px-6 sm:px-10 border-t border-border-subtle">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-text-tertiary mb-6">Delegates &amp; Staff</p>
+          <h2 className="font-jotia text-4xl sm:text-5xl font-bold tracking-tight mb-10">
+            Enter the conference portal.
+          </h2>
+          <Link
+            href="/login"
+            className="inline-block px-10 py-4 bg-rust-500 text-paper text-xs uppercase tracking-[0.3em] hover:bg-rust-600 transition-colors"
+          >
+            Open Portal
+          </Link>
+          <p className="mt-8 text-[11px] uppercase tracking-[0.3em] text-text-tertiary">
+            Yarmook Elementary Private School &mdash; Dhahran
+          </p>
+        </div>
+      </section>
 
       <Footer />
     </div>
