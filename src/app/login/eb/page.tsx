@@ -1,24 +1,29 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/button';
-import { Input, FormLabel, FormGroup, ErrorMessage } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import {
+  NxtmunMark,
+  MonoLabel,
+  StampBadge,
+  HRule,
+  NoiseOverlay,
+} from "@/components/nxtmun/primitives";
 
 export default function EBLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -33,125 +38,178 @@ export default function EBLoginPage() {
       }
 
       if (!data.user) {
-        setError('Login failed');
+        setError("Login failed");
         setLoading(false);
         return;
       }
 
-      // Get user profile from users table
       const { data: userProfile, error: profileError } = await supabase
-        .from('users')
-        .select('status, role')
-        .eq('id', data.user.id)
+        .from("users")
+        .select("status, role")
+        .eq("id", data.user.id)
         .maybeSingle();
 
       if (profileError) {
-        setError('Failed to load profile');
+        setError("Failed to load profile");
         setLoading(false);
         return;
       }
 
       const role = userProfile?.role?.toUpperCase();
 
-      // Redirect based on role
-      if (role === 'EXECUTIVE_BOARD' || role === 'ADMIN' || role === 'SECRETARY_GENERAL' || role === 'DEPUTY_SECRETARY_GENERAL') {
-        router.push('/eb/dash');
+      if (
+        role === "EXECUTIVE_BOARD" ||
+        role === "ADMIN" ||
+        role === "SECRETARY_GENERAL" ||
+        role === "DEPUTY_SECRETARY_GENERAL"
+      ) {
+        router.push("/eb/dash");
       } else {
-        setError(`Access denied. This portal is for Executive Board members only. Current role: ${userProfile?.role}`);
+        setError(
+          `Access denied. This portal is for Executive Board members only. Current role: ${userProfile?.role}`
+        );
         setLoading(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-bg-base flex font-inter selection:bg-white-pure selection:text-bg-base">
-      {/* Left Form Side */}
-      <div className="w-full max-w-[480px] p-10 flex flex-col justify-center bg-bg-base relative z-10 border-r border-border-subtle shadow-2xl">
-        <div className="w-full max-w-sm mx-auto">
-          {/* Brand Logo */}
-          <div className="mb-16">
-            <Link href="/" className="inline-block hover:scale-105 transition-transform duration-300">
-              <Image src="/billmun.png" alt="BILLMUN Logo" width={80} height={80} className="w-20 h-auto dark:invert" />
-            </Link>
+    <div className="relative min-h-screen bg-bg-base text-paper grid lg:grid-cols-2">
+      <NoiseOverlay intensity="heavy" />
+
+      {/* Left — auth form */}
+      <div className="flex items-center justify-center p-6 sm:p-12 order-2 lg:order-1 border-r border-border-subtle">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden mb-10 flex items-center justify-between">
+            <NxtmunMark size="md" />
+            <StampBadge variant="blood">RESTRICTED</StampBadge>
           </div>
 
-          <div className="mb-10">
-            <h1 className="font-jotia text-5xl text-text-primary mb-3 tracking-tight">
-              Executive Portal
+          <div className="mb-8">
+            <MonoLabel tone="blood" className="mb-3 block">// EXECUTIVE PORTAL</MonoLabel>
+            <h1 className="font-display text-4xl md:text-5xl leading-[1.05]">
+              Restricted <span className="italic">access</span>.
             </h1>
-            <p className="text-text-secondary text-lg">
-              Sign in to manage committees and users.
+            <p className="font-mono text-[12px] text-paper-mute mt-3">
+              EB, Secretariat, and Administrators only.
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            <FormGroup>
-              <FormLabel htmlFor="email">Email Address</FormLabel>
-              <Input
-                id="email"
+            <div>
+              <label
+                htmlFor="eb-email"
+                className="block font-mono uppercase tracking-[0.20em] text-[10px] text-paper-mute mb-2"
+              >
+                // Email
+              </label>
+              <input
+                id="eb-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
                 required
+                autoComplete="email"
+                placeholder="officer@nxtmun.com"
+                className="w-full h-12 bg-bg-card border border-border-emphasized px-4 font-mono text-[13px] text-paper placeholder:text-paper-faint focus:border-paper focus:outline-none transition-colors"
               />
-            </FormGroup>
+            </div>
 
-            <FormGroup>
-              <FormLabel htmlFor="password">Password</FormLabel>
-              <Input
-                id="password"
+            <div>
+              <label
+                htmlFor="eb-password"
+                className="block font-mono uppercase tracking-[0.20em] text-[10px] text-paper-mute mb-2"
+              >
+                // Password
+              </label>
+              <input
+                id="eb-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
                 required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className="w-full h-12 bg-bg-card border border-border-emphasized px-4 font-mono text-[13px] text-paper placeholder:text-paper-faint focus:border-paper focus:outline-none transition-colors"
               />
-            </FormGroup>
+            </div>
 
-            {error && <ErrorMessage>{error}</ErrorMessage>}
+            {error && (
+              <div
+                role="alert"
+                className="border border-blood-deep bg-blood/[0.08] px-4 py-3 font-mono text-[12px] text-blood-bright leading-relaxed"
+              >
+                <span className="font-bold uppercase tracking-[0.18em] text-[10px] block mb-1">
+                  // ACCESS DENIED
+                </span>
+                {error}
+              </div>
+            )}
 
-            <Button type="submit" variant="default" disabled={loading} className="w-full py-3">
-              Sign In
-            </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group w-full h-12 bg-blood text-paper font-mono uppercase tracking-[0.22em] text-[11px] font-bold border border-blood-deep hover:bg-blood-bright disabled:bg-bg-card disabled:text-paper-faint disabled:border-border-emphasized disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+            >
+              <span>{loading ? "Verifying" : "Authorize"}</span>
+              {!loading && (
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              )}
+            </button>
           </form>
 
-          {/* Register & EB Links */}
-          <div className="mt-8 pt-8 border-t border-border-subtle flex flex-col gap-4 text-left">
-            <p className="text-sm text-text-dimmed">
-              Not an EB member?{' '}
-              <Link href="/login" className="font-semibold text-text-primary hover:text-text-secondary transition-colors underline underline-offset-4">
-                Attendee Login
-              </Link>
-            </p>
+          <HRule className="my-8" />
+
+          <div className="space-y-2 font-mono text-[11px] uppercase tracking-[0.18em]">
+            <p className="text-paper-mute">Not an officer?</p>
+            <Link href="/login" className="text-paper hover:text-blood-bright transition-colors block">
+              → Standard Portal
+            </Link>
+            <Link
+              href="/"
+              className="text-paper-faint hover:text-paper-mute transition-colors block"
+            >
+              ← Back to Dossier
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Right Background Side */}
-      <div className="hidden lg:flex flex-1 bg-bg-card relative overflow-hidden items-center justify-center">
-        {/* Chevron Pattern Background */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="chevrons" width="100" height="100" patternUnits="userSpaceOnUse" patternTransform="scale(4)">
-                <path d="M0 50 L50 100 L100 50 L100 25 L50 75 L0 25 Z" fill="currentColor" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#chevrons)" />
-          </svg>
+      {/* Right — file index */}
+      <aside className="hidden lg:flex flex-col justify-between p-12 relative overflow-hidden bg-bg-card/30 order-1 lg:order-2">
+        <div className="absolute inset-0 nxt-scanlines pointer-events-none" aria-hidden />
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 70% 30%, var(--nxt-blood) 0, transparent 40%), radial-gradient(circle at 20% 80%, var(--nxt-paper) 0, transparent 40%)",
+          }}
+        />
+
+        <div className="relative">
+          <NxtmunMark size="lg" withTagline />
         </div>
-        
-        <div className="relative z-10 max-w-lg text-center px-8">
-          <Image src="/billmun.png" alt="BILLMUN Logo Large" width={300} height={300} className="mx-auto mb-12 opacity-80 invert" />
-          <h2 className="font-jotia text-4xl mb-4 text-text-primary">Executive Control</h2>
-          <p className="text-text-secondary text-lg leading-relaxed">Secure your session to manage committees, review documents, and direct the flow of debate.</p>
+
+        <div className="relative max-w-md">
+          <MonoLabel tone="blood" className="mb-3 block">// CLEARANCE: HIGH</MonoLabel>
+          <h2 className="font-display text-4xl leading-[1.05]">
+            Direct the <span className="italic">flow of debate</span>.
+          </h2>
+          <p className="font-mono text-[13px] text-paper-soft mt-4 leading-relaxed">
+            Manage committees, review documents, oversee delegates, and coordinate the
+            secretariat from a single command surface.
+          </p>
         </div>
-      </div>
+
+        <div className="relative flex items-center justify-between">
+          <MonoLabel>FILE-NXT-2026 / EB-001</MonoLabel>
+          <StampBadge variant="blood">RESTRICTED</StampBadge>
+        </div>
+      </aside>
     </div>
   );
 }

@@ -1,24 +1,18 @@
 {
-  "name": "BILLMUN Portal",
-  "short_name": "BILLMUN",
-  "description": "Bahrain International Model United Nations Conference Portal",
+  "name": "NXTMUN Portal",
+  "short_name": "NXTMUN",
+  "description": "NXTMUN — Student-led Model United Nations Conference Portal",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#3b82f6",
+  "background_color": "#0B0A09",
+  "theme_color": "#0B0A09",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
     {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512x512.png",
+      "src": "/nxtmun-icon.jpg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ],

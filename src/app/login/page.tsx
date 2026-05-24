@@ -1,40 +1,34 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import { supabase } from '@/lib/supabase';
-
-const BackgroundPaths = dynamic(
-  () =>
-    import('@/components/ui/background-paths').then((m) => ({
-      default: m.BackgroundPaths,
-    })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="absolute inset-0 bg-neutral-950" aria-hidden />
-    ),
-  },
-);
+import React, { useState } from "react";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import {
+  NxtmunMark,
+  MonoLabel,
+  StampBadge,
+  HRule,
+  NoiseOverlay,
+} from "@/components/nxtmun/primitives";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        credentials: 'same-origin',
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({ email, password }),
       });
 
@@ -42,12 +36,12 @@ export default function LoginPage() {
       let data: { error?: string; session?: { access_token: string; refresh_token: string } } = {};
       if (raw) {
         try {
-          data = JSON.parse(raw) as typeof data;
+          data = JSON.parse(raw);
         } catch {
           setError(
             res.ok
-              ? 'Login response was invalid. Try again or hard-refresh the page.'
-              : 'Login failed (server error). Clear .next and restart the dev server if this persists.',
+              ? "Login response was invalid. Try again or hard-refresh the page."
+              : "Login failed (server error). Clear .next and restart the dev server if this persists."
           );
           setLoading(false);
           return;
@@ -55,7 +49,7 @@ export default function LoginPage() {
       }
 
       if (!res.ok) {
-        setError(data.error || 'Login failed.');
+        setError(data.error || "Login failed.");
         setLoading(false);
         return;
       }
@@ -68,106 +62,179 @@ export default function LoginPage() {
       }
 
       setSuccess(true);
-      window.location.href = '/dashboard';
+      window.location.href = "/dashboard";
     } catch {
-      setError('An unexpected error occurred.');
+      setError("An unexpected error occurred.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 z-0">
-        <BackgroundPaths />
-      </div>
+    <div className="relative min-h-screen bg-bg-base text-paper grid lg:grid-cols-2">
+      <NoiseOverlay intensity="default" />
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
-        <div className="w-full max-w-sm">
-          <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 sm:p-10 shadow-2xl">
-            {/* Logo */}
-            <div className="flex justify-center mb-8">
-              <Link href="/">
-                <img
-                  src="/billmun.png"
-                  alt="BILLMUN Logo"
-                  className="w-20 sm:w-24 h-auto invert opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300"
-                />
-              </Link>
-            </div>
+      {/* ===== LEFT — File index ===== */}
+      <aside className="hidden lg:flex flex-col justify-between border-r border-border-subtle p-12 relative overflow-hidden bg-bg-card/30">
+        <div className="absolute inset-0 nxt-scanlines pointer-events-none" aria-hidden />
+        <div
+          className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 30% 20%, var(--nxt-paper) 0, transparent 40%), radial-gradient(circle at 80% 80%, var(--nxt-blood) 0, transparent 40%)",
+          }}
+        />
 
-            {/* Title */}
-            <h1 className="font-jotia text-xl sm:text-2xl text-center mb-8 tracking-[0.25em] text-white/90">
-              PORTAL LOGIN
+        <div className="relative">
+          <NxtmunMark size="lg" withTagline />
+        </div>
+
+        <div className="relative space-y-8 max-w-md">
+          <div>
+            <MonoLabel tone="blood" className="mb-3 block">// PORTAL ACCESS</MonoLabel>
+            <h1 className="font-display text-4xl md:text-5xl leading-[1.05]">
+              The dossier <span className="italic">awaits</span>.
             </h1>
+            <p className="mt-4 font-mono text-[13px] text-paper-soft leading-relaxed">
+              Sign in to access committee files, position papers, blocs, and the live debate
+              record. Every action is logged.
+            </p>
+          </div>
 
-            {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label htmlFor="login-email" className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-2">
-                  Email
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  className="w-full h-11 rounded-lg border border-white/15 bg-white/5 px-4 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
-                />
-              </div>
+          <HRule />
 
-              <div>
-                <label htmlFor="login-password" className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-2">
-                  Password
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                  className="w-full h-11 rounded-lg border border-white/15 bg-white/5 px-4 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent transition-all"
-                />
-              </div>
-
-              {error && (
-                <div className="text-center text-sm font-medium text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="text-center text-sm font-medium text-green-400 bg-green-400/10 border border-green-400/20 rounded-lg px-4 py-3">
-                  Login successful. Redirecting...
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading || success}
-                className="w-full h-11 mt-2 rounded-lg bg-white text-black font-bold text-sm uppercase tracking-widest hover:bg-white/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {success ? 'Redirecting...' : loading ? 'Signing in...' : 'Sign In'}
-              </button>
-            </form>
-
-            {/* Links */}
-            <div className="mt-6 text-center space-y-4">
-              <div>
-                <Link href="/register" className="text-sm font-bold uppercase tracking-[0.1em] text-white/90 hover:text-white hover:underline transition-all">
-                  Register for an account
-                </Link>
-              </div>
-              <div>
-                <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors">
-                  Back to Home
-                </Link>
-              </div>
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div>
+              <MonoLabel className="block mb-2">// CLEARANCE</MonoLabel>
+              <p className="font-mono text-[12px] text-paper-soft">
+                Delegate / Chair / Press / Admin / Security
+              </p>
             </div>
+            <div>
+              <MonoLabel className="block mb-2">// EDITION</MonoLabel>
+              <p className="font-mono text-[12px] text-paper-soft">I — 03–04 April 2026</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex items-center justify-between">
+          <MonoLabel>FILE-NXT-2026 / AUTH-001</MonoLabel>
+          <StampBadge variant="blood">CONFIDENTIAL</StampBadge>
+        </div>
+      </aside>
+
+      {/* ===== RIGHT — Form ===== */}
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          {/* Mobile-only brand */}
+          <div className="lg:hidden mb-10 flex items-center justify-between">
+            <NxtmunMark size="md" />
+            <StampBadge variant="blood">CONFIDENTIAL</StampBadge>
+          </div>
+
+          <div className="mb-8">
+            <MonoLabel tone="blood" className="mb-3 block">// PORTAL LOGIN</MonoLabel>
+            <h2 className="font-display text-3xl md:text-4xl">Authenticate.</h2>
+            <p className="font-mono text-[12px] text-paper-mute mt-2">
+              Use the credentials you registered with.
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label
+                htmlFor="login-email"
+                className="block font-mono uppercase tracking-[0.20em] text-[10px] text-paper-mute mb-2"
+              >
+                // Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full h-12 bg-bg-card border border-border-emphasized px-4 font-mono text-[13px] text-paper placeholder:text-paper-faint focus:border-paper focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="login-password"
+                className="block font-mono uppercase tracking-[0.20em] text-[10px] text-paper-mute mb-2"
+              >
+                // Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className="w-full h-12 bg-bg-card border border-border-emphasized px-4 font-mono text-[13px] text-paper placeholder:text-paper-faint focus:border-paper focus:outline-none transition-colors"
+              />
+            </div>
+
+            {error && (
+              <div
+                role="alert"
+                className="border border-blood-deep bg-blood/[0.08] px-4 py-3 font-mono text-[12px] text-blood-bright leading-relaxed"
+              >
+                <span className="font-bold uppercase tracking-[0.18em] text-[10px] block mb-1">
+                  // ERROR
+                </span>
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="border border-paper/40 bg-paper/[0.05] px-4 py-3 font-mono text-[12px] text-paper">
+                <span className="font-bold uppercase tracking-[0.18em] text-[10px] block mb-1">
+                  // ACCEPTED
+                </span>
+                Login successful. Routing…
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || success}
+              className="group w-full h-12 mt-2 bg-blood text-paper font-mono uppercase tracking-[0.22em] text-[11px] font-bold border border-blood-deep hover:bg-blood-bright disabled:bg-bg-card disabled:text-paper-faint disabled:border-border-emphasized disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+            >
+              <span>{success ? "Routing" : loading ? "Verifying" : "Sign In"}</span>
+              {!loading && !success && (
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              )}
+            </button>
+          </form>
+
+          <HRule className="my-8" />
+
+          <div className="space-y-3">
+            <Link
+              href="/register"
+              className="flex items-center justify-between group font-mono uppercase tracking-[0.20em] text-[11px] text-paper hover:text-blood-bright transition-colors"
+            >
+              <span>Request Access · Register →</span>
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </Link>
+            <Link
+              href="/login/eb"
+              className="flex items-center justify-between font-mono uppercase tracking-[0.20em] text-[10px] text-paper-mute hover:text-paper transition-colors"
+            >
+              <span>Executive Board Portal</span>
+              <span className="text-paper-faint">CLEARANCE: HIGH</span>
+            </Link>
+            <Link
+              href="/"
+              className="block font-mono uppercase tracking-[0.20em] text-[10px] text-paper-faint hover:text-paper-mute transition-colors"
+            >
+              ← Back to Dossier
+            </Link>
           </div>
         </div>
       </div>
