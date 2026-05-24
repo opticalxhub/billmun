@@ -226,35 +226,34 @@ export function DashboardHeader({
               fontFamily: "var(--font-mono)",
               fontSize: "9px",
               color: "var(--text-rust)",
-              letterSpacing: "0.14em",
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
-              marginBottom: "6px",
+              marginBottom: "8px",
             }}
           >
-            {String(user.full_name).split(" ").pop()}
+            {String(user.full_name).split(" ").pop()} &mdash; NXTMUN
           </p>
         ) : null}
         <h1
-          className="truncate"
+          className="truncate font-condensed uppercase"
           style={{
-            fontFamily: "var(--font-barlow-condensed)",
-            fontSize: "clamp(1.6rem, 3.5vw, 2.5rem)",
+            fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
             fontWeight: 800,
-            letterSpacing: "0.04em",
+            letterSpacing: "-0.01em",
             color: "var(--text-primary)",
-            textTransform: "uppercase",
-            lineHeight: 1.05,
+            lineHeight: 0.95,
           }}
         >
           {title}
         </h1>
         {subtitle ? (
           <p
-            className="mt-1 truncate"
+            className="mt-2 truncate"
             style={{
               fontFamily: "var(--font-barlow)",
               fontSize: "13px",
-              color: "var(--text-secondary)",
+              color: "var(--text-tertiary)",
+              lineHeight: 1.5,
             }}
           >
             {subtitle}
@@ -270,28 +269,28 @@ export function DashboardHeader({
         {user && <NotificationBell userId={String(user.id)} />}
 
         <div
-          style={{ width: "1px", height: "24px", backgroundColor: "var(--border-subtle)" }}
+          style={{ width: "1px", height: "22px", backgroundColor: "var(--border-subtle)" }}
         />
 
         {rightContent}
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-3 h-9 transition-all"
+          className="flex items-center gap-2 px-3 h-8 transition-all active:scale-[0.97]"
           style={{
             fontFamily: "var(--font-barlow-condensed)",
             fontSize: "10px",
             fontWeight: 700,
-            letterSpacing: "0.14em",
+            letterSpacing: "0.12em",
             textTransform: "uppercase",
             color: "var(--status-rejected-text)",
             backgroundColor: "var(--status-rejected-bg)",
             border: "1px solid var(--status-rejected-border)",
-            borderRadius: "3px",
+            borderRadius: "2px",
           }}
           aria-label="Log out"
         >
-          <LogOut className="w-3.5 h-3.5" aria-hidden />
+          <LogOut className="w-3 h-3" aria-hidden />
           <span className="hidden sm:inline">Log Out</span>
         </button>
       </div>
@@ -315,17 +314,18 @@ export function DashboardTabBar<T extends string>({
 }) {
   return (
     <div
-      className="sticky top-0 z-40 backdrop-blur-sm"
+      className="sticky top-0 z-40"
       style={{
-        backgroundColor: "rgba(10, 9, 7, 0.95)",
+        backgroundColor: "rgba(10, 9, 7, 0.96)",
         borderBottom: "1px solid var(--border-subtle)",
-        marginTop: "1px",
+        backdropFilter: "blur(8px)",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <nav
-          className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 flex-wrap"
+          className="flex gap-0.5 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
           aria-label="Dashboard tabs"
+          role="tablist"
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab;
@@ -335,19 +335,25 @@ export function DashboardTabBar<T extends string>({
                 onClick={() => onChange(tab)}
                 aria-selected={isActive}
                 role="tab"
-                className="shrink-0 h-9 px-3 transition-all whitespace-nowrap"
+                className="shrink-0 h-8 px-3 transition-all whitespace-nowrap active:scale-[0.97]"
                 style={{
                   fontFamily: "var(--font-barlow-condensed)",
                   fontSize: "10px",
                   fontWeight: 700,
-                  letterSpacing: "0.14em",
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  borderRadius: "3px",
+                  borderRadius: "2px",
                   border: isActive
-                    ? "1px solid var(--rust-600)"
-                    : "1px solid var(--border-subtle)",
+                    ? "1px solid var(--rust-700)"
+                    : "1px solid transparent",
                   color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
                   backgroundColor: isActive ? "var(--rust-900)" : "transparent",
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-tertiary)";
                 }}
               >
                 {tab}
