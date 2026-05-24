@@ -238,7 +238,7 @@ export default function RegisterPage() {
             {/* Brand Logo */}
             <div className="flex justify-center mb-6 sm:mb-10">
               <Link href="/" className="flex items-center gap-3 sm:gap-4">
-                <img src="/billmun.png" alt="BILLMUN Logo" className="w-24 sm:w-36 h-auto dark:invert" />
+                <img src="/nxtmun.png" alt="NXTMUN Logo" className="w-24 sm:w-36 h-auto dark:invert" />
                 <span className="font-jotia text-lg sm:text-2xl text-text-primary tracking-widest uppercase">
                   Registration
                 </span>
@@ -285,7 +285,7 @@ export default function RegisterPage() {
                   <div className="bg-bg-raised border border-border-subtle rounded-card p-4 mb-4">
                     <p className="text-sm text-text-secondary font-medium">
                       <span className="text-status-rejected-text font-bold uppercase tracking-widest mr-2">Important:</span>
-                      Please ensure all information provided matches the exact details used during your initial BILLMUN registration. This is for portal access verification.
+                      Please ensure all information provided matches the exact details used during your initial NXTMUN registration. This is for portal access verification.
                     </p>
                   </div>
 

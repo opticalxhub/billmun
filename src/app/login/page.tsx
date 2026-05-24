@@ -88,8 +88,8 @@ export default function LoginPage() {
             <div className="flex justify-center mb-8">
               <Link href="/">
                 <img
-                  src="/billmun.png"
-                  alt="BILLMUN Logo"
+                  src="/nxtmun.png"
+                  alt="NXTMUN Logo"
                   className="w-20 sm:w-24 h-auto invert opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300"
                 />
               </Link>

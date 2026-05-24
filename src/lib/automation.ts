@@ -1,5 +1,5 @@
 /**
- * Server-side automation hooks for BILLMUN. Each public runner is wrapped in try/catch;
+ * Server-side automation hooks for NXTMUN. Each public runner is wrapped in try/catch;
  * failures are logged to audit_logs and never throw to callers.
  */
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -140,14 +140,14 @@ export async function getNextBadgeNumber(): Promise<string> {
   const { data: rows } = await supabaseAdmin
     .from("security_badges")
     .select("badge_number")
-    .like("badge_number", "BILLMUN-2026-%");
+    .like("badge_number", "NXTMUN-2026-%");
   let max = 0;
   for (const r of rows || []) {
-    const m = /^BILLMUN-2026-(\d+)$/.exec(r.badge_number as string);
+    const m = /^NXTMUN-2026-(\d+)$/.exec(r.badge_number as string);
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
   const next = max + 1;
-  return `BILLMUN-2026-${String(next).padStart(4, "0")}`;
+  return `NXTMUN-2026-${String(next).padStart(4, "0")}`;
 }
 
 /** After status set to APPROVED */
@@ -266,7 +266,7 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
     await supabaseAdmin.from("notifications").insert({
       user_id: userId,
       title: "Account Approved",
-      message: "Your BILLMUN registration has been approved.",
+      message: "Your NXTMUN registration has been approved.",
       type: "SUCCESS",
       link: dashboardLinkForRole(user.role),
     });

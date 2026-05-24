@@ -106,7 +106,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 py-5 backdrop-blur-md bg-bg-base/80 border-b border-border-subtle">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link href="/" className="font-jotia text-2xl tracking-[0.2em] uppercase">
-            BILLMUN
+            NXTMUN
           </Link>
           <div className="hidden sm:flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-text-secondary">
             <a href="#about" className="hover:text-text-primary transition-colors">About</a>
@@ -143,7 +143,7 @@ export default function LandingPage() {
                   <div ref={el => { headingRefs.current[2] = el; }}>LEAD.</div>
                 </h1>
                 <p ref={subtitleRef} className="text-xl sm:text-2xl text-text-secondary mt-6 max-w-2xl">
-                  Join us for BILLMUN I, the inaugural conference that sets a new standard for Model United Nations in the region.
+                  Join us for NXTMUN I, the inaugural conference that sets a new standard for Model United Nations in the region.
                 </p>
                 <p className="mt-4 italic font-bold text-zinc-200 drop-shadow-md">
                   By Alaa Abbadi & Kenan Nezar
@@ -277,7 +277,7 @@ export default function LandingPage() {
         <section id="about" className="py-20 px-6 sm:px-10 bg-bg-card/30">
           <div className="max-w-4xl mx-auto">
             <p className="font-jotia text-lg leading-relaxed mb-6">
-              <strong>BILLMUN</strong> is a student led Model United Nations initiative built around the idea of <strong>Build Inspire Lead</strong>. These three words represent our approach to conference design and student development.
+              <strong>NXTMUN</strong> is a student led Model United Nations initiative built around the idea of <strong>Build Inspire Lead</strong>. These three words represent our approach to conference design and student development.
             </p>
             <div className="space-y-4 mb-6">
               <p className="font-jotia text-lg leading-relaxed">
@@ -294,18 +294,18 @@ export default function LandingPage() {
               Our aim is to raise the standard of MUN in the region and provide a platform where students engage with international issues in a disciplined, well structured and academically strong setting.
             </p>
             <div className="mb-12">
-              <h2 className="font-jotia text-3xl font-bold mb-6">BILLMUN I</h2>
+              <h2 className="font-jotia text-3xl font-bold mb-6">NXTMUN I</h2>
               <p className="font-jotia text-lg leading-relaxed mb-4">
-                BILLMUN I, scheduled for <strong>3–4 April</strong>, marks the official launch of the conference. As our first edition, it represents the foundation of a long-term vision to establish a leading Model United Nations platform.
+                NXTMUN I, scheduled for <strong>3–4 April</strong>, marks the official launch of the conference. As our first edition, it represents the foundation of a long-term vision to establish a leading Model United Nations platform.
               </p>
               <p className="font-jotia text-lg leading-relaxed mb-4">
                 The conference is structured to deliver a focused and high-quality debate experience, bringing together delegates across multiple committees within a professional and well-regulated setting.
               </p>
               <p className="font-jotia text-lg leading-relaxed mb-4">
-                With an emphasis on clarity, organization and academic depth, BILLMUN I is designed not only to meet expectations, but to set a new benchmark for student-led conferences in the region.
+                With an emphasis on clarity, organization and academic depth, NXTMUN I is designed not only to meet expectations, but to set a new benchmark for student-led conferences in the region.
               </p>
               <p className="font-jotia text-lg leading-relaxed">
-                This first conference is more than a starting point — it is the standard upon which all future BILLMUN initiatives will be built.
+                This first conference is more than a starting point — it is the standard upon which all future NXTMUN initiatives will be built.
               </p>
             </div>
           </div>
@@ -318,7 +318,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto">
             <h2 className="font-jotia text-3xl sm:text-4xl font-bold mb-8 text-center">Latest Announcements</h2>
             <div className="bg-bg-card/50 border border-border-subtle rounded-xl p-8 text-center">
-              <p className="text-text-secondary">Stay tuned for official announcements about BILLMUN I.</p>
+              <p className="text-text-secondary">Stay tuned for official announcements about NXTMUN I.</p>
               <HoverScale scale={1.05}>
                 <Link
                   href="/login"
@@ -351,7 +351,7 @@ export default function LandingPage() {
               </video>
             </div>
             <p className="text-center text-text-secondary mt-8 text-sm uppercase tracking-widest">
-              Get to know the Executive Board behind BILLMUN
+              Get to know the Executive Board behind NXTMUN
             </p>
           </div>
         </section>

@@ -276,7 +276,7 @@ export default function ConferenceControlPage() {
           className="w-full min-h-[80px] rounded-input border border-border-input bg-bg-raised px-4 py-3 text-sm text-text-primary placeholder:text-text-disabled resize-none"
           value={postMsg || data?.post_conference_message || ''}
           onChange={(e) => setPostMsg(e.target.value)}
-          placeholder="Thank you for attending BILLMUN 2026..."
+          placeholder="Thank you for attending NXTMUN 2026..."
         />
         <div className="mt-3">
           <Button

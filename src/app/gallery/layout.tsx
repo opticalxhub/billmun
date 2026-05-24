@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Gallery",
-  description: "Photos from BILLMUN conferences — captured by our Media Team. Browse highlights from committee sessions, ceremonies, and more.",
+  description: "Photos from NXTMUN conferences — captured by our Media Team. Browse highlights from committee sessions, ceremonies, and more.",
   openGraph: {
-    title: "Gallery | BILLMUN",
-    description: "Photos from BILLMUN conferences — captured by our Media Team.",
+    title: "Gallery | NXTMUN",
+    description: "Photos from NXTMUN conferences — captured by our Media Team.",
   },
 };
 

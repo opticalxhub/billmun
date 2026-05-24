@@ -1,6 +1,6 @@
 {
-  "name": "BILLMUN Portal",
-  "short_name": "BILLMUN",
+  "name": "NXTMUN Portal",
+  "short_name": "NXTMUN",
   "description": "Bahrain International Model United Nations Conference Portal",
   "start_url": "/",
   "display": "standalone",

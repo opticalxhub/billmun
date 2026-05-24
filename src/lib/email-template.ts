@@ -1,5 +1,5 @@
 /**
- * BILLMUN branded email template system.
+ * NXTMUN branded email template system.
  * All emails sent by the system use this template.
  */
 
@@ -10,10 +10,10 @@ const BORDER_COLOR = "#222222";
 const TEXT_PRIMARY = "#ffffff";
 const TEXT_SECONDARY = "#999999";
 const TEXT_MUTED = "#666666";
-const LOGO_URL = "https://billmun.com/billmun.png";
-const SITE_URL = "https://billmun.com";
-const INSTAGRAM_URL = "https://www.instagram.com/billmun.sa";
-const CONTACT_EMAIL = "noreply@billmun.com";
+const LOGO_URL = "https://nxtmun.com/nxtmun.png";
+const SITE_URL = "https://nxtmun.com";
+const INSTAGRAM_URL = "https://www.instagram.com/nxtmun.sa";
+const CONTACT_EMAIL = "noreply@nxtmun.com";
 
 function sanitizeText(text: string): string {
   return text
@@ -60,7 +60,7 @@ export function generateEmailHTML(
 
 <!-- Logo -->
 <tr><td align="center" style="padding:0 0 24px 0;">
-<img src="${LOGO_URL}" alt="BILLMUN" width="120" height="auto" style="display:block;max-width:120px;height:auto;filter:invert(1);"/>
+<img src="${LOGO_URL}" alt="NXTMUN" width="120" height="auto" style="display:block;max-width:120px;height:auto;filter:invert(1);"/>
 </td></tr>
 
 <!-- Divider -->
@@ -89,15 +89,15 @@ ${bodyHtml}
 <!-- Footer -->
 <tr><td style="padding:0;">
 <p style="margin:0 0 8px 0;font-size:12px;color:${TEXT_MUTED};text-align:center;">
-&copy; 2026 BILLMUN. All rights reserved.
+&copy; 2026 NXTMUN. All rights reserved.
 </p>
 <p style="margin:0 0 8px 0;font-size:12px;color:${TEXT_MUTED};text-align:center;">
 <a href="${INSTAGRAM_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">Instagram</a>
 &nbsp;&middot;&nbsp;
-<a href="${SITE_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">billmun.com</a>
+<a href="${SITE_URL}" style="color:${TEXT_SECONDARY};text-decoration:underline;">nxtmun.com</a>
 </p>
 <p style="margin:0;font-size:11px;color:${TEXT_MUTED};text-align:center;line-height:1.5;">
-This email was sent because you registered for BILLMUN.<br/>
+This email was sent because you registered for NXTMUN.<br/>
 If you believe this was a mistake, contact <a href="mailto:${CONTACT_EMAIL}" style="color:${TEXT_SECONDARY};">${CONTACT_EMAIL}</a>.
 </p>
 </td></tr>
@@ -115,5 +115,5 @@ export function generateEmailPlainText(
   recipientName?: string
 ): string {
   const greeting = recipientName ? `Dear ${recipientName},\n\n` : "";
-  return `${subject}\n\n${greeting}${bodyText}\n\n---\n© 2026 BILLMUN. All rights reserved.\nInstagram: ${INSTAGRAM_URL}\nWebsite: ${SITE_URL}\n\nThis email was sent because you registered for BILLMUN.\nIf you believe this was a mistake, contact ${CONTACT_EMAIL}.`;
+  return `${subject}\n\n${greeting}${bodyText}\n\n---\n© 2026 NXTMUN. All rights reserved.\nInstagram: ${INSTAGRAM_URL}\nWebsite: ${SITE_URL}\n\nThis email was sent because you registered for NXTMUN.\nIf you believe this was a mistake, contact ${CONTACT_EMAIL}.`;
 }

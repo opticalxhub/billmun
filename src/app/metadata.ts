@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
 
 export const homeMetadata: Metadata = {
-  title: "Home | BILLMUN 2026",
-  description: "Welcome to BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Register now for the ultimate diplomatic experience.",
+  title: "Home | NXTMUN 2026",
+  description: "Welcome to NXTMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Register now for the ultimate diplomatic experience.",
   keywords: [
-    "BILLMUN 2026",
+    "NXTMUN 2026",
     "MUN Conference",
     "Model United Nations",
     "Yarmook Elementary Private School Dhahran",
@@ -15,63 +15,63 @@ export const homeMetadata: Metadata = {
     "Saudi Arabia"
   ],
   openGraph: {
-    title: "BILLMUN 2026 Home | Advanced MUN Platform",
-    description: "Welcome to BILLMUN 2026 - Join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran for an unforgettable diplomatic experience.",
-    url: "https://billmun.com",
+    title: "NXTMUN 2026 Home | Advanced MUN Platform",
+    description: "Welcome to NXTMUN 2026 - Join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran for an unforgettable diplomatic experience.",
+    url: "https://nxtmun.com",
     images: [
       {
-        url: "/billmun.png",
+        url: "/nxtmun.png",
         width: 1200,
         height: 630,
-        alt: "BILLMUN 2026 Conference"
+        alt: "NXTMUN 2026 Conference"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "BILLMUN 2026 Home | Advanced MUN Platform",
-    description: "Join BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
-    images: ["/billmun.png"]
+    title: "NXTMUN 2026 Home | Advanced MUN Platform",
+    description: "Join NXTMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
+    images: ["/nxtmun.png"]
   }
 };
 
 export const loginMetadata: Metadata = {
-  title: "Sign In | BILLMUN 2026",
-  description: "Sign in to your BILLMUN 2026 account to access the advanced MUN platform, manage your committee assignments, and participate in real-time debates.",
+  title: "Sign In | NXTMUN 2026",
+  description: "Sign in to your NXTMUN 2026 account to access the advanced MUN platform, manage your committee assignments, and participate in real-time debates.",
   keywords: [
-    "BILLMUN Login",
+    "NXTMUN Login",
     "MUN Sign In",
-    "BILLMUN Account",
+    "NXTMUN Account",
     "Delegate Portal",
     "MUN Platform Access",
     "Conference Login"
   ],
   openGraph: {
-    title: "Sign In | BILLMUN 2026",
-    description: "Access your BILLMUN 2026 account and join the advanced Model United Nations platform.",
-    url: "https://billmun.sa/login",
+    title: "Sign In | NXTMUN 2026",
+    description: "Access your NXTMUN 2026 account and join the advanced Model United Nations platform.",
+    url: "https://nxtmun.sa/login",
     images: [
       {
-        url: "/billmun.png",
+        url: "/nxtmun.png",
         width: 1200,
         height: 630,
-        alt: "BILLMUN 2026 Login"
+        alt: "NXTMUN 2026 Login"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sign In | BILLMUN 2026",
-    description: "Access your BILLMUN 2026 account and join the advanced Model United Nations platform.",
-    images: ["/billmun.png"]
+    title: "Sign In | NXTMUN 2026",
+    description: "Access your NXTMUN 2026 account and join the advanced Model United Nations platform.",
+    images: ["/nxtmun.png"]
   }
 };
 
 export const registerMetadata: Metadata = {
-  title: "Register | BILLMUN 2026",
-  description: "Register for BILLMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Choose your role, select your committee, and start your diplomatic journey.",
+  title: "Register | NXTMUN 2026",
+  description: "Register for NXTMUN 2026 - The premier Model United Nations conference at Yarmook Elementary Private School Dhahran. Choose your role, select your committee, and start your diplomatic journey.",
   keywords: [
-    "BILLMUN Registration",
+    "NXTMUN Registration",
     "MUN Register",
     "Model UN Sign Up",
     "Delegate Registration",
@@ -80,22 +80,22 @@ export const registerMetadata: Metadata = {
     "Yarmook Elementary Private School Dhahran"
   ],
   openGraph: {
-    title: "Register | BILLMUN 2026",
-    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
-    url: "https://billmun.sa/register",
+    title: "Register | NXTMUN 2026",
+    description: "Register for NXTMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
+    url: "https://nxtmun.sa/register",
     images: [
       {
-        url: "/billmun.png",
+        url: "/nxtmun.png",
         width: 1200,
         height: 630,
-        alt: "BILLMUN 2026 Registration"
+        alt: "NXTMUN 2026 Registration"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Register | BILLMUN 2026",
-    description: "Register for BILLMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
-    images: ["/billmun.png"]
+    title: "Register | NXTMUN 2026",
+    description: "Register for NXTMUN 2026 and join the premier Model United Nations conference at Yarmook Elementary Private School Dhahran.",
+    images: ["/nxtmun.png"]
   }
 };

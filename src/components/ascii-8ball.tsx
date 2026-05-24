@@ -226,13 +226,13 @@ export function ASCII8Ball({ className = '' }: { className?: string }) {
       <text x="16" y="292" fill="currentColor" fontSize="9" fontFamily="monospace" opacity="0.12">&#x2514;</text>
       <text x="276" y="292" fill="currentColor" fontSize="9" fontFamily="monospace" opacity="0.12">&#x2518;</text>
 
-      {/* BILLMUN label */}
+      {/* NXTMUN label */}
       <text
         x="150" y="225"
         textAnchor="middle" fill="currentColor"
         fontSize="7" fontFamily="monospace" letterSpacing="5" opacity="0.2"
       >
-        BILLMUN
+        NXTMUN
       </text>
 
       {/* Tiny "BUILD · INSPIRE · LEAD" */}

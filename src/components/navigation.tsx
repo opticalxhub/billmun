@@ -79,7 +79,7 @@ export function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-shrink-0 items-center">
-              <span className="font-jotia text-xl tracking-widest font-bold">BILLMUN</span>
+              <span className="font-jotia text-xl tracking-widest font-bold">NXTMUN</span>
             </Link>
             <div className="flex items-center gap-1.5 ml-2">
               <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-white' : 'bg-white/20 animate-pulse'}`} />
@@ -137,7 +137,7 @@ export function Navigation() {
               Dashboard
             </Link>
             <a 
-              href="https://instagram.com/billmun.sa" 
+              href="https://instagram.com/nxtmun.sa" 
               target="_blank" 
               rel="noopener noreferrer"
               className="p-2 text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]"

@@ -10,7 +10,7 @@ export default function RejectedPage() {
         </div>
         <h1 className="font-jotia text-3xl text-text-primary">Application Rejected</h1>
         <p className="text-text-secondary">
-          Unfortunately, your application to the BILLMUN portal has been rejected. This may be due to verification failure or capacity limits.
+          Unfortunately, your application to the NXTMUN portal has been rejected. This may be due to verification failure or capacity limits.
         </p>
         <p className="text-text-tertiary text-sm">
           Please contact support if you believe this is a mistake.

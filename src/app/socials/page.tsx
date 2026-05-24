@@ -31,7 +31,7 @@ export default function SocialsPage() {
           <div className="text-center mb-16">
             <h1 className="font-jotia text-5xl md:text-7xl mb-4 tracking-tight">Our Socials</h1>
             <p className="text-text-secondary max-w-md mx-auto">
-              Stay connected with BILLMUN. Follow us for updates, highlights, and behind-the-scenes content.
+              Stay connected with NXTMUN. Follow us for updates, highlights, and behind-the-scenes content.
             </p>
           </div>
         </FadeIn>
@@ -41,7 +41,7 @@ export default function SocialsPage() {
         <div className="flex items-center justify-center gap-0 mb-12">
           <span className="font-jotia text-6xl md:text-8xl lg:text-9xl tracking-tight text-text-primary">BILLM</span>
           <a
-            href="https://instagram.com/billmun.sa"
+            href="https://instagram.com/nxtmun.sa"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center mx-1 hover:scale-110 transition-transform"
@@ -56,13 +56,13 @@ export default function SocialsPage() {
         <FadeIn delay={0.6} from="bottom">
         <HoverScale scale={1.05}>
         <a
-          href="https://instagram.com/billmun.sa"
+          href="https://instagram.com/nxtmun.sa"
           target="_blank"
           rel="noopener noreferrer"
           className="group relative inline-flex items-center gap-4 px-12 py-6 bg-text-primary text-bg-base rounded-full font-black uppercase tracking-widest text-lg hover:scale-105 active:scale-95 transition-all shadow-2xl"
         >
           <InstagramIcon className="w-7 h-7" />
-          <span>Follow @billmun</span>
+          <span>Follow @nxtmun</span>
           <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
@@ -72,7 +72,7 @@ export default function SocialsPage() {
 
         <FadeIn delay={0.7} from="bottom">
         <p className="text-text-tertiary text-xs uppercase tracking-widest mt-8">
-          @billmun on Instagram
+          @nxtmun on Instagram
         </p>
         </FadeIn>
       </div>

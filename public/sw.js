@@ -1,5 +1,5 @@
-const CACHE_NAME = 'billmun-v1';
-const API_CACHE_NAME = 'billmun-api-v1';
+const CACHE_NAME = 'nxtmun-v1';
+const API_CACHE_NAME = 'nxtmun-api-v1';
 
 // URLs to cache for offline functionality
 const STATIC_CACHE_URLS = [

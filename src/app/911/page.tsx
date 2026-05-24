@@ -47,8 +47,8 @@ export default function EmergencyPage() {
     <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 font-sans">
       <div className="mb-12">
         <img
-          src="/billmun.png"
-          alt="BILLMUN"
+          src="/nxtmun.png"
+          alt="NXTMUN"
           className="mx-auto mb-8 opacity-50 dark:invert"
           style={{ width: '400px', height: 'auto' }}
         />

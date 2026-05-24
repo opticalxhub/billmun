@@ -39,7 +39,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
     if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
       setUser({
         id: '00000000-0000-0000-0000-000000000000',
-        email: 'emergency@billmun.com',
+        email: 'emergency@nxtmun.com',
         full_name: 'Engineer (Emergency)',
         role: 'EXECUTIVE_BOARD',
         status: 'APPROVED',
@@ -71,7 +71,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
       {/* Top navbar */}
       <nav className="h-14 sm:h-16 lg:h-20 border-b border-border-subtle bg-bg-card flex items-center px-3 sm:px-4 md:px-8 justify-between shrink-0">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <img src="/billmun.png" alt="BILLMUN Logo" className="w-16 sm:w-20 lg:w-24 h-auto dark:invert shrink-0" />
+          <img src="/nxtmun.png" alt="NXTMUN Logo" className="w-16 sm:w-20 lg:w-24 h-auto dark:invert shrink-0" />
           <span className="font-jotia-bold text-sm sm:text-lg md:text-xl text-text-primary tracking-[0.1em] sm:tracking-[0.15em] uppercase truncate">Executive Board</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 shrink-0">

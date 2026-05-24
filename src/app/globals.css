@@ -1,112 +1,128 @@
-@import url('https://db.onlinewebfonts.com/c/09fc87e1ac5bbdeb5c42b2c1ec4f780f?family=Jotia+W00+Regular');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-@font-face { 
-    font-family: "Jotia W00 Regular"; 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot"); 
-    src: url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.eot?#iefix")format("embedded-opentype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff2")format("woff2"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.woff")format("woff"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.ttf")format("truetype"), 
-    url("https://db.onlinewebfonts.com/t/09fc87e1ac5bbdeb5c42b2c1ec4f780f.svg#Jotia W00 Regular")format("svg"); 
-} 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800;9..144,900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * NXTMUN — Brand Tokens
+ * ─────────────────────
+ * Palette is intentionally restrained: crimson rust accent + newspaper-brown
+ * neutrals + warm off-white. No blues, no neons, no gradient stacks.
+ */
 @layer base {
   :root {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
+    /* Surfaces — newspaper-paper warm whites for light surfaces, ink-black base for dark dashboards */
+    --bg-base: #0B0907;
+    --bg-card: #141110;
+    --bg-raised: #1C1816;
+    --bg-hover: #25201D;
+    --bg-dropdown: #141110;
+
+    /* Paper (light editorial surfaces — used on landing) */
+    --paper: #F2EDE6;
+    --paper-dim: #E8DFD2;
+    --paper-line: #D6C9B3;
+
+    /* Borders */
+    --border-subtle: #2A231F;
+    --border-emphasized: #3A3027;
+    --border-strong: #4A3D32;
+    --border-input: #3A3027;
+    --border-dropdown: #2A231F;
+
+    /* Text — warm whites + newspaper browns */
+    --text-primary: #F2EDE6;
+    --text-secondary: #B5A99A;
+    --text-tertiary: #8A7E6F;
+    --text-disabled: #5C5247;
+    --text-dimmed: #B5A99A;
+
+    /* Ink (used on light surfaces) */
+    --ink: #1A140E;
+    --ink-soft: #3D2E1F;
+    --ink-faded: #5C4A36;
+
+    /* Brand accents — crimson rust & newspaper brown */
+    --rust-50:  #F7E5DE;
+    --rust-100: #E8B8A6;
+    --rust-300: #C56A4F;
+    --rust-500: #A0341E;   /* primary brand crimson rust */
+    --rust-600: #862812;
+    --rust-700: #6C1E0C;
+
+    --brown-300: #8A6A47;
+    --brown-500: #5C3A1E;  /* old newspaper type brown */
+    --brown-700: #3D2611;
+
     --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #E8F5E9;
-    --status-approved-text: #1B5E20;
-    --status-approved-border: #C8E6C9;
-    --status-pending-bg: #FFF3E0;
-    --status-pending-text: #E65100;
-    --status-pending-border: #FFE0B2;
-    --status-rejected-bg: #FFEBEE;
-    --status-rejected-text: #B71C1C;
-    --status-rejected-border: #FFCDD2;
+    --white-accent: #F2EDE6;
+
+    /* Semantic */
+    --accent: var(--rust-500);
+    --accent-hover: var(--rust-600);
+    --accent-soft: rgba(160, 52, 30, 0.12);
+
+    /* Status — kept warm, in palette family */
+    --status-approved-bg: rgba(120, 96, 32, 0.14);
+    --status-approved-text: #C9A85A;
+    --status-approved-border: #6B5A2C;
+    --status-pending-bg: rgba(160, 100, 40, 0.14);
+    --status-pending-text: #D89260;
+    --status-pending-border: #7A4E22;
+    --status-rejected-bg: rgba(160, 52, 30, 0.16);
+    --status-rejected-text: #D9785D;
+    --status-rejected-border: var(--rust-700);
   }
 
   .dark {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
-    
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
-    
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
-    
-    --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
-    
-    --status-approved-bg: #112211;
-    --status-approved-text: #4ade80;
-    --status-approved-border: #166534;
-    --status-pending-bg: #221100;
-    --status-pending-text: #fb923c;
-    --status-pending-border: #9a3412;
-    --status-rejected-bg: #220000;
-    --status-rejected-text: #f87171;
-    --status-rejected-border: #991b1b;
+    color-scheme: dark;
   }
 }
 
 @layer utilities {
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Editorial paper texture — subtle film grain for light surfaces */
+  .paper-grain {
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(rgba(92, 58, 30, 0.06) 1px, transparent 1px),
+      radial-gradient(rgba(92, 58, 30, 0.04) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 1px;
   }
-  .text-balance {
-    text-wrap: balance;
+
+  .ink-grain {
+    background-color: var(--bg-base);
+    background-image:
+      radial-gradient(rgba(242, 237, 230, 0.018) 1px, transparent 1px);
+    background-size: 4px 4px;
   }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+
+  /* Hairline editorial divider */
+  .hairline { border-color: var(--paper-line); }
+  .hairline-dark { border-color: var(--border-subtle); }
+
+  /* Stamp — rotation + slight opacity for editorial badge feel */
+  .stamp {
+    display: inline-block;
+    border: 1.5px solid currentColor;
+    padding: 4px 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 11px;
+    transform: rotate(-1.2deg);
   }
 }
 
-/*
- * ALL element-level defaults MUST go inside @layer base
- * so that Tailwind utility classes can always override them.
- * Placing them outside @layer causes them to beat utilities.
- */
 @layer base {
   * {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rust-500)] focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -114,82 +130,62 @@
     @apply bg-bg-base text-text-primary;
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
   body {
-    @apply bg-bg-base text-text-primary font-inter;
+    @apply bg-bg-base text-text-primary;
     min-height: 100vh;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography defaults — utility classes will override these */
-  h1 {
-    @apply font-jotia text-heading-1 text-text-primary;
-  }
-  h2 {
-    @apply font-jotia text-2xl text-text-primary;
-  }
-  h3 {
-    @apply font-jotia text-xl text-text-primary;
-  }
-  p {
-    @apply font-inter text-text-primary leading-relaxed;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fraunces', 'Times New Roman', serif;
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.02em;
   }
 
-  /* Button defaults */
+  h1 { @apply text-text-primary; font-weight: 600; }
+  h2 { @apply text-text-primary; font-weight: 600; }
+  h3 { @apply text-text-primary; font-weight: 600; }
+  p  { @apply text-text-primary leading-relaxed; }
+
   button {
     @apply transition-all duration-150 ease-out;
   }
-  button:disabled {
-    @apply opacity-35 cursor-not-allowed;
-  }
+  button:disabled { @apply opacity-40 cursor-not-allowed; }
 
-  /* Link defaults — utility classes like text-text-secondary WILL override */
-  a {
-    @apply transition-colors;
-  }
+  a { @apply transition-colors; }
 
-  /* Form defaults */
   input, textarea, select {
-    @apply font-inter bg-bg-card text-text-primary border border-border-input rounded-input focus:border-text-primary;
+    @apply bg-bg-card text-text-primary border border-border-input rounded-input;
+    font-family: 'Inter', system-ui, sans-serif;
   }
-  input::placeholder,
-  textarea::placeholder,
-  select::placeholder {
-    @apply text-text-disabled;
-  }
-  select option {
-    background-color: var(--bg-card);
-    color: var(--text-primary);
-  }
+  input:focus, textarea:focus, select:focus { border-color: var(--rust-500); }
+  input::placeholder, textarea::placeholder, select::placeholder { @apply text-text-disabled; }
+  select option { background-color: var(--bg-card); color: var(--text-primary); }
 
-  /* Lists */
-  ul, ol {
-    @apply list-none;
-  }
+  ul, ol { @apply list-none; }
 
-  /* Selection */
-  ::selection {
-    @apply bg-text-dimmed text-white-pure;
-  }
+  ::selection { background: var(--rust-500); color: var(--paper); }
 }
 
-/* Scrollbar styling (pseudo-elements, not affected by utility override concerns) */
-::-webkit-scrollbar {
-  @apply w-2;
-}
-::-webkit-scrollbar-track {
-  @apply bg-bg-card;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-border-subtle hover:bg-border-emphasized rounded-full;
-}
+::-webkit-scrollbar { @apply w-2; }
+::-webkit-scrollbar-track { @apply bg-bg-card; }
+::-webkit-scrollbar-thumb { @apply bg-border-subtle hover:bg-border-emphasized rounded-full; }
 
 @media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-  }
-  input, textarea, select {
-    font-size: 16px !important; /* Prevent iOS zoom on focus */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  input, textarea, select { font-size: 16px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

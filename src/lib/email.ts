@@ -4,9 +4,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendRegistrationConfirmation(email: string, name: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.com>",
+    from: "NXTMUN <noreply@nxtmun.com>",
     to: email,
-    subject: "Registration Received - BILLMUN 2026",
+    subject: "Registration Received - NXTMUN 2026",
     html: `
       <!DOCTYPE html>
       <html>
@@ -22,15 +22,15 @@ export async function sendRegistrationConfirmation(email: string, name: string) 
         </head>
         <body>
           <div class="container">
-            <div class="header">BILLMUN</div>
+            <div class="header">NXTMUN</div>
             <div class="content">
               <p>Hello <strong>${name}</strong>,</p>
-              <p>Thank you for registering for BILLMUN 2026! We've received your application and our Executive Board will review it shortly.</p>
+              <p>Thank you for registering for NXTMUN 2026! We've received your application and our Executive Board will review it shortly.</p>
               <p>You will receive a notification email once a decision has been made on your registration status.</p>
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">View Your Portal</a>
             </div>
             <div class="footer">
-              <p>BILLMUN Conference 2026</p>
+              <p>NXTMUN Conference 2026</p>
             </div>
           </div>
         </body>
@@ -41,9 +41,9 @@ export async function sendRegistrationConfirmation(email: string, name: string) 
 
 export async function sendApprovalEmail(email: string, name: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.com>",
+    from: "NXTMUN <noreply@nxtmun.com>",
     to: email,
-    subject: "Application Approved - BILLMUN 2026",
+    subject: "Application Approved - NXTMUN 2026",
     html: `
       <!DOCTYPE html>
       <html>
@@ -59,15 +59,15 @@ export async function sendApprovalEmail(email: string, name: string) {
         </head>
         <body>
           <div class="container">
-            <div class="header">BILLMUN</div>
+            <div class="header">NXTMUN</div>
             <div class="content">
               <p>Hello <strong>${name}</strong>,</p>
-              <p>Congratulations! Your registration for BILLMUN 2026 has been approved.</p>
+              <p>Congratulations! Your registration for NXTMUN 2026 has been approved.</p>
               <p>You now have full access to the attendees portal. Here you can view committees, submit documents, and get AI-powered feedback on your work.</p>
               <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" class="button">Sign In Now</a>
             </div>
             <div class="footer">
-              <p>BILLMUN Conference 2026</p>
+              <p>NXTMUN Conference 2026</p>
             </div>
           </div>
         </body>
@@ -78,9 +78,9 @@ export async function sendApprovalEmail(email: string, name: string) {
 
 export async function sendRejectionEmail(email: string, name: string, reason?: string) {
   return resend.emails.send({
-    from: "BILLMUN <noreply@billmun.com>",
+    from: "NXTMUN <noreply@nxtmun.com>",
     to: email,
-    subject: "Registration Update - BILLMUN 2026",
+    subject: "Registration Update - NXTMUN 2026",
     html: `
       <!DOCTYPE html>
       <html>
@@ -95,15 +95,15 @@ export async function sendRejectionEmail(email: string, name: string, reason?: s
         </head>
         <body>
           <div class="container">
-            <div class="header">BILLMUN</div>
+            <div class="header">NXTMUN</div>
             <div class="content">
               <p>Hello <strong>${name}</strong>,</p>
-              <p>Thank you for your interest in BILLMUN 2026. Unfortunately, your registration was not approved for this conference cycle.</p>
+              <p>Thank you for your interest in NXTMUN 2026. Unfortunately, your registration was not approved for this conference cycle.</p>
               ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-              <p>For inquiries, please contact us at <a href="mailto:support@billmun.com">support@billmun.com</a></p>
+              <p>For inquiries, please contact us at <a href="mailto:support@nxtmun.com">support@nxtmun.com</a></p>
             </div>
             <div class="footer">
-              <p>BILLMUN Conference 2026</p>
+              <p>NXTMUN Conference 2026</p>
             </div>
           </div>
         </body>
@@ -179,7 +179,7 @@ export async function sendReportEmail(reportData: any) {
           <p><strong>Email:</strong> ${user_details.email}</p>
 
           <div class="footer">
-            <p>Sent via BILLMUN Portal &middot; ${new Date(timestamp).toLocaleString()}</p>
+            <p>Sent via NXTMUN Portal &middot; ${new Date(timestamp).toLocaleString()}</p>
           </div>
         </div>
       </body>
@@ -187,7 +187,7 @@ export async function sendReportEmail(reportData: any) {
   `;
 
   return resend.emails.send({
-    from: "BILLMUN Reports <noreply@billmun.com>",
+    from: "NXTMUN Reports <noreply@nxtmun.com>",
     to: ["opticalxhub@gmail.com", "alaa2030abbadi@gmail.com"],
     subject: `${category === 'MEDICAL' ? '[URGENT] MEDICAL' : '[ALERT] ISSUE'}: ${issue_type} - ${user_details.full_name}`,
     html,

@@ -144,7 +144,7 @@ export default function BlocsTab({ ctx }: { ctx: ChairContext }) {
       {/* Privacy Notice */}
       <div className="mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
         <p className="text-xs text-yellow-400">
-          <strong>Chair Access:</strong> As committee chair, you have access to all bloc communications for oversight purposes. This access is in accordance with BILLMUN regulations and conference rules.
+          <strong>Chair Access:</strong> As committee chair, you have access to all bloc communications for oversight purposes. This access is in accordance with NXTMUN regulations and conference rules.
         </p>
       </div>
 

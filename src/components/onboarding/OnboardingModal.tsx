@@ -65,7 +65,7 @@ export default function OnboardingModal({ role, full_name, committee, onComplete
     }
     return {
       title: "You’re all set",
-      description: "Close this guide and start using BILLMUN with confidence.",
+      description: "Close this guide and start using NXTMUN with confidence.",
     };
   }, [step, committee, full_name, roleUpper]);
 

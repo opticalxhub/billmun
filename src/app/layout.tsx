@@ -15,62 +15,62 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "BILLMUN",
-    template: "%s | BILLMUN"
+    default: "NXTMUN",
+    template: "%s | NXTMUN"
   },
-  description: "BILLMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
+  description: "NXTMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
   keywords: [
-    "BILLMUN",
-    "BILLMUN 2026",
-    "BILLMUN conference",
-    "BILLMUN MUN",
+    "NXTMUN",
+    "NXTMUN 2026",
+    "NXTMUN conference",
+    "NXTMUN MUN",
     "Model United Nations",
     "MUN Saudi Arabia",
     "MUN Khobar",
     "Yarmook Elementary Private School Dhahran MUN",
     "student diplomacy",
-    "BILLMUN apply",
-    "BILLMUN gallery",
-    "BILLMUN socials",
-    "BILLMUN contact"
+    "NXTMUN apply",
+    "NXTMUN gallery",
+    "NXTMUN socials",
+    "NXTMUN contact"
   ],
-  authors: [{ name: "BILLMUN" }],
-  creator: "BILLMUN",
-  publisher: "BILLMUN",
+  authors: [{ name: "NXTMUN" }],
+  creator: "NXTMUN",
+  publisher: "NXTMUN",
   metadataBase: safeMetadataBaseUrl(),
   icons: {
     icon: [
-      { url: '/billmun.png', sizes: 'any' },
-      { url: '/billmun.png', sizes: '32x32' },
-      { url: '/billmun.png', sizes: '16x16' }
+      { url: '/nxtmun.png', sizes: 'any' },
+      { url: '/nxtmun.png', sizes: '32x32' },
+      { url: '/nxtmun.png', sizes: '16x16' }
     ],
     apple: [
-      { url: '/billmun.png', sizes: '180x180' }
+      { url: '/nxtmun.png', sizes: '180x180' }
     ],
-    shortcut: '/billmun.png',
+    shortcut: '/nxtmun.png',
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://billmun.com",
-    title: "BILLMUN",
-    description: "BILLMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
-    siteName: "BILLMUN",
+    url: "https://nxtmun.com",
+    title: "NXTMUN",
+    description: "NXTMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
+    siteName: "NXTMUN",
     images: [
       {
-        url: "/billmun.png",
+        url: "/nxtmun.png",
         width: 1200,
         height: 630,
-        alt: "BILLMUN Logo"
+        alt: "NXTMUN Logo"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "BILLMUN",
-    description: "BILLMUN is a student-led Model United Nations conference. 3–4 April 2026.",
-    images: ["/billmun.png"],
-    creator: "@billmun"
+    title: "NXTMUN",
+    description: "NXTMUN is a student-led Model United Nations conference. 3–4 April 2026.",
+    images: ["/nxtmun.png"],
+    creator: "@nxtmun"
   },
   robots: {
     index: true,
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     }
   },
   alternates: {
-    canonical: "https://billmun.com",
+    canonical: "https://nxtmun.com",
   },
 };
 
@@ -102,16 +102,16 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "BILLMUN",
-              "url": "https://billmun.com",
-              "logo": "https://billmun.com/billmun.png",
-              "description": "BILLMUN is a student-led Model United Nations conference.",
+              "name": "NXTMUN",
+              "url": "https://nxtmun.com",
+              "logo": "https://nxtmun.com/nxtmun.png",
+              "description": "NXTMUN is a student-led Model United Nations conference.",
               "sameAs": [
-                "https://www.instagram.com/billmun.sa"
+                "https://www.instagram.com/nxtmun.sa"
               ],
               "event": {
                 "@type": "Event",
-                "name": "BILLMUN 2026",
+                "name": "NXTMUN 2026",
                 "startDate": "2026-04-03",
                 "endDate": "2026-04-04",
                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
@@ -126,7 +126,7 @@ export default function RootLayout({
                 },
                 "organizer": {
                   "@type": "Organization",
-                  "name": "BILLMUN"
+                  "name": "NXTMUN"
                 }
               }
             })
@@ -138,27 +138,27 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "BILLMUN",
-              "url": "https://billmun.sa",
+              "name": "NXTMUN",
+              "url": "https://nxtmun.sa",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://billmun.sa/?q={search_term_string}",
+                "target": "https://nxtmun.sa/?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })
           }}
         />
-        <link rel="preconnect" href="https://cdn.billmun.sa" />
+        <link rel="preconnect" href="https://cdn.nxtmun.sa" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://billmun.sa" />
+        <link rel="dns-prefetch" href="https://nxtmun.sa" />
         <link rel="dns-prefetch" href="https://qmmgugalvcgaxvgsfslp.supabase.co" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/billmun.png" sizes="any" />
-        <link rel="icon" href="/billmun.png" sizes="32x32" />
-        <link rel="icon" href="/billmun.png" sizes="16x16" />
-        <link rel="apple-touch-icon" href="/billmun.png" sizes="180x180" />
-        <link rel="shortcut icon" href="/billmun.png" />
+        <link rel="icon" href="/nxtmun.png" sizes="any" />
+        <link rel="icon" href="/nxtmun.png" sizes="32x32" />
+        <link rel="icon" href="/nxtmun.png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/nxtmun.png" sizes="180x180" />
+        <link rel="shortcut icon" href="/nxtmun.png" />
         <meta name="theme-color" content="#000000" />
       </head>
       <body className="min-h-screen bg-bg-base text-text-primary font-inter text-rendering-optimizeLegibility">

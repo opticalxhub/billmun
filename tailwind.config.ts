@@ -45,6 +45,38 @@ const config: Config = {
         "status-rejected-bg": "var(--status-rejected-bg)",
         "status-rejected-text": "var(--status-rejected-text)",
         "status-rejected-border": "var(--status-rejected-border)",
+
+        // Brand
+        rust: {
+          50:  "var(--rust-50)",
+          100: "var(--rust-100)",
+          300: "var(--rust-300)",
+          500: "var(--rust-500)",
+          600: "var(--rust-600)",
+          700: "var(--rust-700)",
+          DEFAULT: "var(--rust-500)",
+        },
+        brown: {
+          300: "var(--brown-300)",
+          500: "var(--brown-500)",
+          700: "var(--brown-700)",
+          DEFAULT: "var(--brown-500)",
+        },
+        paper: {
+          DEFAULT: "var(--paper)",
+          dim: "var(--paper-dim)",
+          line: "var(--paper-line)",
+        },
+        ink: {
+          DEFAULT: "var(--ink)",
+          soft: "var(--ink-soft)",
+          faded: "var(--ink-faded)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+          soft: "var(--accent-soft)",
+        },
       },
       backgroundColor: {
         base: "var(--bg-base)",
@@ -68,9 +100,15 @@ const config: Config = {
         base: "var(--bg-base)",
       },
       fontFamily: {
-        "jotia": ["Jotia W00 Regular", "sans-serif"],
-        "jotia-bold": ["Jotia W00 Regular", "sans-serif"],
-        "inter": ["Inter", "sans-serif"],
+        // Brand serif for headings (editorial / cinematic)
+        "serif": ["Fraunces", "Times New Roman", "serif"],
+        "jotia": ["Fraunces", "Times New Roman", "serif"],
+        "jotia-bold": ["Fraunces", "Times New Roman", "serif"],
+        // Body
+        "inter": ["Inter", "system-ui", "sans-serif"],
+        "sans": ["Inter", "system-ui", "sans-serif"],
+        // Data / labels
+        "mono": ["JetBrains Mono", "ui-monospace", "monospace"],
       },
       fontSize: {
         "nav-brand": ["17px", { lineHeight: "1.2", fontWeight: "700", letterSpacing: "0.08em" }],

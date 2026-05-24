@@ -123,7 +123,7 @@ export default function DevTestPage() {
       ]},
       { name: 'AUTH & SECURITY', tests: [
         { name: 'Registration API', fn: async () => {
-          const email = `test-${Date.now()}@billmun.sa`;
+          const email = `test-${Date.now()}@nxtmun.sa`;
           const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -295,7 +295,7 @@ export default function DevTestPage() {
           return true;
         }},
         { name: 'Logo & Assets Check', fn: async () => {
-          const res = await fetch('/billmun.png');
+          const res = await fetch('/nxtmun.png');
           if (res.status !== 200) throw new Error('Main logo missing');
           return true;
         }}
@@ -333,7 +333,7 @@ export default function DevTestPage() {
       <div className="min-h-screen bg-bg-base flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-bg-card p-8 rounded-card border border-border-subtle">
           <div className="flex justify-center mb-6">
-            <img src="/billmun.png" alt="Logo" className="w-20 h-auto invert" />
+            <img src="/nxtmun.png" alt="Logo" className="w-20 h-auto invert" />
           </div>
           <h1 className="font-jotia-bold text-2xl text-text-primary mb-2">Dev Diagnostics</h1>
           <p className="text-text-dimmed text-sm mb-6">Enter passphrase to access system health tools.</p>

@@ -14,14 +14,14 @@ interface InteractiveOnboardingProps {
 const getOnboardingSteps = (dashboardType: string) => {
   const baseSteps = [
     {
-      title: `Welcome to BILLMUN, {userName}!`,
+      title: `Welcome to NXTMUN, {userName}!`,
       description: `Let's take a quick tour of your ${dashboardType} dashboard.`,
       content: (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
             <Star className="w-8 h-8 text-white" />
           </div>
-          <p>You're all set for BILLMUN 2026!</p>
+          <p>You're all set for NXTMUN 2026!</p>
         </div>
       )
     },
@@ -95,7 +95,7 @@ const getOnboardingSteps = (dashboardType: string) => {
           <Check className="w-8 h-8 text-white" />
         </div>
         <p className="font-semibold">Onboarding Complete!</p>
-        <p className="text-sm text-text-dimmed">Good luck at BILLMUN 2026!</p>
+        <p className="text-sm text-text-dimmed">Good luck at NXTMUN 2026!</p>
       </div>
     )
   });

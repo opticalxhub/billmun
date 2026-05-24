@@ -91,7 +91,7 @@ export default function DelegateDashboard() {
         return {
           user: {
             id: '00000000-0000-0000-0000-000000000000',
-            email: 'emergency@billmun.com',
+            email: 'emergency@nxtmun.com',
             full_name: 'MR. Abdulrahman',
             role: 'EXECUTIVE_BOARD',
             status: 'APPROVED',

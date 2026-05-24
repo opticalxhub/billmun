@@ -626,7 +626,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
             {/* Privacy Warning */}
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <p className="text-xs text-yellow-400">
-                <strong>Privacy Notice:</strong> Bloc messages are not encrypted and may be accessed by conference organizers, committee chairs, and security personnel in accordance with BILLMUN regulations. All communications are subject to conference rules.
+                <strong>Privacy Notice:</strong> Bloc messages are not encrypted and may be accessed by conference organizers, committee chairs, and security personnel in accordance with NXTMUN regulations. All communications are subject to conference rules.
               </p>
             </div>
             {messagesLoading ? (

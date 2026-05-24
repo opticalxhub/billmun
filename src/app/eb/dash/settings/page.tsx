@@ -7,12 +7,12 @@ import { DashboardLoadingState } from '@/components/dashboard-shell';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({
-    conference_name: 'BILLMUN 2026',
+    conference_name: 'NXTMUN 2026',
     conference_date: '2026-04-03',
     conference_location: 'Khobar, Saudi Arabia',
     registration_open: true,
     auto_approve_registrations: false,
-    portal_message: 'Welcome to the official BILLMUN 2026 Attendees Portal.',
+    portal_message: 'Welcome to the official NXTMUN 2026 Attendees Portal.',
     maintenance_mode: false,
     ai_analysis_enabled: true,
     max_file_upload_mb: 10,
