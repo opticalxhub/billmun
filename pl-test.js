@@ -3,13 +3,13 @@ const fs = require('fs');
 
 
 const ROLES = [
-  { role: 'DELEGATE', email: 'testdel7@billmun.test', pass: 'Pookie123!' },
-  { role: 'CHAIR', email: 'testchair7@billmun.test', pass: 'Pookie123!' },
-  { role: 'ADMIN', email: 'testadmin7@billmun.test', pass: 'Pookie123!' },
-  { role: 'MEDIA', email: 'testmedia7@billmun.test', pass: 'Pookie123!' },
-  { role: 'PRESS', email: 'testpress7@billmun.test', pass: 'Pookie123!' },
-  { role: 'SECURITY', email: 'testsecurity7@billmun.test', pass: 'Pookie123!' },
-  { role: 'EXECUTIVE_BOARD', email: 'testeb7@billmun.test', pass: 'Pookie123!' }
+  { role: 'DELEGATE', email: 'testdel7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'CHAIR', email: 'testchair7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'ADMIN', email: 'testadmin7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'MEDIA', email: 'testmedia7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'PRESS', email: 'testpress7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'SECURITY', email: 'testsecurity7@nxtmun.test', pass: 'Pookie123!' },
+  { role: 'EXECUTIVE_BOARD', email: 'testeb7@nxtmun.test', pass: 'Pookie123!' }
 ];
 
 async function runTests() {

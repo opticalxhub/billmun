@@ -8,13 +8,13 @@ const BASE = 'http://localhost:3000';
 const password = 'Pookie123!';
 
 const accounts = [
-  { label: 'DELEGATE',        email: 'testdel7@billmun.test',     full_name: 'Test Delegate',  department: 'DELEGATE',        preferred_committee: 'UNESCO', allocated_country: 'France' },
-  { label: 'CHAIR',           email: 'testchair7@billmun.test',   full_name: 'Test Chair',     department: 'CHAIR',           preferred_committee: 'UNESCO', allocated_country: '' },
-  { label: 'CO_CHAIR',        email: 'testcochair7@billmun.test', full_name: 'Test CoChair',   department: 'CO_CHAIR',        preferred_committee: 'UNESCO', allocated_country: '' },
-  { label: 'ADMIN',           email: 'testadmin7@billmun.test',   full_name: 'Test Admin',     department: 'ADMIN',           preferred_committee: 'UNESCO', allocated_country: '' },
-  { label: 'PRESS',           email: 'testpress7@billmun.test',   full_name: 'Test Press',     department: 'PRESS',           preferred_committee: '',       allocated_country: '' },
-  { label: 'SECURITY',        email: 'testsec7@billmun.test',     full_name: 'Test Security',  department: 'SECURITY',        preferred_committee: '',       allocated_country: '' },
-  { label: 'EXECUTIVE_BOARD', email: 'testeb7@billmun.test',      full_name: 'Test EB',        department: 'EXECUTIVE_BOARD', preferred_committee: '',       allocated_country: '' },
+  { label: 'DELEGATE',        email: 'testdel7@nxtmun.test',     full_name: 'Test Delegate',  department: 'DELEGATE',        preferred_committee: 'UNESCO', allocated_country: 'France' },
+  { label: 'CHAIR',           email: 'testchair7@nxtmun.test',   full_name: 'Test Chair',     department: 'CHAIR',           preferred_committee: 'UNESCO', allocated_country: '' },
+  { label: 'CO_CHAIR',        email: 'testcochair7@nxtmun.test', full_name: 'Test CoChair',   department: 'CO_CHAIR',        preferred_committee: 'UNESCO', allocated_country: '' },
+  { label: 'ADMIN',           email: 'testadmin7@nxtmun.test',   full_name: 'Test Admin',     department: 'ADMIN',           preferred_committee: 'UNESCO', allocated_country: '' },
+  { label: 'PRESS',           email: 'testpress7@nxtmun.test',   full_name: 'Test Press',     department: 'PRESS',           preferred_committee: '',       allocated_country: '' },
+  { label: 'SECURITY',        email: 'testsec7@nxtmun.test',     full_name: 'Test Security',  department: 'SECURITY',        preferred_committee: '',       allocated_country: '' },
+  { label: 'EXECUTIVE_BOARD', email: 'testeb7@nxtmun.test',      full_name: 'Test EB',        department: 'EXECUTIVE_BOARD', preferred_committee: '',       allocated_country: '' },
 ];
 
 async function main() {

@@ -3,12 +3,12 @@ DELETE FROM public.committee_assignments WHERE committee_id = '550e8400-e29b-41d
 
 -- Delete users
 DELETE FROM public.users WHERE email IN (
-    'test_delegate@billmun.sa',
-    'test_chair@billmun.sa',
-    'test_admin@billmun.sa',
-    'test_security@billmun.sa',
-    'test_media@billmun.sa',
-    'test_executive_board@billmun.sa'
+    'test_delegate@nxtmun.sa',
+    'test_chair@nxtmun.sa',
+    'test_admin@nxtmun.sa',
+    'test_security@nxtmun.sa',
+    'test_media@nxtmun.sa',
+    'test_executive_board@nxtmun.sa'
 );
 
 -- Delete committee

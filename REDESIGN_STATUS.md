@@ -1,4 +1,4 @@
-# BILLMUN Portal Redesign Status
+# NXTMUN Portal Redesign Status
 
 ## User Requirements Summary
 
@@ -13,7 +13,7 @@
 - **Status:** Font links added to layout, Tailwind config updated
 
 ### 3. Branding
-- Replace all "BILLMUN", "BM" text with billmun.png logo
+- Replace all "NXTMUN", "BM" text with nxtmun.png logo
 - **Issue:** Logo file not found in project - needs to be provided
 
 ### 4. Remove Emojis
@@ -60,6 +60,6 @@
 - ⏳ Global font replacement in all components
 
 ## Notes
-- Logo file (billmun.png) not found - user needs to provide this
+- Logo file (nxtmun.png) not found - user needs to provide this
 - Need to update database schema to include committee and country fields for registration
 - All legal documents should be extensive (300+ lines) and protect all parties

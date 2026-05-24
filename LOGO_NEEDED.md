@@ -2,14 +2,14 @@
 
 ## Missing Asset
 
-The redesign requires the `billmun.png` logo file to replace all text-based branding throughout the application.
+The redesign requires the `nxtmun.png` logo file to replace all text-based branding throughout the application.
 
 ## Where to Place It
 
 Please add the logo file to one of these locations:
-- `public/billmun.png` (recommended)
-- `src/assets/billmun.png`
-- Root directory: `billmun.png`
+- `public/nxtmun.png` (recommended)
+- `src/assets/nxtmun.png`
+- Root directory: `nxtmun.png`
 
 ## Logo Specifications
 
@@ -23,7 +23,7 @@ Please provide a high-resolution PNG with transparent background for best result
 
 ## Current Status
 
-All text references to "BILLMUN" and "BM" are ready to be replaced with the logo image once the file is provided.
+All text references to "NXTMUN" and "BM" are ready to be replaced with the logo image once the file is provided.
 
 ## Implementation Plan
 

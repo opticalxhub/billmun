@@ -10,6 +10,6 @@ INSERT INTO conference_windows (label, start_time, end_time) VALUES
 
 -- Update post-conference message
 UPDATE conference_config SET
-  post_conference_message = 'BILLMUN I has concluded. Thank you to every delegate, chair, and member of staff who made this conference possible. It has been an honour. Stay connected — follow us @billmun.sa on Instagram for highlights, photos, and future announcements.',
+  post_conference_message = 'NXTMUN I has concluded. Thank you to every delegate, chair, and member of staff who made this conference possible. It has been an honour. Stay connected — follow us @nxtmun.sa on Instagram for highlights, photos, and future announcements.',
   manual_override = NULL
 WHERE id = '1';

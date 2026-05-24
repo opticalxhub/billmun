@@ -1,4 +1,4 @@
-# BILLMUN Portal Redesign - Completion Status
+# NXTMUN Portal Redesign - Completion Status
 
 ## ✅ COMPLETED
 
@@ -62,7 +62,7 @@ All 300+ lines each, comprehensive and protective:
 ### 6. Footer Component Created
 - **File:** `src/components/footer.tsx`
 - **Sections:**
-  - About BILLMUN
+  - About NXTMUN
   - Conference information
   - Legal links (Privacy, Terms, Acceptable Use)
   - Contact information
@@ -77,7 +77,7 @@ All 300+ lines each, comprehensive and protective:
 ## ⏳ PENDING / NEEDS ATTENTION
 
 ### 1. Logo Integration
-- **Status:** Waiting for `billmun.png` file
+- **Status:** Waiting for `nxtmun.png` file
 - **Documentation:** Created `LOGO_NEEDED.md` with specifications
 - **Once provided, will replace:**
   - Navigation branding
@@ -149,7 +149,7 @@ allocated_country: formData.allocatedCountry,
 ## 📋 NEXT STEPS
 
 1. **Provide Logo File**
-   - Add `billmun.png` to project
+   - Add `nxtmun.png` to project
    - Update all branding references
 
 2. **Update Database Schema**

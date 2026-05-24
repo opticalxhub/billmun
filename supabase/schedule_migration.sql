@@ -1,5 +1,5 @@
--- BILLMUN Conference Schedule Migration
--- Matches the official BILLMUN AGENDA exactly
+-- NXTMUN Conference Schedule Migration
+-- Matches the official NXTMUN AGENDA exactly
 -- All times in KSA (UTC+3) — April 3 = Friday (Day 1), April 4 = Saturday (Day 2)
 -- Safe to run multiple times (clears old data first)
 

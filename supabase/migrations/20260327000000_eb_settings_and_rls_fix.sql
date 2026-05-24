@@ -10,7 +10,7 @@ ALTER TABLE public.conference_settings ADD COLUMN IF NOT EXISTS updated_at TIMES
 
 -- 2. Seed initial settings if table is empty
 INSERT INTO public.conference_settings (id, conference_name, conference_date, conference_location, registration_open, auto_approve_registrations, portal_message, maintenance_mode, ai_analysis_enabled, max_file_upload_mb, emergency_contact_phone)
-VALUES ('1', 'BILLMUN 2026', '2026-03-27', 'Khobar, Saudi Arabia', true, false, 'Welcome to the official BILLMUN 2026 Attendees Portal.', false, true, 10, '+966 5X XXX XXXX')
+VALUES ('1', 'NXTMUN 2026', '2026-03-27', 'Khobar, Saudi Arabia', true, false, 'Welcome to the official NXTMUN 2026 Attendees Portal.', false, true, 10, '+966 5X XXX XXXX')
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. Reset and fix RLS for conference_settings

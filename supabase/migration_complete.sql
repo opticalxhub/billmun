@@ -1,4 +1,4 @@
--- BILLMUN Complete Database Migration
+-- NXTMUN Complete Database Migration
 -- Run this in Supabase SQL Editor to set up all required tables, columns, indexes, and policies
 
 -- Enable UUID extension

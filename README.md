@@ -1,6 +1,6 @@
-# BILLMUN Attendees Portal
+# NXTMUN Attendees Portal
 
-A production-ready, full-stack conference management platform for the BILLMUN Model United Nations conference. Built with Next.js 14, Supabase PostgreSQL, Supabase Auth, and Groq AI.
+A production-ready, full-stack conference management platform for the NXTMUN Model United Nations conference. Built with Next.js 14, Supabase PostgreSQL, Supabase Auth, and Groq AI.
 
 ## 🚀 Quick Start
 

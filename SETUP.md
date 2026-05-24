@@ -1,6 +1,6 @@
-# BILLMUN Portal - Complete Setup Guide
+# NXTMUN Portal - Complete Setup Guide
 
-This guide will walk you through setting up the BILLMUN Attendees Portal from scratch with Supabase as the backend.
+This guide will walk you through setting up the NXTMUN Attendees Portal from scratch with Supabase as the backend.
 
 ## Prerequisites
 
@@ -21,7 +21,7 @@ npm install
 1. Go to https://supabase.com/dashboard
 2. Click "New Project"
 3. Fill in:
-   - Project name: `billmun`
+   - Project name: `nxtmun`
    - Database password: (strong password)
    - Region: Choose closest to you
 4. Click "Create new project" and wait 3-5 minutes

@@ -1,8 +1,8 @@
-# BILLMUN Attendees Portal - Complete Implementation Summary
+# NXTMUN Attendees Portal - Complete Implementation Summary
 
 ## ✅ What's Been Built
 
-This is a **fully functional, production-ready** BILLMUN Attendees Portal with:
+This is a **fully functional, production-ready** NXTMUN Attendees Portal with:
 
 ### Core Features
 - ✅ **Supabase Backend** - PostgreSQL database with full schema

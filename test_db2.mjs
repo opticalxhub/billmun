@@ -17,7 +17,7 @@ async function check() {
   if (u1?.length === 0) {
      const { error: insUser } = await supabase.from('users').insert({
         id: '00000000-0000-0000-0000-000000000000',
-        email: 'emergency@billmun.online',
+        email: 'emergency@nxtmun.online',
         full_name: 'Engineer (Emergency)',
         role: 'EXECUTIVE_BOARD',
         status: 'APPROVED'

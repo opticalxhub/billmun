@@ -1,4 +1,4 @@
--- BILLMUN: Add missing columns to EXISTING tables
+-- NXTMUN: Add missing columns to EXISTING tables
 -- Safe to run multiple times. Only adds what's missing.
 
 -- media_gallery

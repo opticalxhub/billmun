@@ -205,8 +205,8 @@ INSERT INTO committees (name, abbreviation, max_delegates, is_active) VALUES
 
 -- Insert EB User
 -- Note: You'll need to create this user in Supabase Auth first to get a real UUID
--- Email: EB@billmun.sa
+-- Email: EB@nxtmun.sa
 -- Suggested Password: B1llMUN_2026_EB!
 INSERT INTO users (id, email, full_name, role, status)
-VALUES ('00000000-0000-0000-0000-000000000000', 'EB@billmun.sa', 'BillMUN Executive Board', 'EXECUTIVE_BOARD', 'APPROVED')
+VALUES ('00000000-0000-0000-0000-000000000000', 'EB@nxtmun.sa', 'NXTMUN Executive Board', 'EXECUTIVE_BOARD', 'APPROVED')
 ON CONFLICT (email) DO UPDATE SET role = 'EXECUTIVE_BOARD', status = 'APPROVED';

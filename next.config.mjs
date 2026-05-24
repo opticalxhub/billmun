@@ -8,7 +8,7 @@ try {
 }
 
 const imageRemotePatterns = [
-  { protocol: 'https', hostname: 'billmun.com', pathname: '/**' },
+  { protocol: 'https', hostname: 'nxtmun.com', pathname: '/**' },
   { protocol: 'http', hostname: 'localhost', pathname: '/**' },
 ];
 if (supabaseHost) {
@@ -65,7 +65,7 @@ const nextConfig = {
         ],
       },
       {
-        source: '/billmun.png',
+        source: '/nxtmun.png',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],

@@ -1,4 +1,4 @@
-# BILLMUN Portal - Quick Reference
+# NXTMUN Portal - Quick Reference
 
 ## ⚡ 30-Minute Setup
 

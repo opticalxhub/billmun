@@ -36,17 +36,17 @@ INSERT INTO public.users (
 )
 VALUES 
 -- Delegate
-('770e8400-e29b-41d4-a716-446655440001', 'test_delegate@billmun.sa', 'Test Delegate', 'DELEGATE', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
+('770e8400-e29b-41d4-a716-446655440001', 'test_delegate@nxtmun.sa', 'Test Delegate', 'DELEGATE', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
 -- Chair
-('770e8400-e29b-41d4-a716-446655440002', 'test_chair@billmun.sa', 'Test Chair', 'CHAIR', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
+('770e8400-e29b-41d4-a716-446655440002', 'test_chair@nxtmun.sa', 'Test Chair', 'CHAIR', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
 -- Admin
-('770e8400-e29b-41d4-a716-446655440003', 'test_admin@billmun.sa', 'Test Admin', 'ADMIN', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
+('770e8400-e29b-41d4-a716-446655440003', 'test_admin@nxtmun.sa', 'Test Admin', 'ADMIN', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
 -- Security
-('770e8400-e29b-41d4-a716-446655440004', 'test_security@billmun.sa', 'Test Security', 'SECURITY', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
+('770e8400-e29b-41d4-a716-446655440004', 'test_security@nxtmun.sa', 'Test Security', 'SECURITY', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
 -- Media
-('770e8400-e29b-41d4-a716-446655440005', 'test_media@billmun.sa', 'Test Media', 'MEDIA', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
+('770e8400-e29b-41d4-a716-446655440005', 'test_media@nxtmun.sa', 'Test Media', 'MEDIA', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now()),
 -- EB
-('770e8400-e29b-41d4-a716-446655440006', 'test_executive_board@billmun.sa', 'Test EB', 'EXECUTIVE_BOARD', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now())
+('770e8400-e29b-41d4-a716-446655440006', 'test_executive_board@nxtmun.sa', 'Test EB', 'EXECUTIVE_BOARD', 'APPROVED', '$2a$10$xyz...', true, 'ACTIVE', now(), now())
 ON CONFLICT (email) DO NOTHING;
 
 -- Note: In a real environment, you should use an actual bcrypt hash for 'password123'. 

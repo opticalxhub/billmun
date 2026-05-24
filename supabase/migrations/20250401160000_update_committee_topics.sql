@@ -1,4 +1,4 @@
--- Migration: Update Committee Topics for BILLMUN 2026
+-- Migration: Update Committee Topics for NXTMUN 2026
 -- Created: April 1, 2026
 
 -- Update committees with their respective topics

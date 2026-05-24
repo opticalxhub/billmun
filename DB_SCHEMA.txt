@@ -278,7 +278,7 @@ TOTAL TABLES: 77
 
 [conference_settings] (14 cols)
   id: text | def="1" | [REQ]
-  conference_name: text | def="BILLMUN 2026"
+  conference_name: text | def="NXTMUN 2026"
   conference_date: date
   conference_location: text
   registration_open: boolean | def=false

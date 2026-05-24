@@ -7,10 +7,10 @@ const supabase = createClient(url, key);
 
 async function runTests() {
   const usersToTest = [
-    { email: 'testdel7@billmun.test', role: 'DELEGATE' },
-    { email: 'testchair7@billmun.test', role: 'CHAIR' },
-    { email: 'testeb7@billmun.test', role: 'EXECUTIVE_BOARD' },
-    { email: 'testsecurity7@billmun.test', role: 'SECURITY' }
+    { email: 'testdel7@nxtmun.test', role: 'DELEGATE' },
+    { email: 'testchair7@nxtmun.test', role: 'CHAIR' },
+    { email: 'testeb7@nxtmun.test', role: 'EXECUTIVE_BOARD' },
+    { email: 'testsecurity7@nxtmun.test', role: 'SECURITY' }
   ];
 
   const report = {};

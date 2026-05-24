@@ -1,4 +1,4 @@
--- BILLMUN SUPABASE SCHEMA UPDATES
+-- NXTMUN SUPABASE SCHEMA UPDATES
 -- Run this in your Supabase SQL Editor to ensure all tables exist
 
 -- 1. Committee Blocs (for Blocs & Resolutions section)

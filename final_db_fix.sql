@@ -69,7 +69,7 @@ USING (public.get_my_role() IN ('EXECUTIVE_BOARD', 'ADMIN', 'SECRETARY_GENERAL',
 
 -- 7. Audit logs fallback user
 INSERT INTO users (id, email, full_name, role, status)
-VALUES ('00000000-0000-0000-0000-000000000000', 'emergency@billmun.online', 'Engineer (Emergency)', 'EXECUTIVE_BOARD', 'APPROVED')
+VALUES ('00000000-0000-0000-0000-000000000000', 'emergency@nxtmun.online', 'Engineer (Emergency)', 'EXECUTIVE_BOARD', 'APPROVED')
 ON CONFLICT DO NOTHING;
 
 -- 8. Refresh schema cache
