@@ -10,7 +10,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#000000',
+  themeColor: '#0B0907',
 };
 
 export const metadata: Metadata = {
@@ -159,7 +159,7 @@ export default function RootLayout({
         <link rel="icon" href="/nxtmun.png" sizes="16x16" />
         <link rel="apple-touch-icon" href="/nxtmun.png" sizes="180x180" />
         <link rel="shortcut icon" href="/nxtmun.png" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#0B0907" />
       </head>
       <body className="min-h-screen bg-bg-base text-text-primary font-inter text-rendering-optimizeLegibility">
         <Providers>

@@ -100,15 +100,9 @@ const config: Config = {
         base: "var(--bg-base)",
       },
       fontFamily: {
-        // Brand serif for headings (editorial / cinematic)
-        "serif": ["Fraunces", "Times New Roman", "serif"],
-        "jotia": ["Fraunces", "Times New Roman", "serif"],
-        "jotia-bold": ["Fraunces", "Times New Roman", "serif"],
-        // Body
-        "inter": ["Inter", "system-ui", "sans-serif"],
-        "sans": ["Inter", "system-ui", "sans-serif"],
-        // Data / labels
-        "mono": ["JetBrains Mono", "ui-monospace", "monospace"],
+        "jotia": ["Jotia W00 Regular", "sans-serif"],
+        "jotia-bold": ["Jotia W00 Regular", "sans-serif"],
+        "inter": ["Inter", "sans-serif"],
       },
       fontSize: {
         "nav-brand": ["17px", { lineHeight: "1.2", fontWeight: "700", letterSpacing: "0.08em" }],
