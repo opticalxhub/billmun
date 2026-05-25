@@ -54,7 +54,7 @@ export default function EBLoginPage() {
       const role = userProfile?.role?.toUpperCase();
 
       // Redirect based on role
-      if (role === 'EXECUTIVE_BOARD' || role === 'ADMIN' || role === 'SECRETARY_GENERAL' || role === 'DEPUTY_SECRETARY_GENERAL') {
+      if (role === 'EXECUTIVE_BOARD' || role === 'SECRETARY_GENERAL' || role === 'DEPUTY_SECRETARY_GENERAL') {
         router.push('/eb/dash');
       } else {
         setError(`Access denied. This portal is for Executive Board members only. Current role: ${userProfile?.role}`);
@@ -71,13 +71,6 @@ export default function EBLoginPage() {
       {/* Left Form Side */}
       <div className="w-full max-w-[480px] p-10 flex flex-col justify-center bg-bg-base relative z-10 border-r border-border-subtle shadow-2xl">
         <div className="w-full max-w-sm mx-auto">
-          {/* Brand Logo */}
-          <div className="mb-16">
-            <Link href="/" className="inline-block hover:scale-105 transition-transform duration-300">
-              <Image src="/billmun.png" alt="BILLMUN Logo" width={80} height={80} className="w-20 h-auto dark:invert" />
-            </Link>
-          </div>
-
           <div className="mb-10">
             <h1 className="font-jotia text-5xl text-text-primary mb-3 tracking-tight">
               Executive Portal
@@ -147,7 +140,6 @@ export default function EBLoginPage() {
         </div>
         
         <div className="relative z-10 max-w-lg text-center px-8">
-          <Image src="/billmun.png" alt="BILLMUN Logo Large" width={300} height={300} className="mx-auto mb-12 opacity-80 invert" />
           <h2 className="font-jotia text-4xl mb-4 text-text-primary">Executive Control</h2>
           <p className="text-text-secondary text-lg leading-relaxed">Secure your session to manage committees, review documents, and direct the flow of debate.</p>
         </div>

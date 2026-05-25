@@ -34,63 +34,47 @@ import { useConferenceGate } from '@/lib/use-conference-gate';
 import { ConferenceLockScreen } from '@/components/conference-lock-screen';
 
 const DEFAULT_TABS = [
-  'Command Center',
+  'Overview',
   'Roll Call',
-  'Timers',
   'Speakers List',
-  'Points & Motions',
-  'Blocs & Resolutions',
-  'Delegate Stats',
+  'Debate Tools',
+  'Resolutions',
   'Documents',
   'Delegates',
-  'Analytics',
-  'AI Tools',
-  'Preparation',
-  'Committee Schedule',
-  'WhatsApp',
+  'Schedule',
 ] as const;
 
 const ICJ_CHAIR_TABS = [
-  'Command Center',
+  'Overview',
   'Roll Call',
-  'Timers',
   'Speakers List',
   'Case Management',
-  'Delegate Stats',
   'Documents',
   'Delegates',
-  'Analytics',
-  'AI Tools',
-  'Preparation',
-  'Committee Schedule',
-  'WhatsApp',
+  'Schedule',
 ] as const;
 
 const CRISIS_CHAIR_TABS = [
-  'Command Center',
+  'Overview',
   'Crisis Control',
   'Roll Call',
-  'Timers',
   'Speakers List',
-  'Points & Motions',
-  'Blocs & Resolutions',
-  'Delegate Stats',
+  'Debate Tools',
+  'Resolutions',
   'Documents',
   'Delegates',
-  'Analytics',
-  'AI Tools',
-  'Preparation',
-  'Committee Schedule',
-  'WhatsApp',
+  'Schedule',
 ] as const;
 
 type TabName = string;
 
+import type { PortalUserSummary, CommitteeSummary, CommitteeSessionSummary, DelegateSummary } from '@/types/portal';
+
 export interface ChairContext {
-  user: any;
-  committee: any;
-  session: any;
-  delegates: any[];
+  user: PortalUserSummary;
+  committee: CommitteeSummary | null;
+  session: CommitteeSessionSummary | null;
+  delegates: DelegateSummary[];
   refreshData: () => Promise<void>;
 }
 
@@ -108,7 +92,7 @@ export default function ChairDashboard() {
       if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
         return {
           id: '00000000-0000-0000-0000-000000000000',
-          email: 'emergency@billmun.com',
+          email: 'emergency@portal.nxtmun.com',
           full_name: 'Engineer (Emergency)',
           role: 'EXECUTIVE_BOARD',
           status: 'APPROVED',
@@ -137,7 +121,7 @@ export default function ChairDashboard() {
       // Find committee where this user is chair or co-chair
       const { data: committeeData } = await supabase
         .from('committees')
-        .select('*')
+        .select('id, name, abbreviation, topic, secondary_topic, description, background_guide_url, rop_url, sub_topics, chair_id, co_chair_id, admin_id, visibility')
         .or(`chair_id.eq.${user!.id},co_chair_id.eq.${user!.id}`)
         .maybeSingle();
 
@@ -151,7 +135,11 @@ export default function ChairDashboard() {
         .maybeSingle();
       
       if (assignData) {
-        const { data: c } = await supabase.from('committees').select('*').eq('id', assignData.committee_id).maybeSingle();
+        const { data: c } = await supabase
+          .from('committees')
+          .select('id, name, abbreviation, topic, secondary_topic, description, background_guide_url, rop_url, sub_topics, chair_id, co_chair_id, admin_id, visibility')
+          .eq('id', assignData.committee_id)
+          .maybeSingle();
         return c;
       }
       return null;
@@ -180,14 +168,27 @@ export default function ChairDashboard() {
         `)
         .eq('committee_id', committee!.id);
       
-      return (data || [])
-        .filter((a: any) => a.user?.status === 'APPROVED' && a.user?.role === 'DELEGATE')
-        .map((a: any) => ({
-          ...a.user,
+      const rawData = (data || []) as unknown as Array<{
+        user_id: string;
+        country: string | null;
+        seat_number: string | null;
+        user: {
+          id: string;
+          full_name: string | null;
+          email: string;
+          role: string;
+          status: string;
+        } | null;
+      }>;
+
+      return rawData
+        .filter((a) => a.user?.status === 'APPROVED' && a.user?.role === 'DELEGATE')
+        .map((a) => ({
+          ...(a.user as any),
           user_id: a.user_id,
           country: a.country || 'Unknown',
           seat_number: a.seat_number || '',
-        }));
+        })) as DelegateSummary[];
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -199,9 +200,9 @@ export default function ChairDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('committee_sessions')
-        .select('*')
+        .select('id, committee_id, status, caucus_type, debate_topic, current_speaker, speaking_time_limit, moderated_caucus_topic, moderated_caucus_time, unmoderated_caucus_time, voting_open, updated_at')
         .eq('committee_id', committee!.id)
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (error) throw error;
@@ -323,9 +324,9 @@ export default function ChairDashboard() {
   }
 
   const ctx: ChairContext = {
-    user,
-    committee,
-    session: committeeSession,
+    user: user as PortalUserSummary,
+    committee: committee as CommitteeSummary | null,
+    session: committeeSession as CommitteeSessionSummary | null,
     delegates,
     refreshData,
   };
@@ -349,22 +350,35 @@ export default function ChairDashboard() {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
         <div className="xl:col-span-8">
           <DashboardAnimatedTabPanel activeKey={activeTab}>
-            {activeTab === 'Command Center' && <CommandCenterTab ctx={ctx} />}
+            {activeTab === 'Overview' && (
+              <div className="space-y-6">
+                <CommandCenterTab ctx={ctx} />
+                <PreparationTab ctx={ctx} />
+              </div>
+            )}
             {activeTab === 'Roll Call' && <RollCallTab ctx={ctx} />}
-            {activeTab === 'Timers' && <TimersTab ctx={ctx} />}
             {activeTab === 'Speakers List' && <SpeakersListTab ctx={ctx} />}
-            {activeTab === 'Points & Motions' && <PointsMotionsTab ctx={ctx} />}
-            {activeTab === 'Blocs & Resolutions' && <BlocsTab ctx={ctx} />}
             {activeTab === 'Case Management' && <ICJCaseManagementTab ctx={ctx} />}
             {activeTab === 'Crisis Control' && <CrisisControlTab ctx={ctx} />}
-            {activeTab === 'Delegate Stats' && <DelegateStatsSpreadsheet committee={ctx.committee} />}
+            {activeTab === 'Debate Tools' && (
+              <div className="space-y-6">
+                <TimersTab ctx={ctx} />
+                <PointsMotionsTab ctx={ctx} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <AIToolsTab ctx={ctx} />
+                  <AnalyticsTab ctx={ctx} />
+                </div>
+              </div>
+            )}
+            {activeTab === 'Resolutions' && ctx.committee && (
+              <div className="space-y-6">
+                <BlocsTab ctx={ctx} />
+                <DelegateStatsSpreadsheet committee={ctx.committee} />
+              </div>
+            )}
             {activeTab === 'Documents' && <ChairDocumentsTab ctx={ctx} />}
             {activeTab === 'Delegates' && <DelegatesTab ctx={ctx} />}
-            {activeTab === 'Analytics' && <AnalyticsTab ctx={ctx} />}
-            {activeTab === 'AI Tools' && <AIToolsTab ctx={ctx} />}
-            {activeTab === 'Preparation' && <PreparationTab ctx={ctx} />}
-            {activeTab === 'Committee Schedule' && <CommitteeScheduleTab committee={ctx.committee} user={ctx.user} />}
-            {activeTab === 'WhatsApp' && <WhatsAppTab />}
+            {activeTab === 'Schedule' && ctx.committee && <CommitteeScheduleTab committee={ctx.committee} user={ctx.user} />}
           </DashboardAnimatedTabPanel>
         </div>
 

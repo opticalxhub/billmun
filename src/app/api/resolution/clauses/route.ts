@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from('resolution_clauses')
-      .select('*')
+      .select('id, resolution_id, type, opening_phrase, content, order_index, parent_clause_id, created_at')
       .eq('resolution_id', resolutionId)
       .order('order_index', { ascending: true });
 

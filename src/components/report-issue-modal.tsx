@@ -6,10 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './button';
 import { Input, Textarea } from './ui';
 
+import type { PortalUserSummary } from '@/types/portal';
+
 type Category = 'PORTAL' | 'IN_PERSON' | 'MEDICAL';
 
 interface ReportIssueModalProps {
-  user: any;
+  user: PortalUserSummary | null;
   committeeName?: string;
 }
 
@@ -59,15 +61,8 @@ export function ReportIssueModal({ user, committeeName }: ReportIssueModalProps)
       category,
       issue_type: issueType,
       description,
-      user_id: user.id,
-      user_details: {
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        grade: user.grade,
-        committee: committeeName || 'None'
-      },
       metadata: {
+        committee: committeeName || 'None',
         request_engineer: category === 'PORTAL' ? requestEngineer : undefined,
         person_responsible: category === 'IN_PERSON' ? personResponsible : undefined,
         location: (category === 'IN_PERSON' || category === 'MEDICAL') ? location : undefined,
@@ -75,6 +70,8 @@ export function ReportIssueModal({ user, committeeName }: ReportIssueModalProps)
         witnesses: category === 'IN_PERSON' ? witnesses : undefined,
         patient_name: category === 'MEDICAL' ? patientName : undefined,
         immediate_assistance: category === 'MEDICAL' ? immediateAssistance : undefined,
+        user_id: user?.id,
+        user_name: user?.full_name
       }
     };
 
@@ -191,11 +188,11 @@ export function ReportIssueModal({ user, committeeName }: ReportIssueModalProps)
                       {/* Common Auto-Fields */}
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Full Name</label>
-                        <div className="h-10 px-3 flex items-center bg-bg-raised border border-border-subtle rounded-input text-sm text-text-disabled">{user.full_name}</div>
+                        <div className="h-10 px-3 flex items-center bg-bg-raised border border-border-subtle rounded-input text-sm text-text-disabled">{user?.full_name}</div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-text-dimmed">Role</label>
-                        <div className="h-10 px-3 flex items-center bg-bg-raised border border-border-subtle rounded-input text-sm text-text-disabled">{user.role}</div>
+                        <div className="h-10 px-3 flex items-center bg-bg-raised border border-border-subtle rounded-input text-sm text-text-disabled">{user?.role}</div>
                       </div>
                     </div>
 

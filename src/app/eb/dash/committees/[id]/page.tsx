@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { DashboardAnimatedTabPanel, DashboardTabBar } from "@/components/dashboard-shell";
 
-type TabName = "Delegates" | "Chair Assignment" | "Admin Assignment" | "Session History" | "Statistics";
-const TABS: TabName[] = ["Delegates", "Chair Assignment", "Admin Assignment", "Session History", "Statistics"];
+type TabName = "Delegates" | "Chair Assignment" | "Session History" | "Statistics";
+const TABS: TabName[] = ["Delegates", "Chair Assignment", "Session History", "Statistics"];
 
 export default function ManageCommitteePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -25,8 +25,6 @@ export default function ManageCommitteePage({ params }: { params: Promise<{ id: 
   const [delegates, setDelegates] = useState<any[]>([]);
   const [availableUsers, setAvailableUsers] = useState<any[]>([]);
   const [chairUsers, setChairUsers] = useState<any[]>([]);
-  const [adminUsers, setAdminUsers] = useState<any[]>([]);
-  const [assignedAdmins, setAssignedAdmins] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
   
@@ -64,13 +62,9 @@ export default function ManageCommitteePage({ params }: { params: Promise<{ id: 
       }));
       setDelegates(els);
 
-      const assignedAdminsList = (assignments || []).filter((a: any) => a.users?.role === "ADMIN");
-      setAssignedAdmins(assignedAdminsList);
-
       const assignedUserIds = new Set((assignments || []).map(a => a.user_id));
       setAvailableUsers((users || []).filter(u => u.role === "DELEGATE" && !assignedUserIds.has(u.id)));
       setChairUsers((users || []).filter(u => u.role === "CHAIR"));
-      setAdminUsers((users || []).filter(u => u.role === "ADMIN" && !assignedUserIds.has(u.id)));
       
       setSessions(sessionsData || []);
 
@@ -150,26 +144,6 @@ export default function ManageCommitteePage({ params }: { params: Promise<{ id: 
     } catch (err) {
       console.error('Failed to reassign chair:', err);
       alert('Failed to reassign chair.');
-    }
-  };
-
-  const addAdmin = async (adminId: string) => {
-    if (!adminId) return;
-    if (assignedAdmins.length >= 2) {
-      alert("Maximum 2 admins allowed per committee.");
-      return;
-    }
-    try {
-      const { error } = await supabase.from("committee_assignments").insert({
-        user_id: adminId,
-        committee_id: id,
-        country: "Admin"
-      });
-      if (error) throw error;
-      load();
-    } catch (err) {
-      console.error('Failed to add admin:', err);
-      alert('Failed to add admin.');
     }
   };
 
@@ -270,68 +244,37 @@ export default function ManageCommitteePage({ params }: { params: Promise<{ id: 
         )}
 
         {activeTab === "Chair Assignment" && (
-          <Card className="max-w-xl">
-            <SectionLabel>Current Chair</SectionLabel>
-            <div className="mt-4 flex items-center justify-between p-4 border border-border-subtle rounded-card bg-bg-raised">
-              <div>
-                <p className="font-semibold">{committee.chair?.full_name || "Unassigned"}</p>
-                <p className="text-xs text-text-dimmed">{committee.chair?.email || "No chair assigned to this committee."}</p>
-              </div>
-            </div>
-            <div className="mt-6">
-              <SectionLabel>Reassign Chair</SectionLabel>
-              <div className="flex gap-2 mt-2">
-                <select 
-                  className="flex-1 h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
-                  onChange={(e) => {
-                    if(confirm("Change the chair?")) reassignChair(e.target.value);
-                  }}
-                  value={committee.chair_id || ""}
-                >
-                  <option value="">Select a chair...</option>
-                  {chairUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>)}
-                </select>
-                {committee.chair_id && <Button variant="outline" onClick={() => reassignChair("")}>Unassign</Button>}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {activeTab === "Admin Assignment" && (
-          <Card className="max-w-2xl">
-            <SectionLabel>Assigned Admins ({assignedAdmins.length}/2)</SectionLabel>
-            <div className="space-y-2 mt-4">
-              {assignedAdmins.map(a => (
-                <div key={a.id} className="flex items-center justify-between p-3 border border-border-subtle rounded-card bg-bg-raised">
-                  <div>
-                    <p className="font-semibold text-sm">{a.users?.full_name}</p>
-                    <p className="text-xs text-text-dimmed">{a.users?.email}</p>
-                  </div>
-                  <Button variant="outline" size="sm" className="text-status-rejected-text" onClick={() => removeAssignment(a.id)}>Remove</Button>
-                </div>
-              ))}
-              {assignedAdmins.length === 0 && <p className="text-sm text-text-dimmed">No admins assigned.</p>}
-            </div>
-            {assignedAdmins.length < 2 && (
-              <div className="mt-6 pt-6 border-t border-border-subtle">
-                <SectionLabel>Add Admin</SectionLabel>
-                <div className="flex gap-2 mt-2">
+          <div className="space-y-6">
+            <Card className="p-6 bg-bg-card border-border-subtle">
+              <SectionLabel>Assigned Chairs</SectionLabel>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-dimmed uppercase tracking-widest">Main Chair</label>
                   <select 
-                    id="admin-select"
-                    className="flex-1 h-10 rounded-input border border-border-input bg-transparent px-3 text-sm"
+                    className="w-full h-10 px-3 rounded-input border border-border-subtle bg-bg-raised text-sm"
+                    value={committee.chair_id || ""}
+                    onChange={(e) => reassignChair(e.target.value)}
                   >
-                    <option value="">Select an admin...</option>
-                    {adminUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
+                    <option value="">No Chair Assigned</option>
+                    {chairUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>)}
                   </select>
-                  <Button onClick={() => {
-                    const sel = document.getElementById("admin-select") as HTMLSelectElement;
-                    addAdmin(sel.value);
-                    sel.value = "";
-                  }}>Add</Button>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text-dimmed uppercase tracking-widest">Co-Chair</label>
+                  <select 
+                    className="w-full h-10 px-3 rounded-input border border-border-subtle bg-bg-raised text-sm"
+                    value={committee.co_chair_id || ""}
+                    onChange={(e) => {
+                      supabase.from("committees").update({ co_chair_id: e.target.value || null }).eq("id", id).then(() => load());
+                    }}
+                  >
+                    <option value="">No Co-Chair Assigned</option>
+                    {chairUsers.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.email})</option>)}
+                  </select>
                 </div>
               </div>
-            )}
-          </Card>
+            </Card>
+          </div>
         )}
 
         {activeTab === "Session History" && (

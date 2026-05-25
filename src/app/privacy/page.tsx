@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             <p>1.1. In this Privacy Policy, the following definitions apply:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>&quot;Agreement&quot; means this Privacy Policy and the Terms of Service.</li>
-              <li>&quot;BILLMUN&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot; refers to the BILLMUN organization, its organizers, technology providers, and parent entities.</li>
+              <li>&quot;NXTMUN&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot; refers to the NXTMUN organization, its organizers, technology providers, and parent entities.</li>
               <li>&quot;Data Protection Laws&quot; means all applicable privacy and data protection laws, including but not limited to GDPR, CCPA, and local regulations in the jurisdiction of operation.</li>
               <li>&quot;User&quot;, &quot;you&quot;, or &quot;your&quot; refers to any individual accessing the Platform, including Delegates, Advisors, Staff, and Guests.</li>
               <li>&quot;Personal Data&quot; means any information relating to an identified or identifiable natural person.</li>
@@ -27,8 +27,8 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">2. DATA CONTROLLER AND DATA PROTECTION OFFICER</h2>
-            <p>2.1. BILLMUN acts as the Data Controller for the Personal Data processed through the Platform. We have appointed a Data Protection Officer (DPO) who is responsible for overseeing questions in relation to this privacy policy. If you have any questions about this privacy policy, including any requests to exercise your legal rights, please contact the DPO using the details set out below.</p>
-            <p>2.2. Contact Email: dpo@billmun.com</p>
+            <p>2.1. NXTMUN acts as the Data Controller for the Personal Data processed through the Platform. We have appointed a Data Protection Officer (DPO) who is responsible for overseeing questions in relation to this privacy policy. If you have any questions about this privacy policy, including any requests to exercise your legal rights, please contact the DPO using the details set out below.</p>
+            <p>2.2. Contact Email: dpo@portal.nxtmun.com</p>
           </section>
 
           <section>
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
             <h2 className="font-jotia text-2xl text-text-primary mb-4">7. DISCLOSURE OF YOUR PERSONAL DATA</h2>
             <p>7.1. We may share your Personal Data with the parties set out below for the purposes set out in the table in paragraph 5 above.</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Internal Third Parties: Other components within the BILLMUN ecosystem.</li>
+              <li>Internal Third Parties: Other components within the NXTMUN ecosystem.</li>
               <li>External Third Parties: Service providers acting as processors based in various countries who provide IT and system administration services.</li>
               <li>Professional advisers including lawyers, bankers, auditors and insurers who provide consultancy, banking, legal, insurance and accounting services.</li>
               <li>Public Authorities: Revenue & Customs, regulators and other authorities who require reporting of processing activities in certain circumstances.</li>
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">8. INTERNATIONAL DATA TRANSFERS</h2>
-            <p>8.1. We share your Personal Data within the BILLMUN Organisation. This will involve transferring your data outside the European Economic Area (EEA) or your home jurisdiction. Many of our external third parties are based outside the EEA so their processing of your Personal Data will involve a transfer of data outside the EEA.</p>
+            <p>8.1. We share your Personal Data within the NXTMUN Organisation. This will involve transferring your data outside the European Economic Area (EEA) or your home jurisdiction. Many of our external third parties are based outside the EEA so their processing of your Personal Data will involve a transfer of data outside the EEA.</p>
             <p>8.2. Whenever we transfer your Personal Data out of the EEA, we ensure a similar degree of protection is afforded to it by ensuring at least one of the following safeguards is implemented:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>We will only transfer your Personal Data to countries that have been deemed to provide an adequate level of protection for Personal Data by the European Commission.</li>
@@ -151,7 +151,7 @@ export default function PrivacyPage() {
               <li>Request transfer of your Personal Data.</li>
               <li>Right to withdraw consent.</li>
             </ul>
-            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@billmun.com.</p>
+            <p>10.2. If you wish to exercise any of the rights set out above, please contact our Data Protection Officer at dpo@portal.nxtmun.com.</p>
             <p>10.3. You will not have to pay a fee to access your Personal Data (or to exercise any of the other rights). However, we may charge a reasonable fee if your request is clearly unfounded, repetitive or excessive. Alternatively, we may refuse to comply with your request in these circumstances.</p>
           </section>
 
@@ -172,18 +172,18 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">14. FORCE MAJEURE AND ACCIDENTAL DISCLOSURE</h2>
-            <p>14.1. BILLMUN shall not be liable for any accidental disclosure of data resulting from acts of God, war, terrorism, civil unrest, labor disputes, power outages, internet service provider failures, or any other event beyond our reasonable control. While we maintain industry-standard security, no system is 100% secure, and by using the platform, you acknowledge and accept these inherent risks.</p>
+            <p>14.1. NXTMUN shall not be liable for any accidental disclosure of data resulting from acts of God, war, terrorism, civil unrest, labor disputes, power outages, internet service provider failures, or any other event beyond our reasonable control. While we maintain industry-standard security, no system is 100% secure, and by using the platform, you acknowledge and accept these inherent risks.</p>
           </section>
 
           <section>
             <h2 className="font-jotia text-2xl text-text-primary mb-4">15. JURISDICTION AND DISPUTE RESOLUTION</h2>
-            <p>15.1. Any disputes arising out of or in connection with this Privacy Policy shall be governed by the laws of the jurisdiction in which BILLMUN is headquartered. Any legal action or proceeding relating to your access to, or use of, the platform or this policy shall be instituted in a court in that jurisdiction. You and BILLMUN agree to submit to the jurisdiction of, and agree that venue is proper in, these courts in any such legal action or proceeding.</p>
+            <p>15.1. Any disputes arising out of or in connection with this Privacy Policy shall be governed by the laws of the jurisdiction in which NXTMUN is headquartered. Any legal action or proceeding relating to your access to, or use of, the platform or this policy shall be instituted in a court in that jurisdiction. You and NXTMUN agree to submit to the jurisdiction of, and agree that venue is proper in, these courts in any such legal action or proceeding.</p>
           </section>
 
           <div className="pt-12 border-t border-white/10 space-y-4">
             <p className="font-bold">END OF DOCUMENT</p>
             <p className="text-xs">Document ID: B-PRIV-2026-V4.2.1-FULL-993-LEGAL</p>
-            <p className="text-xs italic">Proprietary and Confidential to BILLMUN Organization.</p>
+            <p className="text-xs italic">Proprietary and Confidential to NXTMUN Organization.</p>
           </div>
         </div>
       </div>

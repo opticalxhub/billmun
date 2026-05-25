@@ -9,18 +9,18 @@ export function Footer() {
     <footer className="border-t border-border-subtle bg-bg-card py-12 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center gap-6">
-          {/* Logo + BILLMUN text */}
+          {/* Logo + NXTMUN text */}
           <div className="flex items-center gap-3">
             <Image
-              src="/billmun.png"
-              alt="BILLMUN"
+              src="/logo.png"
+              alt="NXTMUN"
               width={40}
               height={40}
               className="w-10 h-10 object-contain dark:invert"
               unoptimized
             />
             <span className="font-jotia text-xl tracking-widest uppercase text-text-primary">
-              BILLMUN
+              NXTMUN
             </span>
           </div>
 
@@ -36,7 +36,7 @@ export function Footer() {
 
           {/* Copyright */}
           <p className="text-center text-xs font-jotia text-text-tertiary uppercase tracking-widest">
-            © 2026 BILLMUN. All rights reserved.
+            © 2026 NXTMUN. All rights reserved.
           </p>
         </div>
       </div>

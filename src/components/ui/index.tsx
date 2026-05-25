@@ -45,7 +45,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 )
 Textarea.displayName = 'Textarea';
 
-type BadgeVariant = 'default' | 'approved' | 'pending' | 'rejected' | 'suspended';
+type BadgeVariant = 'default' | 'approved' | 'pending' | 'rejected' | 'suspended' | 'outline';
 
 export const Badge = ({
   className,
@@ -60,6 +60,8 @@ export const Badge = ({
       ? 'bg-status-pending-bg text-status-pending-text border border-status-pending-border'
       : variant === 'rejected' || variant === 'suspended'
       ? 'bg-status-rejected-bg text-status-rejected-text border border-status-rejected-border'
+      : variant === 'outline'
+      ? 'bg-transparent text-text-primary border border-border-subtle'
       : 'bg-bg-raised text-text-secondary border border-border-subtle';
 
   return (

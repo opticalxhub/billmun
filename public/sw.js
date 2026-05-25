@@ -1,125 +1,122 @@
-const CACHE_NAME = 'billmun-v1';
-const API_CACHE_NAME = 'billmun-api-v1';
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE_NAME = `billmun-static-${CACHE_VERSION}`;
+const API_CACHE_NAME = `billmun-api-${CACHE_VERSION}`;
 
-// URLs to cache for offline functionality
 const STATIC_CACHE_URLS = [
-  '/',
   '/login',
   '/register',
   '/manifest.json',
-  // Add other static assets that should be cached
+  '/favicon.ico',
+  '/NXTMUN.png',
 ];
 
-// API endpoints to cache
-const API_CACHE_URLS = [
+const PUBLIC_PAGE_ALLOWLIST = new Set([
+  '/login',
+  '/register',
+  '/gallery',
+  '/contact',
+  '/socials',
+  '/terms',
+  '/privacy',
+  '/acceptable-use',
+  '/maintenance',
+]);
+
+const API_CACHE_URLS = new Set([
   '/api/config/conference-status',
   '/api/config/public-settings',
   '/api/announcements/public',
   '/api/gallery',
-];
+]);
 
-// Install event - cache static assets
+function isCacheableStaticAsset(request) {
+  return request.destination === 'image' || request.destination === 'style' || request.destination === 'script' || request.destination === 'font';
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(STATIC_CACHE_URLS);
-      })
+    caches.open(STATIC_CACHE_NAME).then((cache) => cache.addAll(STATIC_CACHE_URLS)),
   );
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    caches.keys().then((cacheNames) =>
+      Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
+          if (cacheName !== STATIC_CACHE_NAME && cacheName !== API_CACHE_NAME) {
             return caches.delete(cacheName);
           }
-        })
-      );
-    })
+          return undefined;
+        }),
+      ),
+    ),
   );
+  self.clients.claim();
 });
 
-// Fetch event - serve from cache when offline, cache API responses
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and external URLs
   if (request.method !== 'GET' || url.origin !== self.location.origin) {
     return;
   }
 
-  // Only intercept whitelisted public GET APIs; let all other /api/* through untouched
   if (url.pathname.startsWith('/api/')) {
-    if (API_CACHE_URLS.some(apiUrl => url.pathname === new URL(apiUrl, self.location.origin).pathname)) {
-      event.respondWith(
-        caches.open(API_CACHE_NAME)
-          .then((cache) => {
-            return cache.match(request)
-              .then((response) => {
-                // Return cached version if available
-                if (response) {
-                  // Update cache in background
-                  fetch(request).then((freshResponse) => {
-                    if (freshResponse.ok) {
-                      cache.put(request, freshResponse.clone());
-                    }
-                  }).catch(() => {
-                    // Ignore network errors for background updates
-                  });
-                  return response;
-                }
-
-                // Fetch from network and cache
-                return fetch(request).then((freshResponse) => {
-                  if (freshResponse.ok) {
-                    cache.put(request, freshResponse.clone());
-                  }
-                  return freshResponse;
-                });
-              })
-          })
-      );
+    if (!API_CACHE_URLS.has(url.pathname)) {
       return;
     }
+
+    event.respondWith(
+      caches.open(API_CACHE_NAME).then(async (cache) => {
+        try {
+          const freshResponse = await fetch(request);
+          if (freshResponse.ok) {
+            cache.put(request, freshResponse.clone());
+          }
+          return freshResponse;
+        } catch {
+          const cached = await cache.match(request);
+          if (cached) return cached;
+          throw new Error(`No cached response for ${url.pathname}`);
+        }
+      }),
+    );
     return;
   }
 
-  // Handle static assets
+  if (request.destination === 'document') {
+    if (!PUBLIC_PAGE_ALLOWLIST.has(url.pathname)) {
+      return;
+    }
+
+    event.respondWith(
+      fetch(request).catch(async () => {
+        const cached = await caches.match(request);
+        return cached || caches.match('/login');
+      }),
+    );
+    return;
+  }
+
+  if (!isCacheableStaticAsset(request) && !url.pathname.startsWith('/_next/static/')) {
+    return;
+  }
+
   event.respondWith(
-    caches.match(request)
-      .then((response) => {
-        // Return cached version if available
-        if (response) {
-          return response;
-        }
+    caches.match(request).then(async (cached) => {
+      if (cached) {
+        return cached;
+      }
 
-        // Fetch from network and cache
-        return fetch(request).then((freshResponse) => {
-          // Don't cache non-successful responses
-          if (!freshResponse.ok) {
-            return freshResponse;
-          }
-
-          // Cache the response
-          const responseToCache = freshResponse.clone();
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(request, responseToCache);
-            });
-
-          return freshResponse;
-        });
-      })
-      .catch(() => {
-        // Return a fallback page if available
-        if (request.destination === 'document') {
-          return caches.match('/');
-        }
-      })
+      const freshResponse = await fetch(request);
+      if (freshResponse.ok) {
+        const cache = await caches.open(STATIC_CACHE_NAME);
+        cache.put(request, freshResponse.clone());
+      }
+      return freshResponse;
+    }),
   );
 });

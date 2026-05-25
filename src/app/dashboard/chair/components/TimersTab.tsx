@@ -27,7 +27,7 @@ export default function TimersTab({ ctx }: { ctx: ChairContext }) {
 
   // Main timer
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (running && !paused && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(p => {
@@ -44,12 +44,12 @@ export default function TimersTab({ ctx }: { ctx: ChairContext }) {
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => { if (interval) clearInterval(interval); };
   }, [running, paused, timeLeft, label]);
 
   // Speaking timer
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (speakingRunning && speakingTimeLeft > 0) {
       interval = setInterval(() => {
         setSpeakingTimeLeft(p => {
@@ -58,14 +58,14 @@ export default function TimersTab({ ctx }: { ctx: ChairContext }) {
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => { if (interval) clearInterval(interval); };
   }, [speakingRunning, speakingTimeLeft]);
 
   const loadLogs = async () => {
     if (!ctx.committee?.id) return;
     const { data } = await supabase
       .from('timer_logs')
-      .select('*')
+      .select('id, committee_id, session_id, label, set_duration, actual_duration, started_at, completed_at, created_by')
       .eq('committee_id', ctx.committee.id)
       .order('started_at', { ascending: false })
       .limit(20);

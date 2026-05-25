@@ -25,7 +25,7 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data } = await supabase
         .from('country_research')
-        .select('*')
+        .select('id, country_notes, previous_resolutions')
         .eq('user_id', ctx.user.id)
         .maybeSingle();
       
@@ -45,12 +45,12 @@ export default function ResearchTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data } = await supabase
         .from('stance_notes')
-        .select('*')
+        .select('id, sub_topic, stance')
         .eq('user_id', ctx.user.id);
       
       if (data) {
         const map: Record<string, string> = {};
-        data.forEach((s: any) => { map[s.sub_topic] = s.stance; });
+        data.forEach((s) => { map[s.sub_topic] = s.stance; });
         setStances(map);
       }
       return data || [];

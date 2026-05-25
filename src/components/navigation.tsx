@@ -3,33 +3,36 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { X } from 'lucide-react';
+import type { PortalNotification, PortalUserSummary } from '@/types/portal';
+
+const notificationSelect = 'id, title, message, type, link, is_read, created_at';
 
 export function Navigation() {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  const { data: user } = useQuery({
+  const { data: user } = useQuery<PortalUserSummary | null>({
     queryKey: ['user-profile'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data } = await supabase.from('users').select('id, email, full_name, role, status').eq('id', user.id).maybeSingle();
-      return data;
+      const { data } = await supabase.from('users').select('id, email, full_name, role, status, has_completed_onboarding').eq('id', user.id).maybeSingle();
+      return data as PortalUserSummary | null;
     },
   });
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [] } = useQuery<PortalNotification[]>({
     queryKey: ['notifications', user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await supabase
         .from('notifications')
-        .select('*')
+        .select(notificationSelect)
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(20);
-      return data || [];
+      return (data as PortalNotification[] | null) || [];
     },
     staleTime: 30 * 1000,
   });
@@ -42,14 +45,14 @@ export function Navigation() {
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ['notifications', user?.id] });
-      const previous = queryClient.getQueryData(['notifications', user?.id]);
-      queryClient.setQueryData(['notifications', user?.id], (old: any) => 
-        old?.map((n: any) => n.id === id ? { ...n, is_read: true } : n)
+      const previous = queryClient.getQueryData<PortalNotification[]>(['notifications', user?.id]);
+      queryClient.setQueryData<PortalNotification[]>(['notifications', user?.id], (old = []) =>
+        old.map((notification) => (notification.id === id ? { ...notification, is_read: true } : notification)),
       );
       return { previous };
     },
-    onError: (err, id, context: any) => {
-      queryClient.setQueryData(['notifications', user?.id], context.previous);
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(['notifications', user?.id], context?.previous ?? []);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
@@ -71,7 +74,7 @@ export function Navigation() {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+  }, [queryClient, user?.id]);
 
   return (
     <nav className="border-b border-border-subtle bg-bg-base/80 backdrop-blur-md sticky top-0 z-50">
@@ -79,7 +82,7 @@ export function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-4">
             <Link href="/" className="flex flex-shrink-0 items-center">
-              <span className="font-jotia text-xl tracking-widest font-bold">BILLMUN</span>
+              <span className="font-jotia text-xl tracking-widest font-bold text-brand-crimson">NXTMUN</span>
             </Link>
             <div className="flex items-center gap-1.5 ml-2">
               <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-white' : 'bg-white/20 animate-pulse'}`} />
@@ -137,7 +140,7 @@ export function Navigation() {
               Dashboard
             </Link>
             <a 
-              href="https://instagram.com/billmun.sa" 
+              href="https://instagram.com/portal.nxtmun.com" 
               target="_blank" 
               rel="noopener noreferrer"
               className="p-2 text-text-secondary hover:text-text-primary transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]"
@@ -153,3 +156,4 @@ export function Navigation() {
     </nav>
   );
 }
+

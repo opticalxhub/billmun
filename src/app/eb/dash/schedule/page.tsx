@@ -38,7 +38,7 @@ export default function EBSchedulePage() {
     try {
       const { data, error } = await supabase
         .from('schedule_events')
-        .select('*')
+        .select('id, day_label, event_name, location, start_time, end_time, description')
         .order('start_time', { ascending: true });
       if (error) throw error;
       setEvents(data || []);

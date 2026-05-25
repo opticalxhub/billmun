@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { contactSubmissionSchema, enforceSameOrigin } from "@/lib/security";
+import { reportError } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,34 +18,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    const sameOriginError = enforceSameOrigin(req);
+    if (sameOriginError) {
+      return sameOriginError;
     }
 
-    const { name, email, subject, message } = body as {
-      name?: string;
-      email?: string;
-      subject?: string;
-      message?: string;
-    };
-
-    if (!name?.trim() || !email?.trim() || !message?.trim()) {
-      return NextResponse.json({ error: "Name, email, and message are required" }, { status: 400 });
+    const payload = contactSubmissionSchema.safeParse(await req.json());
+    if (!payload.success) {
+      return NextResponse.json({ error: "Invalid contact submission" }, { status: 400 });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
-    }
+    const { name, email, subject, message } = payload.data;
 
     const { error } = await supabaseAdmin.from("contact_submissions").insert({
-      name: name.trim(),
-      email: email.trim(),
-      subject: subject?.trim() || null,
-      message: message.trim(),
+      name,
+      email,
+      subject,
+      message,
     });
 
     if (error) throw error;
@@ -55,11 +46,12 @@ export async function POST(req: NextRequest) {
       .in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"]);
 
     if (ebUsers?.length) {
+      const notificationPreview = (subject ?? message ?? 'New contact submission').slice(0, 100);
       await supabaseAdmin.from("notifications").insert(
         ebUsers.map((u) => ({
           user_id: u.id,
           title: "New Contact Form Submission",
-          message: `From ${name.trim()} (${email.trim()}): ${(subject || message).trim().substring(0, 100)}`,
+          message: `From ${name} (${email}): ${notificationPreview}`,
           type: "INFO" as const,
           link: "/eb/dash?tab=contact",
         }))
@@ -67,12 +59,13 @@ export async function POST(req: NextRequest) {
     }
 
     const response = NextResponse.json({ ok: true });
+    response.headers.set('Cache-Control', 'no-store');
     response.headers.set('RateLimit-Limit', '3');
     response.headers.set('RateLimit-Remaining', '2');
     response.headers.set('RateLimit-Reset', String(Math.floor(Date.now() / 1000) + 600));
     return response;
-  } catch (err: any) {
-    console.error("[contact] error:", err);
+  } catch (err: unknown) {
+    reportError(err, { route: '/api/contact', method: 'POST' });
     return NextResponse.json({ error: "Failed to submit" }, { status: 500 });
   }
 }

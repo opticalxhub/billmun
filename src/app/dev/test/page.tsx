@@ -121,9 +121,9 @@ export default function DevTestPage() {
           });
         }}
       ]},
-      { name: 'AUTH & SECURITY', tests: [
+      { name: 'AUTH & SYSTEM', tests: [
         { name: 'Registration API', fn: async () => {
-          const email = `test-${Date.now()}@billmun.sa`;
+          const email = `test-${Date.now()}@portal.nxtmun.com`;
           const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -161,11 +161,6 @@ export default function DevTestPage() {
           if (res.status !== 401 && res.status !== 200) {
             throw new Error(`Unexpected status ${res.status}`);
           }
-          return true;
-        }},
-        { name: 'EB Security Role Check', fn: async () => {
-          const { error } = await supabase.from('users').select('id').eq('role', 'SECURITY').limit(1);
-          if (error) throw error;
           return true;
         }},
         { name: 'Protected Route (401)', fn: async () => {
@@ -257,26 +252,6 @@ export default function DevTestPage() {
           return true;
         }}
       ]},
-      { name: 'MEDIA & PRESS', tests: [
-        { name: 'Media Gallery Table', fn: async () => {
-          const { error } = await supabase.from('media_gallery').select('id').limit(1);
-          if (error) throw error;
-          return true;
-        }},
-        { name: 'Press Releases Access', fn: async () => {
-          const { error } = await supabase.from('press_releases').select('id').limit(1);
-          if (error) throw error;
-          return true;
-        }},
-        { name: 'Media Upload API Check', fn: async () => {
-          const res = await fetch('/api/media/upload', { method: 'POST' });
-          if (res.status === 500) throw new Error('Status 500');
-          if (res.status !== 401 && res.status !== 403 && res.status !== 400) {
-            throw new Error(`Unexpected status ${res.status}`);
-          }
-          return true;
-        }}
-      ]},
       { name: 'CONFERENCE DAY READY', tests: [
         { name: 'Conference Settings Check', fn: async () => {
           const { error } = await supabase.from('conference_settings').select('*').limit(1).single();
@@ -295,7 +270,7 @@ export default function DevTestPage() {
           return true;
         }},
         { name: 'Logo & Assets Check', fn: async () => {
-          const res = await fetch('/billmun.png');
+          const res = await fetch('/logo.png');
           if (res.status !== 200) throw new Error('Main logo missing');
           return true;
         }}
@@ -333,7 +308,7 @@ export default function DevTestPage() {
       <div className="min-h-screen bg-bg-base flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-bg-card p-8 rounded-card border border-border-subtle">
           <div className="flex justify-center mb-6">
-            <img src="/billmun.png" alt="Logo" className="w-20 h-auto invert" />
+            <img src="/NXTMUN.png" alt="Logo" className="w-20 h-auto invert" />
           </div>
           <h1 className="font-jotia-bold text-2xl text-text-primary mb-2">Dev Diagnostics</h1>
           <p className="text-text-dimmed text-sm mb-6">Enter passphrase to access system health tools.</p>
@@ -447,3 +422,4 @@ export default function DevTestPage() {
     </div>
   );
 }
+

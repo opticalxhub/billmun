@@ -46,14 +46,14 @@ export default function CommitteeScheduleTab({ committee, user }: CommitteeSched
     // Fetch committee-specific events (chair-added)
     const { data: committeeData, error: committeeError } = await supabase
       .from('committee_schedules')
-      .select('*')
+      .select('id, event_name, start_time, end_time, location, description, committee_id, event_type')
       .eq('committee_id', committee.id)
       .order('start_time', { ascending: true });
     
     // Fetch default conference events
     const { data: defaultData, error: defaultError } = await supabase
       .from('schedule_events')
-      .select('*')
+      .select('id, day_label, event_name, location, start_time, end_time, description, applicable_roles, order_index')
       .order('start_time', { ascending: true });
     
     if (!committeeError && committeeData) setEvents(committeeData);

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabaseAdmin
       .from('announcements')
-      .select('*')
+      .select('id, title, body, author_id, is_pinned, target_roles, committee_id, scheduled_for, is_active, created_at, updated_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(limit);

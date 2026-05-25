@@ -153,10 +153,8 @@ export default function EBUsersPage() {
                     >
                       <option value="DELEGATE">Delegate</option>
                       <option value="CHAIR">Chair</option>
-                      <option value="MEDIA">Press / Media</option>
-                      <option value="SECURITY">Security</option>
+                      <option value="CO_CHAIR">Co-Chair</option>
                       <option value="EXECUTIVE_BOARD">Executive Board</option>
-                      <option value="ADMIN">Administrator</option>
                       <option value="SECRETARY_GENERAL">Secretary General</option>
                       <option value="DEPUTY_SECRETARY_GENERAL">Deputy Sec Gen</option>
                     </select>

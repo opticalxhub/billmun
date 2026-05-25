@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getAuthenticatedHomePath, isChairRole, isExecutiveBoardRole } from '@/lib/portal-routing'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -71,35 +72,58 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // ── Optimization: Skip DB calls for static assets and public paths ─────
+  if (!isPortalPath(path)) {
+    return response;
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
-  const path = request.nextUrl.pathname;
 
   // ── Emergency access ────────────────────────────────────────────────
   const emergencyToken = request.cookies.get('emergency_token')?.value;
   let hasValidEmergencyAccess = false;
 
   if (emergencyToken && process.env.DISABLE_EMERGENCY_ACCESS !== 'true') {
-    const { data: emergencySession } = await supabase
-      .from('emergency_sessions')
-      .select('expires_at')
-      .eq('id', emergencyToken)
-      .maybeSingle();
-    if (emergencySession && new Date(emergencySession.expires_at) > new Date()) {
-      hasValidEmergencyAccess = true;
+    // Only check DB if we are on a portal path and don't have a valid user
+    if (!user) {
+      const { data: emergencySession } = await supabase
+        .from('emergency_sessions')
+        .select('expires_at')
+        .eq('id', emergencyToken)
+        .maybeSingle();
+      if (emergencySession && new Date(emergencySession.expires_at) > new Date()) {
+        hasValidEmergencyAccess = true;
+      }
     }
   }
 
-  // ── Fetch profile + settings when we have a user ────────────────────
+  // ── Fetch profile + settings only for portal paths ─────────────────
   let userProfile: { status: string; role: string } | null = null;
   let settings: { maintenance_mode: boolean } | null = null;
 
   if (user) {
-    const [profileRes, settingsRes] = await Promise.all([
-      supabase.from('users').select('status, role').eq('id', user.id).maybeSingle(),
-      supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle(),
-    ]);
-    userProfile = profileRes.data;
-    settings = settingsRes.data;
+    // Check if we have role/status in session cookies to avoid DB hit (Performance Tuning)
+    const cachedRole = request.cookies.get('user_role')?.value;
+    const cachedStatus = request.cookies.get('user_status')?.value;
+    
+    if (cachedRole && cachedStatus) {
+      userProfile = { role: cachedRole, status: cachedStatus };
+    } else {
+      const [profileRes, settingsRes] = await Promise.all([
+        supabase.from('users').select('status, role').eq('id', user.id).maybeSingle(),
+        supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle(),
+      ]);
+      userProfile = profileRes.data;
+      settings = settingsRes.data;
+      
+      // Set cookies for next time
+      if (userProfile) {
+        response.cookies.set('user_role', userProfile.role, { maxAge: 60 * 60 }); // 1h
+        response.cookies.set('user_status', userProfile.status, { maxAge: 60 * 60 });
+      }
+    }
+  } else if (!hasValidEmergencyAccess) {
+    return NextResponse.redirect(new URL('/login', request.url))
   } else {
     const { data } = await supabase.from('conference_settings').select('maintenance_mode').eq('id', '1').maybeSingle();
     settings = data;
@@ -124,6 +148,10 @@ export async function middleware(request: NextRequest) {
 
   // ── Unauthenticated users ───────────────────────────────────────────
   if (!user && !hasValidEmergencyAccess) {
+    if (path === '/') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
     // Require login for protected paths
     if (!isPublicPath(path) && !path.startsWith('/pending') && !path.startsWith('/rejected')) {
       return NextResponse.redirect(new URL('/login', request.url));
@@ -133,11 +161,9 @@ export async function middleware(request: NextRequest) {
 
   // ── Authenticated user guards ───────────────────────────────────────
   if (userProfile) {
-    const isEB = EB_ROLES.includes(userProfile.role);
-    const isAdmin = userProfile.role === 'ADMIN';
-    const isChair = ['CHAIR', 'CO_CHAIR'].includes(userProfile.role);
-    const isSecurity = userProfile.role === 'SECURITY';
-    const isMedia = ['MEDIA', 'PRESS'].includes(userProfile.role);
+    const isEB = isExecutiveBoardRole(userProfile.role);
+    const isChair = isChairRole(userProfile.role);
+    const authenticatedHomePath = getAuthenticatedHomePath(userProfile.role);
 
     // Allow public paths, API, /911 for everyone
     const alwaysAllowed =
@@ -151,6 +177,10 @@ export async function middleware(request: NextRequest) {
     }
     if (!alwaysAllowed && userProfile.status === 'REJECTED') {
       return NextResponse.redirect(new URL('/rejected', request.url));
+    }
+
+    if ((path === '/' || path === '/login' || path === '/login/eb') && !hasValidEmergencyAccess) {
+      return NextResponse.redirect(new URL(authenticatedHomePath, request.url));
     }
 
     // ── EB can ONLY access /eb/dash and /911 (not other dashboards) ─
@@ -167,19 +197,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // ── Role-specific dashboard guards ──────────────────────────────
-    if (path.startsWith('/dashboard/admin') && !isAdmin && !hasValidEmergencyAccess) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    if (path.startsWith('/dashboard/chair') && !isChair && !isAdmin && !hasValidEmergencyAccess) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    if (path.startsWith('/dashboard/security') && !isSecurity && !hasValidEmergencyAccess) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-
-    if (path.startsWith('/dashboard/press') && !isMedia && !hasValidEmergencyAccess) {
+    if (path.startsWith('/dashboard/chair') && !isChair && !hasValidEmergencyAccess) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }

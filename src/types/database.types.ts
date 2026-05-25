@@ -13,7 +13,7 @@ export type Database = {
           emergency_contact_name?: string;
           emergency_contact_relation?: string;
           emergency_contact_phone?: string;
-          role: 'DELEGATE' | 'CHAIR' | 'CO_CHAIR' | 'MEDIA' | 'PRESS' | 'EXECUTIVE_BOARD' | 'ADMIN' | 'SECURITY' | 'SECRETARY_GENERAL' | 'DEPUTY_SECRETARY_GENERAL';
+          role: 'DELEGATE' | 'CHAIR' | 'CO_CHAIR' | 'EXECUTIVE_BOARD' | 'SECRETARY_GENERAL' | 'DEPUTY_SECRETARY_GENERAL';
           status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
           preferred_committee?: string;
           allocated_country?: string;

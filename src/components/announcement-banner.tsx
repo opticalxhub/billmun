@@ -4,19 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Megaphone, X, Pin, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { PortalAnnouncement, PortalUserSummary } from '@/types/portal';
 
-interface Announcement {
-  id: string;
-  title: string;
-  body: string;
-  is_pinned: boolean;
-  created_at: string;
-  committee_id: string | null;
-  target_roles: string[] | null;
-}
+const announcementSelect = 'id, title, body, is_pinned, created_at, committee_id, target_roles, is_active';
 
-export function AnnouncementBanner({ user, committeeId }: { user: any, committeeId?: string }) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+type AnnouncementBannerUser = Pick<PortalUserSummary, 'role'> | null | undefined;
+
+export function AnnouncementBanner({ user, committeeId }: { user: AnnouncementBannerUser; committeeId?: string }) {
+  const [announcements, setAnnouncements] = useState<PortalAnnouncement[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
@@ -25,15 +20,15 @@ export function AnnouncementBanner({ user, committeeId }: { user: any, committee
 
     const query = supabase
       .from('announcements')
-      .select('*')
+      .select(announcementSelect)
+      .eq('is_active', true)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     const { data, error } = await query;
 
     if (!error && data) {
-      // Filter based on roles and committee
-      const filtered = data.filter(ann => {
+      const filtered = (data as PortalAnnouncement[]).filter((ann) => {
         const roleMatch = !ann.target_roles?.length || ann.target_roles.includes(user.role);
         const committeeMatch = !ann.committee_id || ann.committee_id === committeeId;
         return roleMatch && committeeMatch;
@@ -64,16 +59,16 @@ export function AnnouncementBanner({ user, committeeId }: { user: any, committee
   const activeAnnouncements = announcements.filter(a => !dismissedIds.includes(a.id));
   const current = activeAnnouncements[currentIndex];
 
+  useEffect(() => {
+    if (currentIndex >= activeAnnouncements.length && activeAnnouncements.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [activeAnnouncements.length, currentIndex]);
+
   if (activeAnnouncements.length === 0) return null;
 
   const handleDismiss = () => {
-    if (current.is_pinned) {
-      // Pinned announcements can't be easily dismissed globally for now, 
-      // just hide them for this session
-      setDismissedIds([...dismissedIds, current.id]);
-    } else {
-      setDismissedIds([...dismissedIds, current.id]);
-    }
+    setDismissedIds((previous) => [...previous, current.id]);
     if (currentIndex >= activeAnnouncements.length - 1) {
       setCurrentIndex(0);
     }

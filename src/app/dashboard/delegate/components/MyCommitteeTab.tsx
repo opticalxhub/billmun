@@ -15,6 +15,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: bool
 };
 
 export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
+  const committeeId = ctx.committee?.id;
+  const chairId = ctx.committee?.chair_id;
+
   // useQuery for Conference Settings
   const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['conference-settings'],
@@ -28,13 +31,14 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
 
   // useQuery for Announcements
   const { data: announcements, isLoading: announcementsLoading, isError: announcementsError } = useQuery({
-    queryKey: ['committee-announcements', ctx.committee?.id],
-    enabled: !!ctx.committee?.id,
+    queryKey: ['committee-announcements', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
+      if (!committeeId) return [];
       const { data, error } = await supabase
         .from('announcements')
-        .select('*, User:author_id(full_name)')
-        .or(`committee_id.eq.${ctx.committee.id},committee_id.is.null`)
+        .select('id, title, body, is_pinned, created_at, committee_id, target_roles, is_active, author_id, User:author_id(full_name)')
+        .or(`committee_id.eq.${committeeId},committee_id.is.null`)
         .order('created_at', { ascending: false })
         .limit(10);
       if (error) throw error;
@@ -45,13 +49,14 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
 
   // useQuery for Roster
   const { data: roster, isLoading: rosterLoading, isError: rosterError } = useQuery({
-    queryKey: ['committee-roster', ctx.committee?.id],
-    enabled: !!ctx.committee?.id,
+    queryKey: ['committee-roster', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
+      if (!committeeId) return [];
       const { data, error } = await supabase
         .from('committee_assignments')
-        .select('*, User:user_id(id, full_name)')
-        .eq('committee_id', ctx.committee.id);
+        .select('id, user_id, committee_id, country, seat_number, assigned_at, User:user_id(id, full_name)')
+        .eq('committee_id', committeeId);
       if (error) throw error;
       return data || [];
     },
@@ -60,10 +65,11 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
 
   // useQuery for Chair
   const { data: chair, isLoading: chairLoading, isError: chairError } = useQuery({
-    queryKey: ['committee-chair', ctx.committee?.chair_id],
-    enabled: !!ctx.committee?.chair_id,
+    queryKey: ['committee-chair', chairId],
+    enabled: !!chairId,
     queryFn: async () => {
-      const { data, error } = await supabase.from('users').select('id, full_name, email').eq('id', ctx.committee.chair_id).maybeSingle();
+      if (!chairId) return null;
+      const { data, error } = await supabase.from('users').select('id, full_name, email').eq('id', chairId).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -108,20 +114,21 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Announcements */}
-      {(announcements || []).filter(a => a.is_pinned).length > 0 && (
+      {(announcements || []).length > 0 && (
         <div className="space-y-3">
-          {(announcements || []).filter(a => a.is_pinned).map((ann) => (
-            <div key={ann.id} className="bg-bg-raised border border-border-emphasized rounded-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="font-jotia-bold text-sm text-text-primary">{ann.title}</h4>
-                <span className="text-text-tertiary font-jotia text-xs whitespace-nowrap">
-                  {new Date(ann.created_at).toLocaleDateString()}
-                </span>
+          {(announcements || []).map((ann) => {
+            const authorObj = Array.isArray(ann.User) ? ann.User[0] : (ann.User as { full_name: string } | null);
+            return (
+              <div key={ann.id} className="p-4 bg-bg-raised border border-border-subtle rounded-card space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-jotia-bold text-text-primary text-sm">{ann.title}</h4>
+                  <span className="text-[10px] text-text-tertiary">{new Date(ann.created_at).toLocaleDateString()}</span>
+                </div>
+                <p className="text-xs text-text-secondary font-jotia line-clamp-3">{ann.body}</p>
+                <p className="text-[9px] text-text-dimmed uppercase tracking-widest">— {authorObj?.full_name || 'Admin'}</p>
               </div>
-              <p className="text-text-dimmed font-jotia text-sm mt-1">{ann.body}</p>
-              <p className="text-text-tertiary font-jotia text-xs mt-2">By {ann.User?.full_name || 'Unknown'}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -215,27 +222,33 @@ export default function MyCommitteeTab({ ctx }: { ctx: DelegateContext }) {
             <thead>
               <tr className="border-b border-border-subtle">
                 <th className="text-left py-2 text-text-dimmed font-jotia text-xs uppercase">Name</th>
-                <th className="text-left py-2 text-text-dimmed font-jotia text-xs uppercase">Country</th>
+                <th className="text-left py-2 text-text-dimmed font-jotia text-xs uppercase">Delegation</th>
               </tr>
             </thead>
             <tbody>
-              {(roster || []).map((r) => (
-                <tr key={r.id} className="border-b border-border-subtle/50">
-                  <td className="py-3 font-jotia text-text-primary">{r.User?.full_name || 'Unknown'}</td>
-                  <td className="py-3 font-jotia text-text-dimmed">{r.country}</td>
-                </tr>
-              ))}
+              {(roster || []).map((r) => {
+                const userObj = Array.isArray(r.User) ? r.User[0] : (r.User as { full_name: string } | null);
+                return (
+                  <tr key={r.id} className="border-b border-border-subtle/50">
+                    <td className="py-3 font-jotia text-text-primary">{userObj?.full_name || 'Unknown'}</td>
+                    <td className="py-3 font-jotia text-text-dimmed">{r.country}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
         {/* Mobile */}
         <div className="md:hidden space-y-2">
-          {(roster || []).map((r) => (
-            <div key={r.id} className="bg-bg-raised rounded-card p-3 flex justify-between items-center">
-              <span className="font-jotia text-text-primary text-sm">{r.User?.full_name || 'Unknown'}</span>
-              <span className="font-jotia text-text-dimmed text-xs">{r.country}</span>
-            </div>
-          ))}
+          {(roster || []).map((r) => {
+            const userObj = Array.isArray(r.User) ? r.User[0] : (r.User as { full_name: string } | null);
+            return (
+              <div key={r.id} className="bg-bg-raised rounded-card p-3 flex justify-between items-center">
+                <span className="font-jotia text-text-primary text-sm">{userObj?.full_name || 'Unknown'}</span>
+                <span className="font-jotia text-text-dimmed text-xs">{r.country}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

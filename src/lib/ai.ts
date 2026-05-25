@@ -61,7 +61,7 @@ export async function analyzePositionPaper(documentText: string): Promise<Positi
     throw new Error("AI analysis is not configured (missing GROQ_API_KEY).");
   }
 
-  const systemPrompt = `You are a senior Model United Nations (MUN) position paper analyst for BILLMUN, a high-school MUN conference. You have deep expertise in:
+  const systemPrompt = `You are a senior Model United Nations (MUN) position paper analyst for NXTMUN, a high-school MUN conference. You have deep expertise in:
 - UN committee procedures (GA, ECOSOC, Security Council, specialized agencies)
 - International law, treaties, and multilateral frameworks
 - Country foreign policy stances and voting records
@@ -146,3 +146,4 @@ Return ONLY valid JSON. No markdown, no explanation, no wrapping.`;
     return fallbackResult("Analysis completed but results could not be fully parsed.");
   }
 }
+

@@ -5,6 +5,12 @@ import { Toaster } from "sonner";
 import { PressReleasesBanner } from "@/components/press-releases-banner";
 import { safeMetadataBaseUrl } from "@/lib/safe-url";
 
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { validateEnv } from "@/lib/env";
+
+validateEnv();
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -15,28 +21,28 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "BILLMUN",
-    template: "%s | BILLMUN"
+    default: "NXTMUN",
+    template: "%s | NXTMUN"
   },
-  description: "BILLMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
+  description: "NXTMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
   keywords: [
-    "BILLMUN",
-    "BILLMUN 2026",
-    "BILLMUN conference",
-    "BILLMUN MUN",
+    "NXTMUN",
+    "NXTMUN 2026",
+    "NXTMUN conference",
+    "NXTMUN MUN",
     "Model United Nations",
     "MUN Saudi Arabia",
     "MUN Khobar",
     "Yarmook Elementary Private School Dhahran MUN",
     "student diplomacy",
-    "BILLMUN apply",
-    "BILLMUN gallery",
-    "BILLMUN socials",
-    "BILLMUN contact"
+    "NXTMUN apply",
+    "NXTMUN gallery",
+    "NXTMUN socials",
+    "NXTMUN contact"
   ],
-  authors: [{ name: "BILLMUN" }],
-  creator: "BILLMUN",
-  publisher: "BILLMUN",
+  authors: [{ name: "NXTMUN" }],
+  creator: "NXTMUN",
+  publisher: "NXTMUN",
   metadataBase: safeMetadataBaseUrl(),
   icons: {
     icon: [
@@ -52,25 +58,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://billmun.com",
-    title: "BILLMUN",
-    description: "BILLMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
-    siteName: "BILLMUN",
+    url: "https://portal.nxtmun.com",
+    title: "NXTMUN",
+    description: "NXTMUN is a student-led Model United Nations conference. Apply to join, explore committees, and be part of the diplomatic experience. 3–4 April 2026.",
+    siteName: "NXTMUN",
     images: [
       {
         url: "/billmun.png",
         width: 1200,
         height: 630,
-        alt: "BILLMUN Logo"
+        alt: "NXTMUN Logo"
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "BILLMUN",
-    description: "BILLMUN is a student-led Model United Nations conference. 3–4 April 2026.",
+    title: "NXTMUN",
+    description: "NXTMUN is a student-led Model United Nations conference. 3–4 April 2026.",
     images: ["/billmun.png"],
-    creator: "@billmun"
+    creator: "@NXTMUN"
   },
   robots: {
     index: true,
@@ -84,7 +90,7 @@ export const metadata: Metadata = {
     }
   },
   alternates: {
-    canonical: "https://billmun.com",
+    canonical: "https://portal.nxtmun.com",
   },
 };
 
@@ -102,16 +108,16 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Organization",
-              "name": "BILLMUN",
-              "url": "https://billmun.com",
-              "logo": "https://billmun.com/billmun.png",
-              "description": "BILLMUN is a student-led Model United Nations conference.",
+              "name": "NXTMUN",
+              "url": "https://portal.nxtmun.com",
+              "logo": "https://portal.nxtmun.com/NXTMUN.png",
+              "description": "NXTMUN is a student-led Model United Nations conference.",
               "sameAs": [
-                "https://www.instagram.com/billmun.sa"
+                "https://www.instagram.com/portal.nxtmun.com"
               ],
               "event": {
                 "@type": "Event",
-                "name": "BILLMUN 2026",
+                "name": "NXTMUN 2026",
                 "startDate": "2026-04-03",
                 "endDate": "2026-04-04",
                 "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
@@ -126,7 +132,7 @@ export default function RootLayout({
                 },
                 "organizer": {
                   "@type": "Organization",
-                  "name": "BILLMUN"
+                  "name": "NXTMUN"
                 }
               }
             })
@@ -138,33 +144,41 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "BILLMUN",
-              "url": "https://billmun.sa",
+              "name": "NXTMUN",
+              "url": "https://portal.nxtmun.com",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://billmun.sa/?q={search_term_string}",
+                "target": "https://portal.nxtmun.com/?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })
           }}
         />
-        <link rel="preconnect" href="https://cdn.billmun.sa" />
+        <link rel="preconnect" href="https://cdn.portal.nxtmun.com" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://billmun.sa" />
+        <link rel="dns-prefetch" href="https://portal.nxtmun.com" />
         <link rel="dns-prefetch" href="https://qmmgugalvcgaxvgsfslp.supabase.co" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" href="/billmun.png" sizes="any" />
-        <link rel="icon" href="/billmun.png" sizes="32x32" />
-        <link rel="icon" href="/billmun.png" sizes="16x16" />
-        <link rel="apple-touch-icon" href="/billmun.png" sizes="180x180" />
-        <link rel="shortcut icon" href="/billmun.png" />
+        <link rel="icon" href="/NXTMUN.png" sizes="any" />
+        <link rel="icon" href="/NXTMUN.png" sizes="32x32" />
+        <link rel="icon" href="/NXTMUN.png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/NXTMUN.png" sizes="180x180" />
+        <link rel="shortcut icon" href="/NXTMUN.png" />
         <meta name="theme-color" content="#000000" />
       </head>
       <body className="min-h-screen bg-bg-base text-text-primary font-inter text-rendering-optimizeLegibility">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-crimson focus:text-white focus:rounded-md focus:font-bold">
+          Skip to main content
+        </a>
         <Providers>
-          <PressReleasesBanner />
-          {children}
+          <GlobalErrorBoundary>
+            <ServiceWorkerRegistration />
+            <PressReleasesBanner />
+            <main id="main-content">
+              {children}
+            </main>
+          </GlobalErrorBoundary>
           <Toaster
             theme="dark"
             position="bottom-right"
@@ -182,3 +196,4 @@ export default function RootLayout({
     </html>
   );
 }
+

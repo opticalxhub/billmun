@@ -61,7 +61,7 @@ export default function GalleryPage() {
             <div className="max-w-7xl mx-auto">
               <h1 className="font-jotia text-5xl md:text-6xl mb-3">Gallery</h1>
               <p className="text-text-secondary mb-2 max-w-lg">
-                Browse photos and videos from BILLMUN — captured by our Media Team.
+                Browse photos and videos from NXTMUN — captured by our Media Team.
               </p>
             </div>
           </ScaleIn>
@@ -173,3 +173,4 @@ export default function GalleryPage() {
     </div>
   );
 }
+

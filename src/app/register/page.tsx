@@ -13,12 +13,12 @@ export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [committees, setCommittees] = useState<any[]>([]);
+  const [committees, setCommittees] = useState<Array<{ id: string; name: string; abbreviation: string }>>([]);
 
   useEffect(() => {
     const fetchCommittees = async () => {
-      const { data } = await supabase.from('committees').select('*');
-      if (data) setCommittees(data);
+      const { data } = await supabase.from('committees').select('id, name, abbreviation');
+      if (data) setCommittees(data as any);
     }; 
     fetchCommittees();
   }, []);
@@ -51,7 +51,7 @@ export default function RegisterPage() {
       if (!formData.email) stepErrors.email = 'Email is required';
       if (!formData.password) stepErrors.password = 'Password is required';
       if (formData.password !== formData.confirm_password) stepErrors.confirm_password = 'Passwords do not match';
-      if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
+      if (['DELEGATE', 'CHAIR', 'CO_CHAIR'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
         if (!formData.preferred_committee) stepErrors.preferred_committee = 'Committee is required';
         if (formData.department === 'DELEGATE' && !formData.allocated_country) stepErrors.allocated_country = 'Country is required';
       }
@@ -108,7 +108,7 @@ export default function RegisterPage() {
     if (!formData.emergency_contact_relation) newErrors.emergency_contact_relation = 'Emergency contact relation is required';
     if (!formData.emergency_contact_phone) newErrors.emergency_contact_phone = 'Emergency contact phone is required';
 
-    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
+    if (['DELEGATE', 'CHAIR', 'CO_CHAIR'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
       if (!formData.preferred_committee) newErrors.preferred_committee = 'Committee preference is required';
       if (formData.department === 'DELEGATE' && !formData.allocated_country) newErrors.allocated_country = 'Country is required';
     }
@@ -137,7 +137,7 @@ export default function RegisterPage() {
       if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
       if (!formData.grade) newErrors.grade = 'Grade is required';
       if (!formData.phone_number) newErrors.phone_number = 'Phone number is required';
-      if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
+      if (['DELEGATE', 'CHAIR', 'CO_CHAIR'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department)) {
         if (!formData.preferred_committee) newErrors.preferred_committee = 'Committee is required';
         if (formData.department === 'DELEGATE' && !formData.allocated_country) newErrors.allocated_country = 'Country is required';
       }
@@ -238,7 +238,7 @@ export default function RegisterPage() {
             {/* Brand Logo */}
             <div className="flex justify-center mb-6 sm:mb-10">
               <Link href="/" className="flex items-center gap-3 sm:gap-4">
-                <img src="/billmun.png" alt="BILLMUN Logo" className="w-24 sm:w-36 h-auto dark:invert" />
+                <img src="/logo.png" alt="NXTMUN Logo" className="w-24 sm:w-36 h-auto dark:invert" />
                 <span className="font-jotia text-lg sm:text-2xl text-text-primary tracking-widest uppercase">
                   Registration
                 </span>
@@ -271,12 +271,9 @@ export default function RegisterPage() {
                     <FormLabel htmlFor="department">Department</FormLabel>
                     <Select id="department" name="department" value={formData.department} onChange={handleInputChange}>
                       <option value="DELEGATE">Delegate</option>
-                      <option value="MEDIA">Press / Media</option>
                       <option value="CHAIR">Chair</option>
                       <option value="CO_CHAIR">Co-Chair</option>
-                      <option value="ADMIN">Administrator</option>
-                      <option value="SECURITY">Security</option>
-                      <option value="EXECUTIVE_BOARD">Executive Board</option>
+                      <option value="EXECUTIVE_BOARD">Executive Board Member</option>
                       <option value="SECRETARY_GENERAL">Secretary General</option>
                       <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
                     </Select>
@@ -285,7 +282,7 @@ export default function RegisterPage() {
                   <div className="bg-bg-raised border border-border-subtle rounded-card p-4 mb-4">
                     <p className="text-sm text-text-secondary font-medium">
                       <span className="text-status-rejected-text font-bold uppercase tracking-widest mr-2">Important:</span>
-                      Please ensure all information provided matches the exact details used during your initial BILLMUN registration. This is for portal access verification.
+                      Please ensure all information provided matches the exact details used during your initial NXTMUN registration. This is for portal access verification.
                     </p>
                   </div>
 
@@ -315,7 +312,7 @@ export default function RegisterPage() {
                     </FormGroup>
                   </div>
 
-                  {['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department) && (
+                  {['DELEGATE', 'CHAIR', 'CO_CHAIR'].includes(formData.department) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(formData.department) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormGroup>
                         <FormLabel htmlFor="preferred_committee">Committee</FormLabel> 
@@ -329,8 +326,8 @@ export default function RegisterPage() {
                       </FormGroup>
                       {formData.department === 'DELEGATE' && (
                         <FormGroup>
-                          <FormLabel htmlFor="allocated_country">Country</FormLabel>     
-                          <Input id="allocated_country" name="allocated_country" type="text" value={formData.allocated_country} onChange={handleInputChange} placeholder="Assigned Country" required />
+                          <FormLabel htmlFor="allocated_country">Delegation</FormLabel>     
+                          <Input id="allocated_country" name="allocated_country" type="text" value={formData.allocated_country} onChange={handleInputChange} placeholder="Assigned Delegation" required />
                           {errors.allocated_country && <ErrorMessage>{errors.allocated_country}</ErrorMessage>}
                         </FormGroup>
                       )}

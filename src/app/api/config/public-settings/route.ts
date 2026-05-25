@@ -10,7 +10,7 @@ export async function GET() {
 
     const response = NextResponse.json({
       conference_date: data?.conference_date || null,
-      conference_name: data?.conference_name || "BILLMUN 2026",
+      conference_name: data?.conference_name || "NXTMUN 2026",
       conference_location: data?.conference_location || null,
       registration_open: data?.registration_open ?? false,
     });
@@ -19,9 +19,10 @@ export async function GET() {
   } catch {
     return NextResponse.json({
       conference_date: null,
-      conference_name: "BILLMUN 2026",
+      conference_name: "NXTMUN 2026",
       conference_location: null,
       registration_open: false,
     });
   }
 }
+

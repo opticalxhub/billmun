@@ -2,6 +2,8 @@ import { NextRequest, NextResponse, after } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { runOnUserApproved } from '@/lib/automation';
+import { RegisterSchema } from '@/lib/validations';
+import { logEvent, reportError } from '@/lib/logger';
 
 /** bcryptjs is CPU-heavy; 10 rounds is a common production default and much faster than 12. */
 const BCRYPT_ROUNDS = 10;
@@ -38,15 +40,18 @@ function matchCommittee(committees: CommitteeRow[], preferred: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
+    const validated = RegisterSchema.safeParse(body);
+    
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error.issues[0]?.message || "Invalid registration data" }, { status: 400 });
+    }
+
     const {
       email, password, full_name, date_of_birth, grade, phone_number,
       emergency_contact_name, emergency_contact_relation, emergency_contact_phone,
       dietary_restrictions, preferred_committee, allocated_country, department
-    } = await request.json();
-
-    if (!email || !password || !full_name) {
-      return NextResponse.json({ error: 'Email, password and full name are required' }, { status: 400 });
-    }
+    } = validated.data;
 
     const emailNorm = email.trim().toLowerCase();
 
@@ -59,7 +64,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Registrations are currently closed.' }, { status: 403 });
     }
 
-    const ALLOWED_SELF_REGISTER_ROLES = ['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN', 'MEDIA', 'PRESS', 'SECURITY', 'EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'];
+    const ALLOWED_SELF_REGISTER_ROLES = ['DELEGATE', 'CHAIR', 'CO_CHAIR', 'EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'];
     const safeDepartment = ALLOWED_SELF_REGISTER_ROLES.includes(department) ? department : 'DELEGATE';
 
     if (existingProfile) {
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (['DELEGATE', 'CHAIR', 'CO_CHAIR', 'ADMIN'].includes(safeDepartment) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(safeDepartment) && (!preferred_committee || preferred_committee === '')) {
+    if (['DELEGATE', 'CHAIR', 'CO_CHAIR'].includes(safeDepartment) && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(safeDepartment) && (!preferred_committee || preferred_committee === '')) {
       return NextResponse.json({ error: 'Committee selection is required for your role' }, { status: 400 });
     }
 

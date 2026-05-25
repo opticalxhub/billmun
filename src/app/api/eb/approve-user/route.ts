@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getEBContext } from '@/lib/eb-auth';
 import { runOnUserApproved, runOnUserRejected } from '@/lib/automation';
+import { ApproveUserSchema } from '@/lib/validations';
+import { logEvent, reportError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,12 +16,14 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
-    const { userId, approve } = body;
-    const approverId = context.ebUserId;
 
-    if (!userId || typeof approve !== 'boolean') {
-      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    const validated = ApproveUserSchema.safeParse(body);
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error.issues[0]?.message || "Invalid approval data" }, { status: 400 });
     }
+
+    const { userId, approve, reason } = validated.data;
+    const approverId = context.ebUserId;
 
     const { data: targetUser } = await supabaseAdmin
       .from('users')

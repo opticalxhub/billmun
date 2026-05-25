@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { reportError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +9,14 @@ export async function GET(_req: NextRequest) {
     // Fetch conference config
     const { data: config } = await supabaseAdmin
       .from("conference_config")
-      .select("*")
+      .select("id, manual_override, post_conference_message")
       .eq("id", "1")
       .maybeSingle();
 
     // Fetch windows
     const { data: windows } = await supabaseAdmin
       .from("conference_windows")
-      .select("*")
+      .select("id, label, start_time, end_time")
       .order("start_time", { ascending: true });
 
     const now = new Date();
@@ -80,10 +81,10 @@ export async function GET(_req: NextRequest) {
       post_conference_message: postConferenceMessage,
       server_time: now.toISOString(),
     });
-    response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
+    response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     return response;
-  } catch (err: any) {
-    console.error("[conference-status] error:", err);
+  } catch (err: unknown) {
+    reportError(err, { route: '/api/config/conference-status', method: 'GET' });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

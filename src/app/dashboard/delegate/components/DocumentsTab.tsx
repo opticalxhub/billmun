@@ -72,7 +72,11 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
   const { data: conferenceSettings } = useQuery({
     queryKey: ['conference-settings-upload'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('conference_settings').select('max_file_upload_mb').eq('id', '1').maybeSingle();
+      const { data, error } = await supabase
+        .from('conference_settings')
+        .select('id, max_file_upload_mb')
+        .eq('id', '1')
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -110,7 +114,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('documents')
-        .select('*, reviewer:reviewed_by_id(full_name)')
+        .select('id, user_id, committee_id, type, title, file_url, file_size, mime_type, status, feedback, uploaded_at, reviewed_at, reviewed_by_id, reviewer:reviewed_by_id(full_name)')
         .eq('user_id', ctx.user.id)
         .order('uploaded_at', { ascending: false })
         .limit(50);
@@ -127,7 +131,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('document_status_history')
-        .select('*, changer:changed_by_id(full_name)')
+        .select('id, document_id, status, changed_by_id, note, changed_at, changer:changed_by_id(full_name)')
         .eq('document_id', drawerDoc.id)
         .order('changed_at', { ascending: true });
       if (error) throw error;
@@ -142,7 +146,7 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('document_versions')
-        .select('*')
+        .select('id, document_id, version, file_url, file_size, uploaded_at')
         .eq('document_id', drawerDoc.id)
         .order('version', { ascending: false });
       if (error) throw error;
@@ -157,10 +161,9 @@ export default function DocumentsTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('committee_resources')
-        .select('*, uploader:uploaded_by(full_name)')
+        .select('id, committee_id, title, description, file_url, uploaded_by, archived, created_at, updated_at, uploader:uploaded_by(full_name)')
         .eq('committee_id', ctx.assignment!.committee_id)
         .eq('archived', false)
-        .eq('is_published', true)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;

@@ -4,14 +4,21 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, Badge, Modal } from '@/components/ui';
 import { Button } from '@/components/button';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { DelegateDashboardData } from '@/types/portal';
 
 export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignment: any }) {
-  const committee_id = committeeAssignment?.committee_id ?? committeeAssignment?.committee_id;
+  const committee_id = committeeAssignment?.committee_id;
+  const queryClient = useQueryClient();
 
-  const [committee, setCommittee] = useState<any>(null);
-  const [sessionStatus, setSessionStatus] = useState<string>('Adjourned');
-  const [debateTopic, setDebateTopic] = useState<string>('');
-  const [speakingTime, setSpeakingTime] = useState<number>(0);
+  const { data: bootstrap } = useQuery<DelegateDashboardData>({
+    queryKey: ['delegate-dashboard'],
+    enabled: false,
+  });
+
+  const committee = bootstrap?.committee;
+  const session = bootstrap?.committeeSession;
+
   const [chairName, setChairName] = useState<string>('Chair');
   const [rosterOpen, setRosterOpen] = useState(false);
   const [roster, setRoster] = useState<any[]>([]);
@@ -19,55 +26,18 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
   useEffect(() => {
     if (!committee_id) return;
 
-    const fetchCommitteeData = async () => {
-      const { data: commData } = await supabase
-        .from('committees')
-        .select('*')
-        .eq('id', committee_id)
-        .maybeSingle();
-
-      if (commData) {
-        setCommittee(commData);
-      }
-
-      const { data: chairRows } = await supabase
-        .from('committee_assignments')
-        .select('users(full_name)')
-        .eq('committee_id', committee_id)
-        .limit(1);
-
-      const chairRow = Array.isArray(chairRows) ? chairRows[0] : null;
-      const users = (chairRow as any)?.users;
-      const chairFullName = Array.isArray(users) ? users[0]?.full_name : users?.full_name;
-      setChairName(chairFullName || 'Chair');
-
-      const { data: sessionData } = await supabase
-        .from('committee_sessions')
-        .select('*')
-        .eq('committee_id', committee_id)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!sessionData) return;
-
-      if (sessionData.caucus_type === 'MODERATED') {
-        setSessionStatus('Moderated Caucus');
-        setDebateTopic(sessionData.debate_topic || '');
-        setSpeakingTime(sessionData.speaking_time_limit || 0);
-      } else if (sessionData.caucus_type === 'UNMODERATED') {
-        setSessionStatus('Unmoderated Caucus');
-        setDebateTopic('');
-        setSpeakingTime(0);
-      } else {
-        setSessionStatus('In Session');
-        setDebateTopic('');
-        setSpeakingTime(0);
-      }
-    };
-
-    fetchCommitteeData();
-    const interval = setInterval(fetchCommitteeData, 60000);
+    // Fetch chair name (rarely changes, staleTime 1h)
+    supabase
+      .from('committee_assignments')
+      .select('users(full_name)')
+      .eq('committee_id', committee_id)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const users = (data as any)?.users;
+        const chairFullName = Array.isArray(users) ? users[0]?.full_name : users?.full_name;
+        if (chairFullName) setChairName(chairFullName);
+      });
 
     const channel = supabase
       .channel(`committee-sessions:${committee_id}`)
@@ -80,16 +50,22 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
           filter: `committee_id=eq.${committee_id}`,
         },
         () => {
-          fetchCommitteeData();
+          queryClient.invalidateQueries({ queryKey: ['delegate-dashboard'] });
         },
       )
       .subscribe();
 
     return () => {
-      clearInterval(interval);
       if (channel) supabase.removeChannel(channel);
     };
-  }, [committee_id]);
+  }, [committee_id, queryClient]);
+
+  if (!committee || !session) return null;
+
+  let sessionStatusLabel = 'In Session';
+  if (session.caucus_type === 'MODERATED') sessionStatusLabel = 'Moderated Caucus';
+  else if (session.caucus_type === 'UNMODERATED') sessionStatusLabel = 'Unmoderated Caucus';
+  else if (session.status === 'ADJOURNED') sessionStatusLabel = 'Adjourned';
 
   const fetchRoster = async () => {
     if (!committee_id) return;
@@ -148,76 +124,52 @@ export function LiveCommitteeBanner({ committeeAssignment }: { committeeAssignme
     return <Card className="animate-pulse h-32 bg-bg-base/50" />;
   }
 
-  const roomPulse = sessionStatus === 'In Session';
-
-  const backgroundGuideUrl = committee?.background_guide_url;
-  const ropUrl = committee?.rop_url;
-
   return (
-    <Card className="bg-bg-card border border-border-subtle relative overflow-hidden">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-        <div>
-          <h1 className="text-3xl font-jotia text-text-primary tracking-tight uppercase">
-            {committee.name}
-          </h1>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-xl">{committeeAssignment.country}</span>
-            <span className="text-text-secondary text-sm px-2 py-0.5 bg-bg-raised rounded">
-              Chair: {chairName}
-            </span>
-          </div>
-          <p className="text-text-secondary mt-2 text-sm max-w-2xl">{committee.topic}</p>
-        </div>
-
-        <div className="flex flex-col items-end gap-3 text-right">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-end">
-              <span className="text-xs text-text-tertiary uppercase tracking-widest font-bold">
-                Room Status
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-text-primary">{sessionStatus}</span>
-                {roomPulse && (
-                  <span className="flex h-3 w-3 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-text-primary/70 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-text-primary/70" />
-                  </span>
+    <Card className="p-0 border-none bg-transparent overflow-visible">
+      <div className="flex flex-col md:flex-row items-stretch gap-4">
+        {/* Main Banner */}
+        <div className="flex-1 bg-bg-card border border-border-subtle rounded-card p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-full bg-brand-crimson/10 text-brand-crimson">
+              <span className="font-jotia-bold text-lg">{committee.abbreviation?.[0]}</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="outline" className="bg-brand-crimson/5 text-brand-crimson border-brand-crimson/20 font-jotia-bold">
+                  {sessionStatusLabel}
+                </Badge>
+                {session.caucus_type === 'MODERATED' && (
+                  <Badge variant="outline" className="bg-blue-500/5 text-blue-500 border-blue-500/20 font-jotia">
+                    {session.speaking_time_limit}s Speaking Time
+                  </Badge>
                 )}
               </div>
+              <h3 className="font-jotia-bold text-text-primary text-lg leading-none">{committee.name}</h3>
+              {session.debate_topic && (
+                <p className="text-sm text-text-secondary font-jotia mt-1">
+                  Topic: <span className="text-text-primary">{session.debate_topic}</span>
+                </p>
+              )}
             </div>
           </div>
 
-          {sessionStatus === 'Moderated Caucus' && (
-            <div className="bg-bg-raised p-2 border border-border-subtle rounded-card text-xs text-left w-full md:w-auto">
-              <p>
-                <span className="text-text-tertiary">Topic:</span> {debateTopic}
-              </p>
-              <p>
-                <span className="text-text-tertiary">Time:</span> {speakingTime}s per speaker
-              </p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex h-9 font-jotia-bold uppercase tracking-wider"
+              onClick={() => {
+                fetchRoster();
+                setRosterOpen(true);
+              }}
+            >
+              View Roster
+            </Button>
+            <div className="h-9 w-[1px] bg-border-subtle hidden sm:block mx-2" />
+            <div className="text-right hidden sm:block">
+              <p className="text-[10px] text-text-dimmed uppercase tracking-widest font-jotia-bold">Chairing</p>
+              <p className="text-sm font-jotia text-text-primary">{chairName}</p>
             </div>
-          )}
-
-          <div className="flex gap-2 mt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!backgroundGuideUrl}
-              onClick={() => backgroundGuideUrl && window.open(backgroundGuideUrl, '_blank')}
-            >
-              Background Guide
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!ropUrl}
-              onClick={() => ropUrl && window.open(ropUrl, '_blank')}
-            >
-              ROP
-            </Button>
-            <Button variant="default" size="sm" onClick={fetchRoster}>
-              Committee Roster
-            </Button>
           </div>
         </div>
       </div>

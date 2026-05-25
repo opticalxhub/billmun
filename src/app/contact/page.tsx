@@ -54,13 +54,13 @@ export default function ContactPage() {
         <FadeIn delay={0.35} from="bottom">
           <div className="space-y-3 mb-10">
             <p className="text-text-secondary max-w-lg">
-              Have a question about BILLMUN? Reach out to our team.
+              Have a question about NXTMUN? Reach out to our team.
             </p>
             <a
-              href="mailto:pr@billmun.com"
+              href="mailto:pr@portal.nxtmun.com"
               className="text-text-primary font-bold text-lg hover:underline inline-block"
             >
-              pr@billmun.com
+              pr@portal.nxtmun.com
             </a>
           </div>
         </FadeIn>
@@ -156,3 +156,4 @@ export default function ContactPage() {
     </div>
   );
 }
+

@@ -13,6 +13,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const [taskTitle, setTaskTitle] = useState('');
   const [taskNotes, setTaskNotes] = useState('');
   const [taskDue, setTaskDue] = useState('');
+  const committeeId = ctx.committee?.id;
 
   // useQuery for Conference Settings (Date)
   const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
@@ -29,7 +30,10 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
   const { data: defaultEvents, isLoading: defaultEventsLoading, isError: defaultEventsError } = useQuery({
     queryKey: ['schedule-events'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('schedule_events').select('*').order('start_time', { ascending: true });
+      const { data, error } = await supabase
+        .from('schedule_events')
+        .select('id, day_label, event_name, location, start_time, end_time, description, applicable_roles, order_index')
+        .order('start_time', { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -43,7 +47,7 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('personal_tasks')
-        .select('*')
+        .select('id, title, notes, due_at, is_completed')
         .eq('user_id', ctx.user.id)
         .order('is_completed', { ascending: true })
         .order('due_at', { ascending: true, nullsFirst: false });
@@ -55,13 +59,14 @@ export default function ScheduleTab({ ctx }: { ctx: DelegateContext }) {
 
   // useQuery for Committee Schedule
   const { data: committeeSchedule, isLoading: committeeScheduleLoading, isError: committeeScheduleError } = useQuery({
-    queryKey: ['committee-schedule', ctx.committee?.id],
-    enabled: !!ctx.committee?.id,
+    queryKey: ['committee-schedule', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
+      if (!committeeId) return [];
       const { data, error } = await supabase
         .from('committee_schedules')
-        .select('*')
-        .eq('committee_id', ctx.committee.id)
+        .select('id, event_name, start_time, end_time, location, description, event_type')
+        .eq('committee_id', committeeId)
         .order('start_time', { ascending: true });
       if (error) throw error;
       return data || [];

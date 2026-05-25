@@ -38,7 +38,7 @@
     "@supabase/supabase-js": "^2.99.3",
     "@tanstack/react-query": "^5.91.2",
     "@tanstack/react-virtual": "^3.13.23",
-    "axios": "^1.13.6",
+    "axios": "^1.15.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -48,7 +48,7 @@
     "groq-sdk": "^0.5.0",
     "gsap": "^3.14.2",
     "lucide-react": "^0.577.0",
-    "next": "^15.1.6",
+    "next": "^15.5.18",
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
@@ -56,7 +56,7 @@
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.71.2",
-    "resend": "^6.9.4",
+    "resend": "^6.12.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
@@ -70,7 +70,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.1.6",
-    "postcss": "^8",
+    "postcss": "^8.5.10",
     "tailwindcss": "^3.4.1",
     "typescript": "5.9.3"
   }

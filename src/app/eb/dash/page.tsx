@@ -11,7 +11,6 @@ import RegistrationsDashPage from "./registrations/page";
 import LiveMonitorPage from "./live-monitor/page";
 import CommitteesDashPage from "./committees/page";
 import EBDocumentsPage from "./documents/page";
-import EBSecurityPage from "./security/page";
 import CommunicationsPage from "./communications/page";
 import SettingsPage from "./settings/page";
 import EBAuditLogPage from "./audit/page";
@@ -20,14 +19,37 @@ import EBWhatsAppPage from "./whatsapp/page";
 import EBReportsPage from "./reports/page";
 import EBSchedulePage from "./schedule/page";
 import ConferenceControlPage from "./conference/page";
-import EBMediaPRPage from "./media-pr/page";
 import EBContactPage from "./contact/page";
+import InteractiveOnboarding from "@/components/interactive-onboarding";
+import { supabase } from "@/lib/supabase";
 
 function EBDashInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabParam = searchParams?.get('tab') || 'overview';
   const [activeTab, setActiveTab] = useState(tabParam);
+  const [user, setUser] = useState<{ id: string; full_name: string; has_completed_onboarding: boolean; role: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase
+          .from('users')
+          .select('id, full_name, has_completed_onboarding, role')
+          .eq('id', data.user.id)
+          .maybeSingle()
+          .then(({ data: profile }) => {
+            if (profile) {
+              setUser(profile as any);
+              if (!profile.has_completed_onboarding && profile.id !== '00000000-0000-0000-0000-000000000000') {
+                setShowOnboarding(true);
+              }
+            }
+          });
+      }
+    });
+  }, []);
 
   // Sync state with URL
   useEffect(() => {
@@ -42,29 +64,58 @@ function EBDashInner() {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview': return <EBDashOverview />;
-      case 'registrations': return <RegistrationsDashPage />;
-      case 'live-monitor': return <LiveMonitorPage />;
-      case 'committees': return <CommitteesDashPage />;
+      case 'registrations': return (
+        <div className="space-y-6">
+          <RegistrationsDashPage />
+          <EBAuditLogPage />
+        </div>
+      );
+      case 'committees': return (
+        <div className="space-y-6">
+          <CommitteesDashPage />
+          <LiveMonitorPage />
+          <EBSchedulePage />
+        </div>
+      );
       case 'documents': return <EBDocumentsPage />;
-      case 'security': return <EBSecurityPage />;
-      case 'communications': return <CommunicationsPage />;
-      case 'contact': return <EBContactPage />;
-      case 'media-pr': return <EBMediaPRPage />;
-      case 'settings': return <SettingsPage />;
-      case 'audit': return <EBAuditLogPage />;
-      case 'internal-workspace': return <EBInternalWorkspacePage />;
-      case 'whatsapp': return <EBWhatsAppPage />;
-      case 'reports': return <EBReportsPage />;
-      case 'schedule': return <EBSchedulePage />;
-      case 'conference': return <ConferenceControlPage />;
+      case 'communications': return (
+        <div className="space-y-6">
+          <CommunicationsPage />
+          <EBWhatsAppPage />
+          <EBContactPage />
+        </div>
+      );
+      case 'settings': return (
+        <div className="space-y-6">
+          <SettingsPage />
+          <ConferenceControlPage />
+          <EBReportsPage />
+          <EBInternalWorkspacePage />
+        </div>
+      );
       default: return <EBDashOverview />;
     }
   };
 
   return (
-    <EBLayout activeTab={activeTab} onTabChange={handleTabChange}>
-      {renderContent()}
-    </EBLayout>
+    <>
+      <EBLayout activeTab={activeTab} onTabChange={handleTabChange}>
+        {renderContent()}
+      </EBLayout>
+      {showOnboarding && user && (
+        <InteractiveOnboarding
+          userRole={user.role}
+          userName={user.full_name || 'Executive Member'}
+          dashboardType="eb"
+          onComplete={async () => {
+            setShowOnboarding(false);
+            try {
+              await supabase.from('users').update({ has_completed_onboarding: true }).eq('id', user.id);
+            } catch {}
+          }}
+        />
+      )}
+    </>
   );
 }
 

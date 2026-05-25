@@ -6,7 +6,6 @@ import { runOnDocumentStatusChanged } from "@/lib/automation";
 const REVIEWER_ROLES = [
   "CHAIR",
   "CO_CHAIR",
-  "ADMIN",
   "EXECUTIVE_BOARD",
   "SECRETARY_GENERAL",
   "DEPUTY_SECRETARY_GENERAL",

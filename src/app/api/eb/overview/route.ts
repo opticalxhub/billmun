@@ -17,7 +17,6 @@ export async function GET(_req: NextRequest) {
       { count: docsToday },
       { count: messagesToday },
       { count: aiToday },
-      { count: openIncidents },
       { data: logs },
       { data: commData },
     ] = await Promise.all([
@@ -27,7 +26,6 @@ export async function GET(_req: NextRequest) {
       supabaseAdmin.from("documents").select("id", { count: "exact", head: true }).gte("uploaded_at", startOfDay),
       supabaseAdmin.from("messages").select("id", { count: "exact", head: true }).gte("created_at", startOfDay),
       supabaseAdmin.from("ai_feedback").select("id", { count: "exact", head: true }).gte("created_at", startOfDay),
-      supabaseAdmin.from("security_incidents").select("id", { count: "exact", head: true }).neq("status", "RESOLVED"),
       supabaseAdmin.from("audit_logs").select("*, actor:actor_id(full_name)").order("performed_at", { ascending: false }).limit(30),
       supabaseAdmin.from("committees").select("*, committee_sessions(id, status), chair:chair_id(full_name)"),
     ]);
@@ -93,7 +91,6 @@ export async function GET(_req: NextRequest) {
         documentsToday: docsToday ?? 0,
         messagesToday: messagesToday ?? 0,
         ai_analyses_today: aiToday ?? 0,
-        open_incidents: openIncidents ?? 0,
       },
       activityFeed: logs || [],
       committees: processedComms,

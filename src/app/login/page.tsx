@@ -39,7 +39,7 @@ export default function LoginPage() {
       });
 
       const raw = await res.text();
-      let data: { error?: string; session?: { access_token: string; refresh_token: string } } = {};
+      let data: { error?: string; redirectTo?: string; session?: { access_token: string; refresh_token: string } } = {};
       if (raw) {
         try {
           data = JSON.parse(raw) as typeof data;
@@ -68,7 +68,7 @@ export default function LoginPage() {
       }
 
       setSuccess(true);
-      window.location.href = '/dashboard';
+      window.location.assign(data.redirectTo || '/dashboard');
     } catch {
       setError('An unexpected error occurred.');
       setLoading(false);
@@ -84,17 +84,6 @@ export default function LoginPage() {
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
         <div className="w-full max-w-sm">
           <div className="bg-black/60 backdrop-blur-2xl border border-white/10 rounded-2xl p-8 sm:p-10 shadow-2xl">
-            {/* Logo */}
-            <div className="flex justify-center mb-8">
-              <Link href="/">
-                <img
-                  src="/billmun.png"
-                  alt="BILLMUN Logo"
-                  className="w-20 sm:w-24 h-auto invert opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300"
-                />
-              </Link>
-            </div>
-
             {/* Title */}
             <h1 className="font-jotia text-xl sm:text-2xl text-center mb-8 tracking-[0.25em] text-white/90">
               PORTAL LOGIN
@@ -158,13 +147,8 @@ export default function LoginPage() {
             {/* Links */}
             <div className="mt-6 text-center space-y-4">
               <div>
-                <Link href="/register" className="text-sm font-bold uppercase tracking-[0.1em] text-white/90 hover:text-white hover:underline transition-all">
-                  Register for an account
-                </Link>
-              </div>
-              <div>
-                <Link href="/" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors">
-                  Back to Home
+                <Link href="/gallery" className="text-[10px] uppercase tracking-[0.2em] text-white/30 hover:text-white/60 transition-colors">
+                  Browse Public Gallery
                 </Link>
               </div>
             </div>

@@ -17,67 +17,76 @@
 
 @layer base {
   :root {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
+    --bg-base: #FDFCFB; /* Newspaper White */
+    --bg-card: #FFFFFF;
+    --bg-raised: #F5F2EF;
+    --bg-hover: #EBE7E2;
+    --bg-dropdown: #FFFFFF;
     
-    --border-subtle: #222222;
-    --border-emphasized: #333333;
-    --border-strong: #444444;
-    --border-input: #333333;
+    --border-subtle: #EBE7E2;
+    --border-emphasized: #D1CDC7;
+    --border-strong: #A39E96;
+    --border-input: #D1CDC7;
     
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
+    --text-primary: #1A1A1A; /* Deep Black */
+    --text-secondary: #4A4A4A;
+    --text-tertiary: #717171;
+    --text-disabled: #A3A3A3;
+    --text-dimmed: #4A4A4A;
     
     --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
+    --white-accent: #FDFCFB;
     
-    --status-approved-bg: #E8F5E9;
-    --status-approved-text: #1B5E20;
-    --status-approved-border: #C8E6C9;
-    --status-pending-bg: #FFF3E0;
-    --status-pending-text: #E65100;
+    /* Branding Colors */
+    --brand-crimson: #9B1B30;
+    --brand-rust: #B7410E;
+    --primary: var(--brand-crimson);
+    
+    --status-approved-bg: #E6F4EA;
+    --status-approved-text: #1E4620;
+    --status-approved-border: #B7E1CD;
+    --status-pending-bg: #FFF4E5;
+    --status-pending-text: #663C00;
     --status-pending-border: #FFE0B2;
-    --status-rejected-bg: #FFEBEE;
-    --status-rejected-text: #B71C1C;
-    --status-rejected-border: #FFCDD2;
+    --status-rejected-bg: #FCE8E6;
+    --status-rejected-text: #A50E0E;
+    --status-rejected-border: #F9D2CE;
   }
 
   .dark {
-    --bg-base: #080808;
-    --bg-card: #111111;
-    --bg-raised: #181818;
-    --bg-hover: #222222;
-    --bg-dropdown: #111111;
+    --bg-base: #0A0A0A;
+    --bg-card: #141414;
+    --bg-raised: #1C1C1C;
+    --bg-hover: #262626;
+    --bg-dropdown: #141414;
     
-    --border-subtle: #222222;
+    --border-subtle: #262626;
     --border-emphasized: #333333;
     --border-strong: #444444;
     --border-input: #333333;
     
-    --text-primary: #F0EDE6;
-    --text-secondary: #A0A09B;
-    --text-tertiary: #7A7A7A;
-    --text-disabled: #555555;
-    --text-dimmed: #A0A09B;
+    --text-primary: #FDFCFB;
+    --text-secondary: #A3A3A3;
+    --text-tertiary: #717171;
+    --text-disabled: #4A4A4A;
+    --text-dimmed: #A3A3A3;
     
     --white-pure: #FFFFFF;
-    --white-accent: #F0EDE6;
+    --white-accent: #FDFCFB;
+
+    --brand-crimson: #E31B23;
+    --brand-rust: #D95D26;
+    --primary: var(--brand-crimson);
     
-    --status-approved-bg: #112211;
-    --status-approved-text: #4ade80;
+    --status-approved-bg: #0F2916;
+    --status-approved-text: #4ADE80;
     --status-approved-border: #166534;
-    --status-pending-bg: #221100;
-    --status-pending-text: #fb923c;
-    --status-pending-border: #9a3412;
-    --status-rejected-bg: #220000;
-    --status-rejected-text: #f87171;
-    --status-rejected-border: #991b1b;
+    --status-pending-bg: #2B1B0A;
+    --status-pending-text: #FB923C;
+    --status-pending-border: #9A3412;
+    --status-rejected-bg: #2D0A0A;
+    --status-rejected-text: #F87171;
+    --status-rejected-border: #991B1B;
   }
 }
 

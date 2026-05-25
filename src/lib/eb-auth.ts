@@ -24,7 +24,7 @@ export async function getEBContext(): Promise<{ context?: EBContext; error?: str
       const { data: ebActor } = await supabaseAdmin
         .from("users")
         .select("id, role")
-        .in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL", "ADMIN"])
+        .in("role", ["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"])
         .limit(1)
         .maybeSingle();
 
@@ -77,7 +77,7 @@ export async function getEBContext(): Promise<{ context?: EBContext; error?: str
     .eq("id", authUser.id)
     .maybeSingle();
 
-  if (!user || !["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL", "ADMIN"].includes(user.role)) {
+  if (!user || !["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(user.role)) {
     return { error: "Forbidden", status: 403 };
   }
 

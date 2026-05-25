@@ -2,11 +2,7 @@ export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   DELEGATE: 'Delegate',
   CHAIR: 'Chair',
   CO_CHAIR: 'Co-Chair',
-  MEDIA: 'Press / Media',
-  PRESS: 'Press',
   EXECUTIVE_BOARD: 'Executive Member',
-  ADMIN: 'Administrator',
-  SECURITY: 'Security',
   SECRETARY_GENERAL: 'Secretary General',
   DEPUTY_SECRETARY_GENERAL: 'Deputy Secretary General',
 };

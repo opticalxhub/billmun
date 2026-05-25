@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getRequestUserContext } from "@/lib/auth-context";
+import { jsonPrivateNoStore } from "@/lib/http";
+import { reportError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +11,7 @@ export async function GET() {
     const { context, error, status } = await getRequestUserContext();
 
     if (!context) {
-      return NextResponse.json(
+      return jsonPrivateNoStore(
         { message: error || "Unauthorized" },
         { status: status || 401 }
       );
@@ -22,55 +24,44 @@ export async function GET() {
       .maybeSingle();
 
     if (userError || !user) {
-      return NextResponse.json(
+      return jsonPrivateNoStore(
         { message: "User not found" },
         { status: 404 }
       );
     }
 
-    // Get committee assignments
-    const { data: assignments } = await supabaseAdmin
-      .from('committee_assignments')
-      .select('*, committees(*)')
-      .eq('user_id', user.id);
+    const [assignmentsRes, documentsRes, docCountRes, aiSessionCountRes, settingsRes] = await Promise.all([
+      supabaseAdmin
+        .from('committee_assignments')
+        .select('id, committee_id, country, seat_number, assigned_at, committees(id, name, abbreviation, topic, secondary_topic)')
+        .eq('user_id', user.id),
+      supabaseAdmin
+        .from('documents')
+        .select('id, title, status, uploaded_at, reviewed_at, committee_id')
+        .eq('user_id', user.id)
+        .order('uploaded_at', { ascending: false })
+        .limit(5),
+      supabaseAdmin.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabaseAdmin.from('ai_feedback').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabaseAdmin
+        .from('conference_settings')
+        .select('id, conference_name, conference_start_date, conference_end_date, maintenance_mode')
+        .eq('id', '1')
+        .maybeSingle(),
+    ]);
 
-    // Get recent documents
-    const { data: documents } = await supabaseAdmin
-      .from('documents')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('uploaded_at', { ascending: false })
-      .limit(5);
-
-    // Get statistics
-    const { count: docCount } = await supabaseAdmin
-      .from('documents')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-
-    const { count: aiSessionCount } = await supabaseAdmin
-      .from('ai_feedback')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-
-    // Calculate days until conference
-    const { data: settings } = await supabaseAdmin
-      .from('conference_settings')
-      .select('*')
-      .maybeSingle();
-
-    return NextResponse.json({
+    return jsonPrivateNoStore({
       user,
-      assignments,
-      documents,
+      assignments: assignmentsRes.data ?? [],
+      documents: documentsRes.data ?? [],
       stats: {
-        docCount,
-        aiSessionCount,
+        docCount: docCountRes.count ?? 0,
+        aiSessionCount: aiSessionCountRes.count ?? 0,
       },
-      settings,
+      settings: settingsRes.data ?? null,
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    reportError(error, { route: '/api/users/me', method: 'GET' });
+    return jsonPrivateNoStore({ error: "Server error" }, { status: 500 });
   }
 }

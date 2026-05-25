@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getAdminContext } from "@/lib/admin-auth";
+import { getRequestUserContext } from "@/lib/auth-context";
 
 async function ensureChannel(name: string, type: string, committeeId?: string | null, isReadOnly = false) {
   const { data: existing } = await supabaseAdmin
@@ -27,8 +27,11 @@ async function upsertMembers(channel_id: string, userIds: string[]) {
 
 export async function POST() {
   try {
-  const ctx = await getAdminContext();
-  if (ctx.error) return NextResponse.json({ error: ctx.error }, { status: ctx.status || 500 });
+  const { context, error: authErr, status: authStatus } = await getRequestUserContext();
+  if (!context) return NextResponse.json({ error: authErr }, { status: authStatus || 500 });
+  if (!["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(context.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const { data: committees } = await supabaseAdmin
     .from("committees")
@@ -60,9 +63,7 @@ export async function POST() {
 
   const departmentChannels: Array<{ name: string; role: string; readOnly?: boolean }> = [
     { name: "Chairs", role: "CHAIR" },
-    { name: "Admin Team", role: "ADMIN" },
-    { name: "Media Team", role: "MEDIA" },
-    { name: "Security Team", role: "SECURITY" },
+    { name: "Co-Chairs", role: "CO_CHAIR" },
   ];
   for (const ch of departmentChannels) {
     const channelId = await ensureChannel(ch.name, "DEPARTMENT", null, false);

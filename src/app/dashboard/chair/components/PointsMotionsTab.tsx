@@ -51,7 +51,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
     if (!ctx.committee?.id) return;
     const { data } = await supabase
       .from('points_and_motions')
-      .select('*, delegate:delegate_id(full_name)')
+      .select('id, committee_id, session_id, delegate_id, type, description, outcome, votes_for, votes_against, votes_abstain, created_at, created_by, delegate:delegate_id(full_name)')
       .eq('committee_id', ctx.committee.id)
       .order('created_at', { ascending: false });
     setRecords(data || []);
@@ -61,7 +61,7 @@ export default function PointsMotionsTab({ ctx }: { ctx: ChairContext }) {
     if (!ctx.committee?.id) return;
     const { data } = await supabase
       .from('session_events')
-      .select('*')
+      .select('id, committee_id, session_id, event_type, title, description, metadata, created_at, created_by')
       .eq('committee_id', ctx.committee.id)
       .order('created_at', { ascending: false })
       .limit(50);

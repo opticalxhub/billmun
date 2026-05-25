@@ -310,10 +310,7 @@ export default function RegistrationsPage() {
             <option value="ALL">All Roles</option>
             <option value="DELEGATE">Delegate</option>
             <option value="CHAIR">Chair</option>
-            <option value="CO_CHAIR">Co-Chair</option>
-            <option value="ADMIN">Admin</option>
-            <option value="MEDIA">Media</option>
-            <option value="SECURITY">Security</option>
+            <option value="CO_CHAIR">Co Chair</option>
             <option value="EXECUTIVE_BOARD">Executive Board</option>
           </select>
           <select className="h-10 rounded-input border border-border-input bg-transparent px-3 text-sm" value={filterCommittee} onChange={e => setFilterCommittee(e.target.value)}>
@@ -332,7 +329,7 @@ export default function RegistrationsPage() {
                 <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary w-[15%]">Status</th>
                 <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary w-[15%]">Role</th>
                 <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary w-[25%]">Committee</th>
-                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary w-[20%]">Country</th>
+                <th className="p-3 border-b border-border-subtle font-semibold text-text-secondary w-[20%]">Delegation</th>
               </tr>
             </thead>
             <tbody>
@@ -538,13 +535,9 @@ export default function RegistrationsPage() {
                         <option value="DELEGATE">Delegate</option>
                         <option value="CHAIR">Chair</option>
                         <option value="CO_CHAIR">Co-Chair</option>
-                        <option value="ADMIN">Admin</option>
-                        <option value="MEDIA">Media</option>
-                        <option value="SECURITY">Security</option>
                         <option value="EXECUTIVE_BOARD">Executive Board</option>
                         <option value="SECRETARY_GENERAL">Secretary General</option>
                         <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>
-                        <option value="PRESS">Press</option>
                       </select>
                     </div>
                     <div>
@@ -602,7 +595,7 @@ export default function RegistrationsPage() {
                 <SectionLabel>Internal Notes</SectionLabel>
                 <div className="mt-3 space-y-3">
                   <div className="flex gap-2">
-                    <Textarea rows={2} placeholder="Add a note (visible only to EB/Admin)" className="flex-1" value={noteContent} onChange={e => setNoteContent(e.target.value)} />
+                    <Textarea rows={2} placeholder="Add a note (visible only to EB)" className="flex-1" value={noteContent} onChange={e => setNoteContent(e.target.value)} />
                     <Button disabled={!noteContent.trim() || submitting} onClick={() => void runAction("add_note", { content: noteContent })}>
                       {submitting ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
                       Save

@@ -5,9 +5,12 @@ import { supabase } from '@/lib/supabase';
 import { Bell, Check, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import type { PortalNotification } from '@/types/portal';
+
+const notificationSelect = 'id, title, message, type, link, is_read, created_at';
 
 export function NotificationBell({ userId }: { userId: string }) {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<PortalNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -16,14 +19,15 @@ export function NotificationBell({ userId }: { userId: string }) {
     if (!userId) return;
     const { data, error } = await supabase
       .from('notifications')
-      .select('*')
+      .select(notificationSelect)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(20);
 
     if (!error && data) {
-      setNotifications(data);
-      setUnreadCount(data.filter((n: any) => !n.is_read).length);
+      const typedData = data as PortalNotification[];
+      setNotifications(typedData);
+      setUnreadCount(typedData.filter((notification) => !notification.is_read).length);
     }
   };
 
@@ -68,11 +72,11 @@ export function NotificationBell({ userId }: { userId: string }) {
     fetchNotifications();
   };
 
-  const handleNotifClick = async (n: any) => {
-    if (!n.is_read) await markAsRead(n.id);
-    if (n.link) {
+  const handleNotifClick = async (notification: PortalNotification) => {
+    if (!notification.is_read) await markAsRead(notification.id);
+    if (notification.link) {
       setIsOpen(false);
-      router.push(n.link);
+      router.push(notification.link);
     }
   };
 
@@ -119,24 +123,24 @@ export function NotificationBell({ userId }: { userId: string }) {
                     <p className="text-sm text-text-dimmed">No notifications yet.</p>
                   </div>
                 ) : (
-                  notifications.map((n) => (
+                  notifications.map((notification) => (
                     <div
-                      key={n.id}
-                      onClick={() => handleNotifClick(n)}
-                      className={`relative p-4 transition-colors hover:bg-bg-raised cursor-pointer group ${!n.is_read ? 'bg-text-primary/[0.02]' : ''}`}
+                      key={notification.id}
+                      onClick={() => handleNotifClick(notification)}
+                      className={`relative p-4 transition-colors hover:bg-bg-raised cursor-pointer group ${!notification.is_read ? 'bg-text-primary/[0.02]' : ''}`}
                     >
-                      {!n.is_read && (
+                      {!notification.is_read && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-text-primary" />
                       )}
                       <div className="flex justify-between items-start mb-1">
-                        <h4 className={`text-sm font-bold ${!n.is_read ? 'text-text-primary' : 'text-text-secondary'}`}>
-                          {n.title}
+                        <h4 className={`text-sm font-bold ${!notification.is_read ? 'text-text-primary' : 'text-text-secondary'}`}>
+                          {notification.title}
                         </h4>
-                        {n.link && <ExternalLink className="w-3 h-3 text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />}
+                        {notification.link && <ExternalLink className="w-3 h-3 text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />}
                       </div>
-                      <p className="text-xs text-text-dimmed line-clamp-2 leading-relaxed">{n.message}</p>
+                      <p className="text-xs text-text-dimmed line-clamp-2 leading-relaxed">{notification.message}</p>
                       <p className="mt-2 text-[10px] text-text-tertiary uppercase tracking-tighter">
-                        {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &middot; {new Date(n.created_at).toLocaleDateString()}
+                        {new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &middot; {new Date(notification.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   ))

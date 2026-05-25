@@ -41,14 +41,15 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     queryKey: ['delegate-ratings', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
+      if (!ctx.committee?.id) return {};
       const { data } = await supabase
         .from('delegate_ratings')
-        .select('*')
+        .select('id, delegate_id, argumentation_quality, diplomacy, preparation, private_notes')
         .eq('committee_id', ctx.committee.id)
         .eq('rated_by', ctx.user.id)
         .limit(100);
       const r: Record<string, Rating> = {};
-      (data || []).forEach((d: any) => {
+      (data || []).forEach((d) => {
         r[d.delegate_id] = {
           argumentation_quality: d.argumentation_quality,
           diplomacy: d.diplomacy,
@@ -65,6 +66,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     queryKey: ['speaking-stats', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
+      if (!ctx.committee?.id) return {};
       const { data } = await supabase
         .from('speakers_list')
         .select('delegate_id, actual_speaking_time')
@@ -72,7 +74,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
         .eq('status', 'COMPLETED')
         .limit(100);
       const s: Record<string, { time: number; count: number }> = {};
-      (data || []).forEach((r: any) => {
+      (data || []).forEach((r) => {
         if (!s[r.delegate_id]) s[r.delegate_id] = { time: 0, count: 0 };
         s[r.delegate_id].time += r.actual_speaking_time || 0;
         s[r.delegate_id].count += 1;
@@ -86,9 +88,10 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
     queryKey: ['delegate-nominees', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
+      if (!ctx.committee?.id) return [];
       const { data } = await supabase
         .from('best_delegate_nominees')
-        .select('*, delegate:delegate_id(full_name)')
+        .select('id, delegate_id, justification, is_winner, delegate:delegate_id(full_name)')
         .eq('committee_id', ctx.committee.id)
         .eq('nominated_by', ctx.user.id);
       return data || [];
@@ -98,7 +101,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
   const saveRatingMutation = useMutation({
     mutationFn: async ({ delegateId, updated }: { delegateId: string, updated: Rating }) => {
       await supabase.from('delegate_ratings').upsert({
-        committee_id: ctx.committee.id,
+        committee_id: ctx.committee!.id,
         delegate_id: delegateId,
         rated_by: ctx.user.id,
         ...updated,
@@ -123,6 +126,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
   });
 
   const saveRating = (delegateId: string, field: keyof Rating, value: number | string) => {
+    if (!ctx.committee?.id) return;
     const current = ratings[delegateId] || { argumentation_quality: 0, diplomacy: 0, preparation: 0, private_notes: '' };
     const updated = { ...current, [field]: value };
     saveRatingMutation.mutate({ delegateId, updated });
@@ -131,7 +135,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
   const addNomineeMutation = useMutation({
     mutationFn: async () => {
       await supabase.from('best_delegate_nominees').insert({
-        committee_id: ctx.committee.id,
+        committee_id: ctx.committee!.id,
         delegate_id: nomineeId,
         nominated_by: ctx.user.id,
         justification,
@@ -154,7 +158,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
   });
 
   const addNominee = () => {
-    if (!nomineeId || !justification) return;
+    if (!nomineeId || !justification || !ctx.committee?.id) return;
     addNomineeMutation.mutate();
   };
 
@@ -197,7 +201,7 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
             <thead>
               <tr className="border-b border-border-subtle">
                 <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest w-8">#</th>
-                <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Delegate</th>
+                <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Delegation</th>
                 <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Speeches</th>
                 <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Time</th>
                 <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Argumentation</th>
@@ -311,15 +315,18 @@ export default function DelegatesTab({ ctx }: { ctx: ChairContext }) {
       <Card>
         <SectionLabel>Best Delegate Nominees ({nominees.length}/3)</SectionLabel>
         <div className="space-y-3 mb-4">
-          {nominees.map(n => (
-            <div key={n.id} className="flex items-center justify-between p-3 bg-yellow-500/5 rounded-card border border-yellow-500/20">
-              <div>
-                <p className="text-sm font-bold text-text-primary">{n.delegate?.full_name}</p>
-                <p className="text-xs text-text-dimmed">{n.justification}</p>
+          {nominees.map(n => {
+            const delegateObj = Array.isArray(n.delegate) ? n.delegate[0] : (n.delegate as { full_name: string } | null);
+            return (
+              <div key={n.id} className="flex items-center justify-between p-3 bg-yellow-500/5 rounded-card border border-yellow-500/20">
+                <div>
+                  <p className="text-sm font-bold text-text-primary">{delegateObj?.full_name || 'Unknown Delegate'}</p>
+                  <p className="text-xs text-text-dimmed">{n.justification}</p>
+                </div>
+                <button onClick={() => removeNominee(n.id)} className="text-xs font-bold text-status-rejected-text uppercase hover:underline">Remove</button>
               </div>
-              <button onClick={() => removeNominee(n.id)} className="text-xs font-bold text-status-rejected-text uppercase hover:underline">Remove</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
         {nominees.length < 3 && (
           <div className="space-y-3 p-4 bg-bg-raised rounded-card border border-border-subtle">

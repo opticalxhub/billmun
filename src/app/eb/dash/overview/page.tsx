@@ -61,7 +61,7 @@ export default function EBDashOverview() {
     return <div className="flex items-center justify-center min-h-[60vh]"><div className="text-center space-y-4"><p className="text-status-rejected-text font-jotia text-lg">Failed to load EB overview.</p><button onClick={() => window.location.reload()} className="px-4 py-2 border border-border-subtle rounded-button text-sm hover:bg-bg-raised">Retry</button></div></div>;
   }
 
-  const stats = ebData?.stats || { totalUsers: 0, pending: 0, approved: 0, committeesInSession: 0, documentsToday: 0, messagesToday: 0, ai_analyses_today: 0, open_incidents: 0 };
+  const stats = ebData?.stats || { totalUsers: 0, pending: 0, approved: 0, committeesInSession: 0, documentsToday: 0, messagesToday: 0, ai_analyses_today: 0 };
   const activityFeed = ebData?.activityFeed || [];
   const committees = ebData?.committees || [];
 
@@ -105,10 +105,6 @@ export default function EBDashOverview() {
         <Card className="p-4">
           <SectionLabel>AI Analyses Today</SectionLabel>
           <div className="text-3xl font-bold mt-1">{stats.ai_analyses_today}</div>
-        </Card>
-        <Card className="p-4 border-status-rejected-border bg-status-rejected-bg/10">
-          <SectionLabel>Open Security Incidents</SectionLabel>
-          <div className="text-3xl font-bold mt-1 text-status-rejected-text">{stats.open_incidents}</div>
         </Card>
       </div>
 

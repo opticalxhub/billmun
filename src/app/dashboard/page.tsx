@@ -43,7 +43,7 @@ export default function DashboardHub() {
         return;
       }
 
-      if (profile.status !== 'APPROVED' && !['EXECUTIVE_BOARD', 'ADMIN', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(profile.role)) {
+      if (profile.status !== 'APPROVED' && !['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(profile.role)) {
         if (profile.status === 'PENDING') router.push('/pending');
         else router.push('/rejected');
         return;
@@ -54,9 +54,6 @@ export default function DashboardHub() {
       
       if (!isEB) {
         if (profile.role === 'CHAIR' || profile.role === 'CO_CHAIR') router.push('/dashboard/chair');
-        else if (profile.role === 'PRESS' || profile.role === 'MEDIA') router.push('/dashboard/press');
-        else if (profile.role === 'ADMIN') router.push('/dashboard/admin');
-        else if (profile.role === 'SECURITY') router.push('/dashboard/security');
         else router.push('/dashboard/delegate');
         return;
       }
@@ -107,7 +104,7 @@ export default function DashboardHub() {
                 <p className="text-sm font-medium">{userProfile?.preferred_committee || 'N/A'}</p>
               </div>
               <div>
-                <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest">Country</p>
+                <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest">Delegation</p>
                 <p className="text-sm font-medium">{userProfile?.allocated_country || 'N/A'}</p>
               </div>
               <div>
@@ -144,7 +141,7 @@ export default function DashboardHub() {
         )}
 
         {/* Chair Dashboard */}
-        {(isGodMode || role === 'CHAIR' || isEB) && (
+        {(isGodMode || role === 'CHAIR' || role === 'CO_CHAIR' || isEB) && (
           <FadeIn delay={0.2} from="bottom">
             <Link href="/dashboard/chair" className="group">
               <HoverScale>
@@ -183,23 +180,7 @@ export default function DashboardHub() {
           </Link>
         )}
 
-        {/* Admin Dashboard */}
-        {(isGodMode || role === 'ADMIN' || isEB) && (
-          <Link href="/dashboard/admin" className="group">
-            <Card className="h-full hover:border-text-primary transition-colors cursor-pointer flex flex-col justify-between">
-              <div>
-                <h3 className="font-jotia text-2xl mb-2 group-hover:underline flex items-center gap-2">
-                  Admin Logistics
-                  <span className="text-xs bg-status-pending-bg text-status-pending-text px-2 py-1 rounded-full">Operations</span>
-                </h3>
-                <p className="text-sm text-text-dimmed">Handle delegate logistics, attendance tracking, document reviews, and conference operations.</p>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary border border-border-subtle px-2 py-1 rounded">Open Dashboard</div>
-              </div>
-            </Card>
-          </Link>
-        )}
+
 
         {/* Security Dashboard */}
         {(isGodMode || role === 'SECURITY' || isEB) && (

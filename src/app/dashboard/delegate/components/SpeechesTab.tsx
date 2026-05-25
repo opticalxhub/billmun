@@ -22,7 +22,7 @@ export default function SpeechesTab({ ctx }: { ctx: DelegateContext }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('speeches')
-        .select('*')
+        .select('id, title, body, notes, word_count, updated_at')
         .eq('user_id', ctx.user.id)
         .order('updated_at', { ascending: false })
         .limit(50);

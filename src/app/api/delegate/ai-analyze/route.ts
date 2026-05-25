@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authError || "Unauthorized" }, { status: status || 401 });
     }
 
-    if (!["DELEGATE", "EXECUTIVE_BOARD", "ADMIN", "CHAIR", "CO_CHAIR"].includes(context.role)) {
+    if (!["DELEGATE", "EXECUTIVE_BOARD", "CHAIR", "CO_CHAIR"].includes(context.role)) {
       return NextResponse.json({ error: "Unauthorized role" }, { status: 403 });
     }
 

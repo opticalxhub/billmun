@@ -44,11 +44,11 @@ export default function EmergencyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-4 font-sans">
+    <div className="min-h-screen bg-bg-base text-text-primary flex flex-col items-center justify-center p-4 font-inter">
       <div className="mb-12">
         <img
-          src="/billmun.png"
-          alt="BILLMUN"
+          src="/logo.png"
+          alt="NXTMUN"
           className="mx-auto mb-8 opacity-50 dark:invert"
           style={{ width: '400px', height: 'auto' }}
         />
@@ -60,12 +60,12 @@ export default function EmergencyPage() {
           placeholder="PASSPHRASE"
           value={passphrase}
           onChange={(e) => setPassphrase(e.target.value)}
-          className="w-full bg-transparent border-b border-[#333333] pb-2 text-center text-[#F0EDE6] text-sm tracking-widest placeholder:text-[#333333] focus:outline-none focus:border-[#F0EDE6] transition-colors"
+          className="w-full bg-transparent border-b border-border-emphasized pb-2 text-center text-text-primary text-sm tracking-widest placeholder:text-text-disabled focus:outline-none focus:border-text-primary transition-colors"
           readOnly={loading}
           autoFocus
         />
         {error && (
-          <p className="text-red-500 text-xs text-center mt-4 tracking-wider">{error}</p>
+          <p className="text-status-rejected-text text-xs text-center mt-4 tracking-wider">{error}</p>
         )}
       </form>
     </div>

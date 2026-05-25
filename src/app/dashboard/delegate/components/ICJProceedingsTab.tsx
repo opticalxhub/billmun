@@ -7,6 +7,7 @@ import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { Card, SectionLabel, Badge } from '@/components/ui';
 import { Textarea } from '@/components/ui';
 import { toast } from 'sonner';
+import type { PortalDocument } from '@/types/portal';
 
 const PHASE_LABELS: Record<string, { label: string; color: string }> = {
   WRITTEN_PROCEEDINGS: { label: 'Written Proceedings', color: 'bg-blue-500' },
@@ -23,15 +24,18 @@ export default function ICJProceedingsTab({ ctx }: { ctx: DelegateContext }) {
 
   const session = ctx.session;
   const committee = ctx.committee;
+  const committeeId = committee?.id;
+  const speakingTimeLimit = session?.speaking_time_limit ?? 0;
 
   const currentPhase = session?.caucus_type || session?.status || 'ADJOURNED';
   const phaseInfo = PHASE_LABELS[currentPhase] || PHASE_LABELS.ADJOURNED;
 
   const { data: speakers = [], isLoading: speakersLoading } = useQuery({
-    queryKey: ['icj-speakers', committee?.id],
-    enabled: !!committee?.id,
+    queryKey: ['icj-speakers', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
-      const res = await fetch(`/api/chair/speakers?committeeId=${committee.id}`);
+      if (!committeeId) return [];
+      const res = await fetch(`/api/chair/speakers?committeeId=${committeeId}`);
       if (!res.ok) return [];
       return await res.json();
     },
@@ -39,17 +43,18 @@ export default function ICJProceedingsTab({ ctx }: { ctx: DelegateContext }) {
   });
 
   const { data: documents = [], isLoading: docsLoading } = useQuery({
-    queryKey: ['icj-documents', committee?.id],
-    enabled: !!committee?.id,
+    queryKey: ['icj-documents', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
-      const res = await fetch(`/api/documents/list?committeeId=${committee.id}`);
+      if (!committeeId) return [];
+      const res = await fetch(`/api/documents/list?committeeId=${committeeId}`);
       if (!res.ok) return [];
       return await res.json();
     },
     staleTime: 60 * 1000,
   });
 
-  const myDocuments = documents.filter((d: any) => d.user_id === ctx.user?.id);
+  const myDocuments = (documents as PortalDocument[]).filter((d) => d.user_id === ctx.user?.id);
 
   const handleSubmitEvidence = async () => {
     if (!evidenceText.trim()) return;
@@ -59,7 +64,7 @@ export default function ICJProceedingsTab({ ctx }: { ctx: DelegateContext }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          committee_id: committee?.id,
+          committee_id: committeeId,
           title: `Evidence Submission – ${new Date().toLocaleDateString()}`,
           type: 'OTHER',
           content: evidenceText.trim(),
@@ -68,9 +73,10 @@ export default function ICJProceedingsTab({ ctx }: { ctx: DelegateContext }) {
       if (!res.ok) throw new Error('Submission failed');
       toast.success('Evidence submitted for review');
       setEvidenceText('');
-      queryClient.invalidateQueries({ queryKey: ['icj-documents', committee?.id] });
+      queryClient.invalidateQueries({ queryKey: ['icj-documents', committeeId] });
     } catch (e: any) {
-      toast.error(e.message || 'Failed to submit evidence');
+      const err = e as Error;
+      toast.error(err.message || 'Failed to submit evidence');
     } finally {
       setSubmitting(false);
     }
@@ -93,9 +99,9 @@ export default function ICJProceedingsTab({ ctx }: { ctx: DelegateContext }) {
             <p className="text-sm text-text-primary">{session.debate_topic}</p>
           </div>
         )}
-        {session?.speaking_time_limit > 0 && (
+        {speakingTimeLimit > 0 && (
           <p className="text-xs text-text-dimmed mt-2">
-            Speaking time limit: <span className="font-semibold">{session.speaking_time_limit}s</span> per advocate
+            Speaking time limit: <span className="font-semibold">{speakingTimeLimit}s</span> per advocate
           </p>
         )}
       </Card>

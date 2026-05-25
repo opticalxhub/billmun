@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DelegateContext } from '../page';
 import { LoadingSpinner, QueryErrorState } from '@/components/loading-spinner';
 import { X } from 'lucide-react';
+import type { DelegateActivity } from '@/types/portal';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: boolean }> = {
   IN_SESSION: { label: 'In Session', color: 'bg-text-primary/70', pulse: true },
@@ -18,172 +19,37 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; pulse?: bool
 export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext; onTabChange?: (tab: string) => void }) {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
-  // useQuery for Conference Settings
-  const { data: settings, isLoading: settingsLoading, isError: settingsError, refetch: refetchSettings } = useQuery({
-    queryKey: ['conference-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const { stats, activity, session, settings } = ctx;
 
-  // useQuery for Stats
-  const { data: stats = { documents: 0, aiToday: 0, speeches: 0, blocs: 0 }, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
-    queryKey: ['delegate-stats', ctx.user?.id],
-    enabled: !!ctx.user?.id,
-    queryFn: async () => {
-      const [docs, speeches, blocs] = await Promise.all([
-        supabase.from('documents').select('id', { count: 'exact', head: true }).eq('user_id', ctx.user.id),
-        supabase.from('speeches').select('id', { count: 'exact', head: true }).eq('user_id', ctx.user.id),
-        supabase.from('bloc_members').select('id', { count: 'exact', head: true }).eq('user_id', ctx.user.id),
-      ]);
-      const today = new Date().toISOString().split('T')[0];
-      const resetDate = ctx.user.ai_analyses_reset_date ? new Date(ctx.user.ai_analyses_reset_date).toISOString().split('T')[0] : null;
-      const aiToday = resetDate === today ? (ctx.user.ai_analyses_today || 0) : 0;
-      return {
-        documents: docs.count || 0,
-        aiToday,
-        speeches: speeches.count || 0,
-        blocs: blocs.count || 0,
-      };
-    },
-    staleTime: 60 * 1000,
-  });
-
-  // useQuery for Activity
-  const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
-    queryKey: ['delegate-activity', ctx.user?.id, ctx.committee?.id],
-    enabled: !!ctx.user?.id,
-    queryFn: async () => {
-      const committeeId = ctx.committee?.id;
-      if (!committeeId) return [];
-      
-      // Get delegate's personal activities + committee activities
-      const [personal, committeeDocs, announcements, /* blocMessages */] = await Promise.all([
-        // Personal audit logs (filter out administrative actions)
-        supabase
-          .from('audit_logs')
-          .select('*')
-          .eq('actor_id', ctx.user.id)
-          .not('action', 'ilike', '%rejected%')
-          .not('action', 'ilike', '%suspended%')
-          .not('action', 'ilike', '%admin%')
-          .not('action', 'ilike', '%security%')
-          .order('performed_at', { ascending: false })
-          .limit(5),
-        // Committee document activity (only approved documents and user's own)
-        supabase
-          .from('documents')
-          .select('id, title, uploaded_at, reviewed_at, status, user_id, users(full_name)')
-          .eq('committee_id', committeeId)
-          .or(`status.eq.APPROVED,user_id.eq.${ctx.user.id}`)
-          .order('uploaded_at', { ascending: false })
-          .limit(3),
-        // Committee announcements
-        supabase
-          .from('announcements')
-          .select('id, title, body, created_at, author_id, users(full_name)')
-          .or(`committee_id.eq.${committeeId},target_roles.cs.{DELEGATE}`)
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(3),
-        // Bloc messages (if in any blocs)
-        supabase
-          .from('bloc_members')
-          .select('bloc_id')
-          .eq('user_id', ctx.user.id)
-      ]);
-
-      const activities: any[] = [];
-      
-      // Add personal activities (delegate-appropriate only)
-      (personal.data || []).forEach((log: any) => {
-        // Filter for delegate-relevant actions only
-        const delegateActions = [
-          'uploaded', 'submitted', 'joined', 'created', 'updated profile',
-          'speech', 'resolution', 'bloc', 'voted', 'spoke', 'motion'
-        ];
-        
-        if (delegateActions.some(action => log.action.toLowerCase().includes(action))) {
-          activities.push({
-            id: `personal-${log.id}`,
-            action: log.action,
-            performed_at: log.performed_at,
-            type: 'personal'
-          });
-        }
-      });
-
-      // Add document activities
-      (committeeDocs.data || []).forEach((doc: any) => {
-        if (doc.user_id === ctx.user.id) {
-          activities.push({
-            id: `doc-${doc.id}`,
-            action: `You uploaded "${doc.title}"`,
-            performed_at: doc.uploaded_at,
-            type: 'document'
-          });
-        } else if (doc.status === 'APPROVED') {
-          const userName = (doc.users as any)?.full_name || 'Unknown';
-          activities.push({
-            id: `doc-${doc.id}`,
-            action: `${userName}'s document "${doc.title}" was approved`,
-            performed_at: doc.reviewed_at || doc.uploaded_at,
-            type: 'document'
-          });
-        }
-      });
-
-      // Add announcements
-      (announcements.data || []).forEach((announcement: any) => {
-        activities.push({
-          id: `ann-${announcement.id}`,
-          action: `Announcement: ${announcement.title}`,
-          performed_at: announcement.created_at,
-          type: 'announcement'
-        });
-      });
-
-      return activities
-        .sort((a, b) => new Date(b.performed_at).getTime() - new Date(a.performed_at).getTime())
-        .slice(0, 10);
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes to prevent excessive refreshing
-    refetchInterval: false, // Disable auto-refresh
-  });
-
-  // useQuery for Roster
-  const { data: roster } = useQuery({
+  // useQuery for Committee Roster (Separate because it's large and not in bootstrap)
+  const { data: roster, isLoading: rosterLoading, isError: rosterError, refetch: refetchRoster } = useQuery({
     queryKey: ['committee-roster', ctx.committee?.id],
     enabled: !!ctx.committee?.id,
     queryFn: async () => {
+      const committeeId = ctx.committee?.id;
+      if (!committeeId || !ctx.committee) return [];
       const { data, error } = await supabase
         .from('committee_assignments')
         .select('id, user_id, country, users(full_name, id, status)')
-        .eq('committee_id', ctx.committee.id)
+        .eq('committee_id', committeeId)
         .limit(100);
       if (error) throw error;
 
-      const approvedAssignments = (data || []).filter((r: any) => r.users?.status === 'APPROVED');
-      const userIds = approvedAssignments.map((r: any) => r.user_id).filter(Boolean);
-      
       const { data: docs } = await supabase
         .from('documents')
         .select('user_id')
-        .in('user_id', userIds)
-        .eq('committee_id', ctx.committee.id)
+        .in('user_id', (data || []).map(r => r.user_id))
+        .eq('committee_id', committeeId)
         .eq('type', 'POSITION_PAPER');
       
       const paperUserIds = new Set((docs || []).map(d => d.user_id));
 
-      return approvedAssignments.map((r: any) => ({
+      return (data || []).map((r) => ({
         ...r,
         has_paper: paperUserIds.has(r.user_id)
       }));
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   // useQuery for Chair
@@ -194,38 +60,44 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
       const { data, error } = await supabase
         .from('users')
         .select('id, full_name, email, role, status')
-        .eq('id', ctx.committee.chair_id)
+        .eq('id', ctx.committee!.chair_id)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   const conferenceDate = useMemo(() => 
     new Date('2026-04-03T12:30:00+03:00'), 
   []);
 
-  const [countdown, setCountdown] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showRoster, setShowRoster] = useState(false);
 
   useEffect(() => {
-    // Presence subscription
-    const channel = supabase.channel('global-presence-roster');
+    // Presence subscription (Unified for 300+ users)
+    const channel = supabase.channel('global-presence-overview', {
+      config: {
+        presence: {
+          key: ctx.user.id,
+        },
+      },
+    });
+    
     channel.on('presence', { event: 'sync' }, () => {
       const state = channel.presenceState();
       const onlineIds = new Set<string>();
-      Object.values(state).forEach((presences: any) => {
-        presences.forEach((p: any) => { if (p.user_id) onlineIds.add(p.user_id); });
+      Object.values(state).forEach((presences) => {
+        (presences as Array<{ user_id?: string }>).forEach((p) => { if (p.user_id) onlineIds.add(p.user_id); });
       });
       setOnlineUsers(onlineIds);
     }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [ctx.user.id]);
 
   useEffect(() => {
-    if (!conferenceDate) return;
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const distance = conferenceDate.getTime() - now;
@@ -238,19 +110,19 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
         setCountdown({ days, hours, minutes, seconds });
       }
-    }, 1000); // Update every second
+    }, 1000);
     return () => clearInterval(interval);
   }, [conferenceDate]);
 
-  const hasError = settingsError || statsError || activityError || chairError;
-  if ((ctx.committee?.id && (settingsLoading || statsLoading || activityLoading || chairLoading))) {
+  const hasError = rosterError || chairError;
+  if (ctx.committee?.id && (rosterLoading || chairLoading)) {
     return <LoadingSpinner className="py-20" />;
   }
   if (hasError) {
-    return <QueryErrorState message="Failed to load overview data." onRetry={() => { refetchSettings(); refetchStats(); refetchActivity(); refetchChair(); }} />;
+    return <QueryErrorState message="Failed to load overview data." onRetry={() => { refetchRoster(); refetchChair(); }} />;
   }
 
-  const sessionStatus = ctx.session?.status || 'ADJOURNED';
+  const sessionStatus = session?.status || 'ADJOURNED';
   const [conferenceNotStarted, setConferenceNotStarted] = useState(false);
   
   // Set conference status on client side only to avoid hydration mismatch
@@ -426,7 +298,7 @@ export default function OverviewTab({ ctx, onTabChange }: { ctx: DelegateContext
                     <tr key={r.id} className="border-b border-border-subtle/50">
                       <td className="py-3 font-jotia text-text-primary flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_5px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
-                        {r.users?.full_name}
+                        {Array.isArray(r.users) ? r.users[0]?.full_name : (r.users as any)?.full_name}
                       </td>
                       <td className="py-3 font-jotia text-text-secondary">{r.country}</td>
                       <td className="py-3 text-right">

@@ -199,7 +199,7 @@ export default function EBContactPage() {
 
             <div className="flex flex-wrap gap-2 pt-4 border-t border-border-subtle">
               <a
-                href={`mailto:${selectedSubmission.email}?subject=Re: ${encodeURIComponent(selectedSubmission.subject || 'Your BILLMUN inquiry')}`}
+                href={`mailto:${selectedSubmission.email}?subject=Re: ${encodeURIComponent(selectedSubmission.subject || 'Your NXTMUN inquiry')}`}
                 className="inline-flex items-center gap-2 px-4 h-10 text-xs font-bold uppercase tracking-widest bg-text-primary text-bg-base rounded-button hover:opacity-90 transition-opacity"
                 onClick={() => updateMutation.mutate({ id: selectedSubmission.id, status: 'REPLIED' })}
               >
@@ -240,3 +240,4 @@ export default function EBContactPage() {
     </div>
   );
 }
+

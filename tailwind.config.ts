@@ -31,6 +31,11 @@ const config: Config = {
         "text-disabled": "var(--text-disabled)",
         "text-dimmed": "var(--text-dimmed)",
         
+        // Brand
+        "brand-crimson": "var(--brand-crimson)",
+        "brand-rust": "var(--brand-rust)",
+        "primary": "var(--primary)",
+        
         // Special
         "white-pure": "var(--white-pure)",
         "white-accent": "var(--white-accent)",

@@ -33,23 +33,27 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   }, [ctx.committee?.id]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (timerRunning) {
       interval = setInterval(() => setElapsedTime(p => p + 1), 1000);
     }
-    return () => clearInterval(interval);
+    return () => { if (interval) clearInterval(interval); };
   }, [timerRunning]);
 
   const loadSettings = async () => {
-    const { data } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
-    if (data?.quorum_threshold) setQuorumThreshold(data.quorum_threshold);
+    const { data } = await supabase
+      .from('conference_settings')
+      .select('id, maintenance_mode')
+      .eq('id', '1')
+      .maybeSingle();
+    // if (data?.quorum_threshold) setQuorumThreshold(data.quorum_threshold);
   };
 
   const loadHistory = async () => {
     if (!ctx.committee?.id) return;
     const { data } = await supabase
       .from('roll_call_records')
-      .select('*, entries:roll_call_entries(*)')
+      .select('id, committee_id, session_id, started_at, completed_at, quorum_established, created_by, entries:roll_call_entries(id, roll_call_id, delegate_id, status)')
       .eq('committee_id', ctx.committee.id)
       .order('started_at', { ascending: false })
       .limit(20);
@@ -57,12 +61,13 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   };
 
   const startRollCall = async () => {
+    if (!ctx.committee?.id) return;
     try {
       const { data, error } = await supabase.from('roll_call_records').insert({
         committee_id: ctx.committee.id,
         session_id: ctx.session?.id,
         created_by: ctx.user.id,
-      }).select().single();
+      }).select('id, committee_id, session_id, started_at, completed_at, quorum_established, created_by').single();
       if (error) throw error;
 
       if (data) {
@@ -87,7 +92,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
   };
 
   const completeRollCall = async () => {
-    if (!activeRollCall) return;
+    if (!activeRollCall || !ctx.committee?.id) return;
     setTimerRunning(false);
     try {
       // Save entries
@@ -105,7 +110,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
             .from('delegate_presence_statuses')
             .upsert({
               user_id: delegateId,
-              committee_id: ctx.committee.id,
+              committee_id: ctx.committee!.id,
               current_status: status === 'ABSENT' ? 'Absent' : 'Present In Session',
               last_changed_by: ctx.user.id,
               last_changed_at: new Date().toISOString()
@@ -113,11 +118,16 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
         )
       );
 
+      const presentCount = Object.values(entries).filter(s => s !== 'ABSENT').length;
+      const isQuorumMet = ctx.delegates.length > 0 && (presentCount / ctx.delegates.length) >= quorumThreshold;
+
       // Mark complete
-      await supabase.from('roll_call_records').update({ completed_at: new Date().toISOString() }).eq('id', activeRollCall.id);
+      await supabase.from('roll_call_records').update({ 
+        completed_at: new Date().toISOString(),
+        quorum_established: isQuorumMet
+      }).eq('id', activeRollCall.id);
 
       // Log event
-      const presentCount = Object.values(entries).filter(s => s !== 'ABSENT').length;
       await supabase.from('session_events').insert({
         committee_id: ctx.committee.id,
         session_id: ctx.session?.id,
@@ -191,7 +201,7 @@ export default function RollCallTab({ ctx }: { ctx: ChairContext }) {
               <thead>
                 <tr className="border-b border-border-subtle">
                   <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Name</th>
-                  <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Country</th>
+                  <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Delegation</th>
                   <th className="p-3 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Status</th>
                 </tr>
               </thead>

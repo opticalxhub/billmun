@@ -24,11 +24,6 @@ const roleHighlights: Record<string, string[]> = {
     "Speakers List - queue speakers and track time",
     "Delegate Review - approve/reject documents and monitor delegates",
   ],
-  MEDIA: [
-    "Upload - post photos/videos to the media workspace",
-    "Press Releases - draft and submit release copy",
-    "Gallery - track approved media assets",
-  ],
   EXECUTIVE_BOARD: [
     "Registrations - approve and manage delegates",
     "Committees - monitor every committee live",
@@ -65,7 +60,7 @@ export default function OnboardingModal({ role, full_name, committee, onComplete
     }
     return {
       title: "You’re all set",
-      description: "Close this guide and start using BILLMUN with confidence.",
+      description: "Close this guide and start using NXTMUN with confidence.",
     };
   }, [step, committee, full_name, roleUpper]);
 
@@ -143,3 +138,4 @@ export default function OnboardingModal({ role, full_name, committee, onComplete
     </AnimatePresence>
   );
 }
+

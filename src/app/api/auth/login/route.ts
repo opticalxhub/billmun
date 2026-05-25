@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import bcrypt from 'bcryptjs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getAuthenticatedHomePath } from '@/lib/portal-routing';
+import { reportError } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +100,7 @@ export async function POST(request: NextRequest) {
 
       const finalResponse = NextResponse.json({
         success: true,
+        redirectTo: getAuthenticatedHomePath(profileRow?.role),
         session: data.session,
         user: data.user,
       });
@@ -150,6 +153,7 @@ export async function POST(request: NextRequest) {
       // Return the response with auth cookies set
       const finalResponse = NextResponse.json({
         success: true,
+        redirectTo: getAuthenticatedHomePath(profile?.role),
         session: retry.data.session,
         user: retry.data.user,
       });
@@ -162,7 +166,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
   } catch (err: any) {
-    console.error('Login error:', err);
+    reportError(err, { context: 'login_api' });
     return NextResponse.json({ error: 'Login failed' }, { status: 500 });
   }
 }

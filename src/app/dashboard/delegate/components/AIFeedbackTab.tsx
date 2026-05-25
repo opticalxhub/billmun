@@ -58,7 +58,11 @@ export default function AIFeedbackTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['delegate-ai-analyses', ctx.user?.id],
     enabled: !!ctx.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.from('ai_feedback').select('*').eq('user_id', ctx.user.id).order('generated_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('ai_feedback')
+        .select('id, document_id, user_id, input_text, overall_score, argument_strength, research_depth, policy_alignment, writing_clarity, format_adherence, diplomatic_language, persuasiveness, ai_detection_score, ai_detection_phrases, summary, strengths, weaknesses, suggestions, annotated_segments, generated_at')
+        .eq('user_id', ctx.user.id)
+        .order('generated_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },

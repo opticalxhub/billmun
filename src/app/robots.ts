@@ -6,7 +6,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/dashboard", "/eb/dash", "/messages", "/documents"],
+      disallow: ["/api/", "/dashboard/", "/eb/dash/", "/messages/", "/documents/"],
     },
+    sitemap: "https://portal.nxtmun.com/sitemap.xml",
   };
 }

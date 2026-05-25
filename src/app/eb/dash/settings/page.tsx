@@ -7,12 +7,12 @@ import { DashboardLoadingState } from '@/components/dashboard-shell';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Record<string, any>>({
-    conference_name: 'BILLMUN 2026',
-    conference_date: '2026-04-03',
-    conference_location: 'Khobar, Saudi Arabia',
+    conference_name: 'NXTMUN',
+    conference_date: '2026-05-25',
+    conference_location: 'Dhahran, Saudi Arabia',
     registration_open: true,
     auto_approve_registrations: false,
-    portal_message: 'Welcome to the official BILLMUN 2026 Attendees Portal.',
+    portal_message: 'Welcome to the official NXTMUN Attendees Portal.',
     maintenance_mode: false,
     ai_analysis_enabled: true,
     max_file_upload_mb: 10,
@@ -28,7 +28,7 @@ export default function SettingsPage() {
       try {
         const { data, error } = await supabase
           .from('conference_settings')
-          .select('*')
+          .select('id, conference_name, conference_date, conference_location, registration_open, auto_approve_registrations, portal_message, maintenance_mode, ai_analysis_enabled, max_file_upload_mb, emergency_contact_phone, whatsapp_group_link')
           .eq('id', '1')
           .maybeSingle();
         

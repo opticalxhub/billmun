@@ -4,11 +4,11 @@
  * Run with the app up: npm run start  (or dev) then: npm run smoke
  *
  * Usage:
- *   BASE_URL=http://localhost:3000 npm run smoke
+ *   BASE_URL=https://portal.nxtmun.com npm run smoke
  *   BASE_URL=https://your-domain.com npm run smoke
  */
 
-const BASE = (process.env.BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+const BASE = (process.env.BASE_URL || "https://portal.nxtmun.com").replace(/\/$/, "");
 const TIMEOUT_MS = 15_000;
 
 async function fetchOk(label, path, init = {}) {

@@ -35,7 +35,7 @@ export default function AIToolsTab({ ctx }: { ctx: ChairContext }) {
       const { data } = await supabase
         .from('documents')
         .select('id, title, file_url, mime_type, user:user_id(full_name)')
-        .eq('committee_id', ctx.committee.id)
+        .eq('committee_id', ctx.committee!.id)
         .order('uploaded_at', { ascending: false });
       return data || [];
     },
@@ -64,7 +64,7 @@ export default function AIToolsTab({ ctx }: { ctx: ChairContext }) {
     if (!ctx.committee?.id) return;
     const { data } = await supabase
       .from('chair_ai_runs')
-      .select('*')
+      .select('id, chair_id, committee_id, tool, input_text, score, summary, sections, suggestions, created_at')
       .eq('chair_id', ctx.user.id)
       .order('created_at', { ascending: false })
       .limit(10);

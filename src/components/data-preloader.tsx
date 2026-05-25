@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import type { DelegateActivity } from '@/types/portal';
 
 export function DataPreloader() {
   const queryClient = useQueryClient();
@@ -17,35 +18,38 @@ export function DataPreloader() {
 
         // === UNIVERSAL DATA (preload for all users) ===
         
-        // 1. Conference Settings
+        // 1. Dashboard Bootstrap (The most important prefetch for 300+ users)
         queryClient.prefetchQuery({
-          queryKey: ['conference-settings'],
+          queryKey: ['delegate-bootstrap', userId],
           queryFn: async () => {
-            const { data, error } = await supabase.from('conference_settings').select('*').eq('id', '1').maybeSingle();
+            const res = await fetch('/api/bootstrap');
+            if (!res.ok) throw new Error('Failed to fetch dashboard data');
+            return res.json();
+          },
+          staleTime: 60 * 1000,
+        });
+
+        // 2. Schedule Events (Static-ish, long staleTime)
+        queryClient.prefetchQuery({
+          queryKey: ['schedule-events'],
+          queryFn: async () => {
+            const { data, error } = await supabase
+              .from('schedule_events')
+              .select('id, day_label, event_name, location, start_time, end_time, description, applicable_roles, order_index')
+              .order('start_time', { ascending: true });
             if (error) throw error;
-            return data;
+            return data || [];
           },
           staleTime: 10 * 60 * 1000,
         });
 
-        // 2. Conference Status
+        // 3. Public Announcements
         queryClient.prefetchQuery({
-          queryKey: ['conference-status'],
+          queryKey: ['announcements-public'],
           queryFn: async () => {
-            const res = await fetch('/api/config/conference-status');
-            if (!res.ok) throw new Error('Failed to fetch conference status');
+            const res = await fetch('/api/announcements/public');
+            if (!res.ok) throw new Error('Failed to fetch announcements');
             return res.json();
-          },
-          staleTime: 2 * 60 * 1000,
-        });
-
-        // 3. Schedule Events (for all users)
-        queryClient.prefetchQuery({
-          queryKey: ['schedule-events'],
-          queryFn: async () => {
-            const { data, error } = await supabase.from('schedule_events').select('*').order('start_time', { ascending: true });
-            if (error) throw error;
-            return data || [];
           },
           staleTime: 5 * 60 * 1000,
         });
@@ -69,7 +73,7 @@ export function DataPreloader() {
             if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
               return {
                 id: '00000000-0000-0000-0000-000000000000',
-                email: 'emergency@billmun.com',
+                email: 'emergency@portal.nxtmun.com',
                 full_name: 'Engineer (Emergency)',
                 role: 'EXECUTIVE_BOARD',
                 status: 'APPROVED',
@@ -102,7 +106,11 @@ export function DataPreloader() {
             queryClient.prefetchQuery({
               queryKey: ['committee', assignment.committee_id],
               queryFn: async () => {
-                const { data, error } = await supabase.from('committees').select('*').eq('id', assignment.committee_id).maybeSingle();
+                const { data, error } = await supabase
+                  .from('committees')
+                  .select('id, name, abbreviation, topic, secondary_topic, description, background_guide_url, rop_url, sub_topics, chair_id, co_chair_id, admin_id, visibility')
+                  .eq('id', assignment.committee_id)
+                  .maybeSingle();
                 if (error) throw error;
                 return data;
               },
@@ -113,7 +121,11 @@ export function DataPreloader() {
             queryClient.prefetchQuery({
               queryKey: ['committee-schedule', assignment.committee_id],
               queryFn: async () => {
-                const { data, error } = await supabase.from('committee_schedules').select('*').eq('committee_id', assignment.committee_id).order('start_time', { ascending: true });
+                const { data, error } = await supabase
+                  .from('committee_schedules')
+                  .select('id, event_name, start_time, end_time, location, description, event_type')
+                  .eq('committee_id', assignment.committee_id)
+                  .order('start_time', { ascending: true });
                 if (error) throw error;
                 return data || [];
               },
@@ -124,7 +136,11 @@ export function DataPreloader() {
             queryClient.prefetchQuery({
               queryKey: ['committee-session', assignment.committee_id],
               queryFn: async () => {
-                const { data, error } = await supabase.from('committee_sessions').select('*').eq('committee_id', assignment.committee_id).maybeSingle();
+                const { data, error } = await supabase
+                  .from('committee_sessions')
+                  .select('id, committee_id, status, caucus_type, debate_topic, current_speaker, speaking_time_limit, moderated_caucus_topic, moderated_caucus_time, unmoderated_caucus_time, voting_open, updated_at')
+                  .eq('committee_id', assignment.committee_id)
+                  .maybeSingle();
                 if (error) throw error;
                 return data;
               },
@@ -143,7 +159,7 @@ export function DataPreloader() {
                   return {
                     user: {
                       id: '00000000-0000-0000-0000-000000000000',
-                      email: 'emergency@billmun.com',
+                      email: 'emergency@portal.nxtmun.com',
                       full_name: 'MR. Abdulrahman',
                       role: 'EXECUTIVE_BOARD',
                       status: 'APPROVED',
@@ -155,10 +171,7 @@ export function DataPreloader() {
                   };
                 }
 
-                const { data: { user: authUser } } = await supabase.auth.getUser();
-                if (!authUser) throw new Error('No session');
-                
-                const res = await fetch(`/api/delegate/dashboard?userId=${authUser.id}`);
+                const res = await fetch('/api/delegate/dashboard', { cache: 'no-store' });
                 if (!res.ok) throw new Error('Failed to load dashboard data');
                 return await res.json();
               },
@@ -199,7 +212,7 @@ export function DataPreloader() {
                   // Personal audit logs
                   supabase
                     .from('audit_logs')
-                    .select('*')
+                    .select('id, action, performed_at, metadata')
                     .eq('actor_id', userId)
                     .not('action', 'ilike', '%rejected%')
                     .not('action', 'ilike', '%suspended%')
@@ -225,10 +238,10 @@ export function DataPreloader() {
                     .limit(3),
                 ]);
 
-                const activities: any[] = [];
+                const activities: DelegateActivity[] = [];
                 
                 // Add personal activities
-                (personal.data || []).forEach((log: any) => {
+                (personal.data || []).forEach((log) => {
                   const delegateActions = ['uploaded', 'submitted', 'joined', 'created', 'updated profile', 'speech', 'resolution', 'bloc', 'voted', 'spoke', 'motion'];
                   if (delegateActions.some(action => log.action.toLowerCase().includes(action))) {
                     activities.push({
@@ -241,7 +254,7 @@ export function DataPreloader() {
                 });
 
                 // Add document activities
-                (committeeDocs.data || []).forEach((doc: any) => {
+                (committeeDocs.data || []).forEach((doc) => {
                   if (doc.user_id === userId) {
                     activities.push({
                       id: `doc-${doc.id}`,
@@ -250,7 +263,8 @@ export function DataPreloader() {
                       type: 'document'
                     });
                   } else if (doc.status === 'APPROVED') {
-                    const userName = (doc.users as any)?.full_name || 'Unknown';
+                    const userObj = Array.isArray(doc.users) ? doc.users[0] : (doc.users as { full_name: string } | null);
+                    const userName = userObj?.full_name || 'Unknown';
                     activities.push({
                       id: `doc-${doc.id}`,
                       action: `${userName}'s document "${doc.title}" was approved`,
@@ -261,7 +275,7 @@ export function DataPreloader() {
                 });
 
                 // Add announcements
-                (announcements.data || []).forEach((announcement: any) => {
+                (announcements.data || []).forEach((announcement) => {
                   activities.push({
                     id: `ann-${announcement.id}`,
                     action: `Announcement: ${announcement.title}`,
@@ -327,8 +341,8 @@ export function DataPreloader() {
           }
         }
 
-        // EB/Admin specific data
-        if (['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL', 'ADMIN'].includes(userRole || '')) {
+        // EB specific data
+        if (['EXECUTIVE_BOARD', 'SECRETARY_GENERAL', 'DEPUTY_SECRETARY_GENERAL'].includes(userRole || '')) {
           // EB Overview data
           queryClient.prefetchQuery({
             queryKey: ['eb-overview'],
@@ -349,17 +363,6 @@ export function DataPreloader() {
               return res.json();
             },
             staleTime: 3 * 60 * 1000,
-          });
-
-          // EB Media & PR
-          queryClient.prefetchQuery({
-            queryKey: ['eb-media-pr'],
-            queryFn: async () => {
-              const res = await fetch('/api/eb/media-pr');
-              if (!res.ok) throw new Error('Failed to fetch media/PR');
-              return res.json();
-            },
-            staleTime: 2 * 60 * 1000,
           });
 
           // EB Announcements
@@ -383,45 +386,6 @@ export function DataPreloader() {
             },
             staleTime: 5 * 60 * 1000,
           });
-
-          // Admin dashboard (exact match)
-          if (userRole === 'ADMIN') {
-            queryClient.prefetchQuery({
-              queryKey: ['admin-dashboard', ''],
-              queryFn: async () => {
-                const res = await fetch('/api/admin/dashboard');
-                if (!res.ok) throw new Error('Failed to fetch users');
-                return res.json();
-              },
-              staleTime: 5 * 60 * 1000,
-            });
-          }
-        }
-
-        // Media/Press specific data
-        if (['MEDIA', 'PRESS'].includes(userRole || '')) {
-          queryClient.prefetchQuery({
-            queryKey: ['press-dashboard'],
-            queryFn: async () => {
-              const res = await fetch('/api/press/dashboard');
-              if (!res.ok) throw new Error('Failed to fetch press dashboard');
-              return res.json();
-            },
-            staleTime: 2 * 60 * 1000,
-          });
-        }
-
-        // Security specific data
-        if (userRole === 'SECURITY') {
-          queryClient.prefetchQuery({
-            queryKey: ['security-dashboard'],
-            queryFn: async () => {
-              const res = await fetch('/api/security/dashboard');
-              if (!res.ok) throw new Error('Failed to fetch security dashboard');
-              return res.json();
-            },
-            staleTime: 1 * 60 * 1000,
-          });
         }
 
       } catch (error) {
@@ -441,3 +405,4 @@ export function DataPreloader() {
 
   return null;
 }
+

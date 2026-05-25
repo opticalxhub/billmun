@@ -283,9 +283,6 @@ export default function LiveMonitorPage() {
                     <option value="DELEGATE">Delegate</option>
                     <option value="CHAIR">Chair</option>
                     <option value="CO_CHAIR">Co-Chair</option>
-                    <option value="ADMIN">Admin</option>
-                    <option value="MEDIA">Media</option>
-                    <option value="SECURITY">Security</option>
                     <option value="EXECUTIVE_BOARD">Executive Board</option>
                     <option value="SECRETARY_GENERAL">Secretary General</option>
                     <option value="DEPUTY_SECRETARY_GENERAL">Deputy Secretary General</option>

@@ -49,7 +49,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       const blocIds = memberships.map(m => m.bloc_id);
       const { data } = await supabase
         .from('blocs')
-        .select('*')
+        .select('id, name, description, invite_code, creator_id')
         .in('id', blocIds);
 
       if (!data) return [];
@@ -60,11 +60,11 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
         supabase.from('bloc_messages').select('bloc_id, content, created_at').in('bloc_id', blocIds).order('created_at', { ascending: false }),
       ]);
       const countMap: Record<string, number> = {};
-      (memberCounts.data || []).forEach((m: any) => { countMap[m.bloc_id] = (countMap[m.bloc_id] || 0) + 1; });
-      const msgMap: Record<string, any> = {};
-      (lastMessages.data || []).forEach((m: any) => { if (!msgMap[m.bloc_id]) msgMap[m.bloc_id] = m; });
+      (memberCounts.data || []).forEach((m) => { countMap[m.bloc_id] = (countMap[m.bloc_id] || 0) + 1; });
+      const msgMap: Record<string, { bloc_id: string; content: string; created_at: string }> = {};
+      (lastMessages.data || []).forEach((m) => { if (!msgMap[m.bloc_id]) msgMap[m.bloc_id] = m; });
 
-      return data.map((b: any) => ({
+      return data.map((b) => ({
         ...b,
         memberCount: countMap[b.id] || 0,
         lastMessage: msgMap[b.id] || null,
@@ -78,7 +78,10 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-members', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_members').select('*, users:user_id(id, full_name, email, role)').eq('bloc_id', selectedBloc.id);
+      const { data } = await supabase
+        .from('bloc_members')
+        .select('id, user_id, joined_at, users:user_id(id, full_name, email, role)')
+        .eq('bloc_id', selectedBloc.id);
       return data || [];
     },
     staleTime: 60 * 1000,
@@ -89,7 +92,11 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-docs', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_documents').select('*, users:uploader_id(full_name)').eq('bloc_id', selectedBloc.id).order('uploaded_at', { ascending: false });
+      const { data } = await supabase
+        .from('bloc_documents')
+        .select('id, uploader_id, title, file_url, file_size, uploaded_at, users:uploader_id(full_name)')
+        .eq('bloc_id', selectedBloc.id)
+        .order('uploaded_at', { ascending: false });
       return data || [];
     },
     staleTime: 60 * 1000,
@@ -100,7 +107,12 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     queryKey: ['bloc-messages', selectedBloc?.id],
     enabled: !!selectedBloc?.id,
     queryFn: async () => {
-      const { data } = await supabase.from('bloc_messages').select('*, users:user_id(full_name)').eq('bloc_id', selectedBloc.id).order('created_at', { ascending: true }).limit(100);
+      const { data } = await supabase
+        .from('bloc_messages')
+        .select('id, user_id, content, file_url, created_at, users:user_id(full_name)')
+        .eq('bloc_id', selectedBloc.id)
+        .order('created_at', { ascending: true })
+        .limit(100);
       return data || [];
     },
     staleTime: 30 * 1000,
@@ -127,8 +139,8 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     channel.on('presence', { event: 'sync' }, () => {
       const state = channel.presenceState();
       const onlineIds = new Set<string>();
-      Object.values(state).forEach((presences: any) => {
-        presences.forEach((p: any) => { if (p.user_id) onlineIds.add(p.user_id); });
+      Object.values(state).forEach((presences) => {
+        (presences as Array<{ user_id?: string }>).forEach((p) => { if (p.user_id) onlineIds.add(p.user_id); });
       });
       setOnlineUsers(onlineIds);
     }).subscribe();
@@ -180,7 +192,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
       queryClient.invalidateQueries({ queryKey: ['delegate-blocs'] });
       supabase.from('audit_logs').insert({ actor_id: ctx.user.id, action: `Joined bloc: ${bloc.name}`, target_type: 'Bloc', target_id: bloc.id });
     },
-    onError: (err: any) => toast.error(err.message.includes('duplicate') ? 'You are already a member.' : err.message)
+    onError: (err: Error) => toast.error(err.message.includes('duplicate') ? 'You are already a member.' : err.message)
   });
 
   const handleJoin = () => {
@@ -507,11 +519,12 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                   <tbody>
                     {(members || []).map(m => {
                       const isOnline = m.user_id && onlineUsers.has(m.user_id);
+                      const userObj = Array.isArray(m.users) ? m.users[0] : (m.users as { full_name: string } | null);
                       return (
                       <tr key={m.id} className="border-b border-border-subtle/50">
                         <td className="px-4 py-3 font-jotia text-text-primary flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-status-approved-text shadow-[0_0_5px_rgba(0,255,0,0.5)]' : 'bg-border-emphasized'}`} />
-                          {m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
+                          {userObj?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}
                         </td>
                         <td className="px-4 py-3 font-jotia text-text-dimmed text-xs">{new Date(m.joined_at).toLocaleDateString()}</td>
                         {isCreator && (
@@ -530,19 +543,22 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                 </table>
               </div>
               <div className="md:hidden space-y-2">
-                {(members || []).map(m => (
-                  <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-jotia text-text-primary text-sm">{m.users?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
-                        <p className="font-jotia text-text-tertiary text-xs">{new Date(m.joined_at).toLocaleDateString()}</p>
+                {(members || []).map(m => {
+                  const userObj = Array.isArray(m.users) ? m.users[0] : (m.users as { full_name: string } | null);
+                  return (
+                    <div key={m.id} className="bg-bg-card border border-border-subtle rounded-card p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-jotia text-text-primary text-sm">{userObj?.full_name || 'Unknown'} {m.user_id === selectedBloc.creator_id && <span className="text-text-tertiary text-xs">(Creator)</span>}</p>
+                          <p className="font-jotia text-text-tertiary text-xs">{new Date(m.joined_at).toLocaleDateString()}</p>
+                        </div>
+                        {isCreator && m.user_id !== ctx.user.id && (
+                          <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[44px] px-2">Remove</button>
+                        )}
                       </div>
-                      {isCreator && m.user_id !== ctx.user.id && (
-                        <button onClick={() => removeMember(m.id)} className="text-xs text-text-dimmed hover:text-status-rejected-text min-h-[44px] px-2">Remove</button>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {/* Invite Code */}
               <div className="bg-bg-card border border-border-subtle rounded-card p-4">
@@ -575,7 +591,9 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                 <div key={d.id} className="bg-bg-card border border-border-subtle rounded-card p-4 flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="font-jotia text-text-primary text-sm truncate">{d.title}</p>
-                    <p className="font-jotia text-text-tertiary text-xs">{d.users?.full_name} &middot; {new Date(d.uploaded_at).toLocaleDateString()}</p>
+                    <p className="font-jotia text-text-tertiary text-xs">
+                      {Array.isArray(d.users) ? d.users[0]?.full_name : (d.users as any)?.full_name} &middot; {new Date(d.uploaded_at).toLocaleDateString()}
+                    </p>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <a href={d.file_url} download className="text-xs text-text-primary hover:underline min-h-[44px] flex items-center px-2">Download</a>
@@ -626,7 +644,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
             {/* Privacy Warning */}
             <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <p className="text-xs text-yellow-400">
-                <strong>Privacy Notice:</strong> Bloc messages are not encrypted and may be accessed by conference organizers, committee chairs, and security personnel in accordance with BILLMUN regulations. All communications are subject to conference rules.
+                <strong>Privacy Notice:</strong> Bloc messages are not encrypted and may be accessed by conference organizers, committee chairs, and security personnel in accordance with NXTMUN regulations. All communications are subject to conference rules.
               </p>
             </div>
             {messagesLoading ? (
@@ -638,6 +656,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                     {virtualMessages.map((virtualRow) => {
                       const m = (messages || [])[virtualRow.index];
                       const isMe = m.user_id === ctx.user.id;
+                      const userObj = Array.isArray(m.users) ? m.users[0] : (m.users as { full_name: string } | null);
                       return (
                         <div
                           key={m.id}
@@ -653,7 +672,7 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
                           className={`flex flex-col mb-4 ${isMe ? "items-end" : "items-start"}`}
                         >
                           <div className={`max-w-[80%] p-3 rounded-card text-sm ${isMe ? "bg-text-primary text-bg-base" : "bg-bg-card border border-border-subtle text-text-primary"}`}>
-                            {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{m.users?.full_name}</p>}
+                            {!isMe && <p className="text-[10px] opacity-70 mb-1 font-jotia-bold">{userObj?.full_name}</p>}
                             <p className="font-jotia">{m.content}</p>
                           </div>
                           <span className="text-[9px] text-text-dimmed mt-1">{new Date(m.created_at).toLocaleTimeString()}</span>
@@ -675,3 +694,4 @@ export default function BlocsTab({ ctx }: { ctx: DelegateContext }) {
     </div>
   );
 }
+

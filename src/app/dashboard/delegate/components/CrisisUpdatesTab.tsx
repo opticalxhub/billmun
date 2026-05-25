@@ -16,13 +16,15 @@ export default function CrisisUpdatesTab({ ctx }: { ctx: DelegateContext }) {
 
   const session = ctx.session;
   const committee = ctx.committee;
+  const committeeId = committee?.id;
 
   // Fetch announcements as crisis updates
   const { data: crisisUpdates = [], isLoading: updatesLoading } = useQuery({
-    queryKey: ['crisis-updates', committee?.id],
-    enabled: !!committee?.id,
+    queryKey: ['crisis-updates', committeeId],
+    enabled: !!committeeId,
     queryFn: async () => {
-      const res = await fetch(`/api/announcements/committee?committeeId=${committee.id}`);
+      if (!committeeId) return [];
+      const res = await fetch(`/api/announcements/committee?committeeId=${committeeId}`);
       if (!res.ok) return [];
       return await res.json();
     },
@@ -49,7 +51,7 @@ export default function CrisisUpdatesTab({ ctx }: { ctx: DelegateContext }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          committee_id: committee?.id,
+          committee_id: committeeId,
           title: `Crisis Note (${noteType}) – ${new Date().toLocaleTimeString()}`,
           type: 'OTHER',
           content: noteText.trim(),

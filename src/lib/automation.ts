@@ -1,5 +1,5 @@
 /**
- * Server-side automation hooks for BILLMUN. Each public runner is wrapped in try/catch;
+ * Server-side automation hooks for NXTMUN. Each public runner is wrapped in try/catch;
  * failures are logged to audit_logs and never throw to callers.
  */
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -46,18 +46,12 @@ async function safeRun<T>(action: string, fn: () => Promise<T>): Promise<T | und
 
 function dashboardLinkForRole(role: string): string {
   if (["EXECUTIVE_BOARD", "SECRETARY_GENERAL", "DEPUTY_SECRETARY_GENERAL"].includes(role)) return "/eb/dash";
-  if (role === "ADMIN") return "/dashboard/admin";
   if (role === "CHAIR" || role === "CO_CHAIR") return "/dashboard/chair";
-  if (role === "SECURITY") return "/dashboard/security";
-  if (role === "MEDIA" || role === "PRESS") return "/dashboard/press";
   return "/dashboard/delegate";
 }
 
 function departmentChannelNameForRole(role: string): string | null {
   if (role === "CHAIR" || role === "CO_CHAIR") return "Chairs";
-  if (role === "ADMIN") return "Admin Team";
-  if (role === "MEDIA" || role === "PRESS") return "Media Team";
-  if (role === "SECURITY") return "Security Team";
   return null;
 }
 
@@ -140,14 +134,14 @@ export async function getNextBadgeNumber(): Promise<string> {
   const { data: rows } = await supabaseAdmin
     .from("security_badges")
     .select("badge_number")
-    .like("badge_number", "BILLMUN-2026-%");
+    .like("badge_number", "NXTMUN-2026-%");
   let max = 0;
   for (const r of rows || []) {
-    const m = /^BILLMUN-2026-(\d+)$/.exec(r.badge_number as string);
+    const m = /^NXTMUN-2026-(\d+)$/.exec(r.badge_number as string);
     if (m) max = Math.max(max, parseInt(m[1], 10));
   }
   const next = max + 1;
-  return `BILLMUN-2026-${String(next).padStart(4, "0")}`;
+  return `NXTMUN-2026-${String(next).padStart(4, "0")}`;
 }
 
 /** After status set to APPROVED */
@@ -211,11 +205,6 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
       if (chId) await addChannelMember(chId, userId);
     }
 
-    if (user.role === "ADMIN" && committeeId) {
-      const cc = await getCommitteeChannelId(committeeId);
-      if (cc) await addChannelMember(cc, userId);
-    }
-
     if (EB_ROLES.includes(user.role as (typeof EB_ROLES)[number])) {
       const ebChannelIds = await allChannelIds();
       if (ebChannelIds.length) {
@@ -232,7 +221,7 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
       }
     }
 
-    if (user.role === "DELEGATE" || user.role === "CHAIR" || user.role === "CO_CHAIR" || user.role === "ADMIN") {
+    if (user.role === "DELEGATE" || user.role === "CHAIR" || user.role === "CO_CHAIR") {
       const { data: existingPres } = await supabaseAdmin
         .from("delegate_presence_statuses")
         .select("id")
@@ -266,7 +255,7 @@ export async function runOnUserApproved(userId: string, actorId: string): Promis
     await supabaseAdmin.from("notifications").insert({
       user_id: userId,
       title: "Account Approved",
-      message: "Your BILLMUN registration has been approved.",
+      message: "Your NXTMUN registration has been approved.",
       type: "SUCCESS",
       link: dashboardLinkForRole(user.role),
     });
@@ -814,3 +803,4 @@ export async function runOnCommitteeSessionAdjourned(committeeId: string): Promi
       .eq("status", "QUEUED");
   });
 }
+

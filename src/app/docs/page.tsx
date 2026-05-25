@@ -14,7 +14,7 @@ const sections = [
     subsections: [
       {
         title: 'Registration Process',
-        description: 'Complete guide to registering for BILLMUN conference',
+        description: 'Complete guide to registering for NXTMUN conference',
         details: [
           'Visit the registration page and fill out all required fields',
           'Provide accurate personal information, school details, and committee preferences',
@@ -487,7 +487,7 @@ const sections = [
     title: 'Emergency Procedures',
     icon: AlertTriangle,
     content: [
-      'The BILLMUN Portal includes comprehensive emergency procedures to ensure conference safety and continuity.',
+      'The NXTMUN Portal includes comprehensive emergency procedures to ensure conference safety and continuity.',
       '',
       '**911 Emergency Override**: In critical situations, authorized personnel can access emergency override functions at /911 using the system passphrase. This provides temporary Executive Board access for 10 minutes.',
       '',
@@ -580,7 +580,7 @@ const sections = [
         title: 'Registration & Login',
         description: 'Common questions about getting started',
         details: [
-          'Q: How do I register for BILLMUN?',
+          'Q: How do I register for NXTMUN?',
           'A: Visit the registration page, fill out the form, and wait for approval.',
           '',
           'Q: What if I forget my password?',
@@ -685,7 +685,7 @@ export default function DocumentationPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-jotia-bold text-4xl text-text-primary mb-4">BILLMUN Portal Documentation</h1>
+          <h1 className="font-jotia-bold text-4xl text-text-primary mb-4">NXTMUN Portal Documentation</h1>
           <p className="text-text-secondary text-lg">
             Complete guide for the Model United Nations conference management platform
           </p>
@@ -790,7 +790,7 @@ export default function DocumentationPage() {
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-border-subtle">
           <div className="text-center text-text-dimmed text-sm">
-            <p>BILLMUN Portal v1.0.0 — Built for Model United Nations conferences</p>
+            <p>NXTMUN Portal v1.0.0 — Built for Model United Nations conferences</p>
             <div className="mt-4 flex justify-center gap-6">
               <Link href="/privacy" className="hover:text-text-primary transition-colors">
                 Privacy Policy
@@ -808,3 +808,4 @@ export default function DocumentationPage() {
     </div>
   );
 }
+

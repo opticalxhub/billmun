@@ -34,7 +34,7 @@ export default function EBReportsPage() {
     try {
       let query = supabase
         .from('issue_reports')
-        .select('*')
+        .select('id, report_id, category, issue_type, description, status, created_at, user_details, metadata')
         .order('created_at', { ascending: false });
 
       if (filterStatus !== 'ALL') {

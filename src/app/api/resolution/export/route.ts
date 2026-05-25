@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     // Fetch resolution
     const { data: res, error: resErr } = await supabaseAdmin
       .from('resolutions')
-      .select('*, committees(name)')
+      .select('id, user_id, committee_id, title, topic, co_sponsors, created_at, updated_at, committees(name)')
       .eq('id', resolutionId)
       .maybeSingle();
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     // Fetch clauses
     const { data: clauses } = await supabaseAdmin
       .from('resolution_clauses')
-      .select('*')
+      .select('id, resolution_id, type, opening_phrase, content, order_index, parent_clause_id, created_at')
       .eq('resolution_id', resolutionId)
       .order('order_index', { ascending: true });
 
@@ -66,7 +66,11 @@ export async function GET(req: NextRequest) {
         y -= (size + 5);
       };
 
-      drawText(`Committee: ${res.committees?.name || 'Unknown'}`, boldFont, 12);
+      const committeeName = Array.isArray(res.committees) 
+        ? res.committees[0]?.name 
+        : (res.committees as any)?.name || 'Unknown';
+
+      drawText(`Committee: ${committeeName}`, boldFont, 12);
       drawText(`Topic: ${res.topic}`, boldFont, 12);
       drawText(`Sponsors: ${(res.co_sponsors || []).join(', ')}`, font, 11);
       y -= 20;
@@ -97,6 +101,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === 'docx') {
+      const committeeName = Array.isArray(res.committees) 
+        ? res.committees[0]?.name 
+        : (res.committees as any)?.name || 'Unknown';
+
       const doc = new Document({
         sections: [
           {
@@ -104,7 +112,7 @@ export async function GET(req: NextRequest) {
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: `Committee: ${res.committees?.name || 'Unknown'}`, bold: true })],
+                children: [new TextRun({ text: `Committee: ${committeeName}`, bold: true })],
               }),
               new Paragraph({
                 children: [new TextRun({ text: `Topic: ${res.topic}`, bold: true })],

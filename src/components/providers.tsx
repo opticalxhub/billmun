@@ -5,6 +5,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { DataPreloader } from './data-preloader';
 import { RoutePrefetcher } from './route-prefetcher';
+import { reportError } from '@/lib/logger';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -23,6 +24,7 @@ export function Providers({ children }: { children: ReactNode }) {
         },
         refetchOnWindowFocus: false, // Don't refetch on window focus for better UX
         refetchOnReconnect: true, // Do refetch on reconnect
+        networkMode: 'online',
       },
       mutations: {
         retry: 1, // Retry mutations once
@@ -50,7 +52,10 @@ export function Providers({ children }: { children: ReactNode }) {
         const now = Date.now();
         // If session expires in less than 10 minutes, refresh it
         if (expiresAt - now < 10 * 60 * 1000) {
-          await supabase.auth.refreshSession();
+          const { error } = await supabase.auth.refreshSession();
+          if (error) {
+            reportError(error, { component: 'Providers', action: 'refreshSession' });
+          }
         }
       }
     }, 5 * 60 * 1000);

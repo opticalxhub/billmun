@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { LogOut, Menu, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -11,21 +10,11 @@ import { ReportIssueModal } from './report-issue-modal';
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview' },
-  { id: 'registrations', label: 'Registrations' },
-  { id: 'live-monitor', label: 'Live Monitor' },
-  { id: 'committees', label: 'Committees' },
+  { id: 'registrations', label: 'Users & Registration' },
+  { id: 'committees', label: 'Committees & Live' },
   { id: 'documents', label: 'Documents' },
-  { id: 'security', label: 'Security' },
   { id: 'communications', label: 'Communications' },
-  { id: 'contact', label: 'Contact Submissions' },
-  { id: 'media-pr', label: 'Media/PR Approval' },
-  { id: 'settings', label: 'Settings' },
-  { id: 'audit', label: 'Audit Log' },
-  { id: 'internal-workspace', label: 'Internal Workspace' },
-  { id: 'whatsapp', label: 'WhatsApp' },
-  { id: 'reports', label: 'Reports Panel' },
-  { id: 'schedule', label: 'Conference Schedule' },
-  { id: 'conference', label: 'Conference Control' },
+  { id: 'settings', label: 'System Settings' },
 ];
 
 export const EBLayout = ({ children, activeTab, onTabChange }: { children: React.ReactNode, activeTab: string, onTabChange: (id: string) => void }) => {
@@ -39,7 +28,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
     if (typeof document !== 'undefined' && document.cookie.includes('emergency_expires=')) {
       setUser({
         id: '00000000-0000-0000-0000-000000000000',
-        email: 'emergency@billmun.com',
+        email: 'emergency@portal.nxtmun.com',
         full_name: 'Engineer (Emergency)',
         role: 'EXECUTIVE_BOARD',
         status: 'APPROVED',
@@ -71,7 +60,7 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
       {/* Top navbar */}
       <nav className="h-14 sm:h-16 lg:h-20 border-b border-border-subtle bg-bg-card flex items-center px-3 sm:px-4 md:px-8 justify-between shrink-0">
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <img src="/billmun.png" alt="BILLMUN Logo" className="w-16 sm:w-20 lg:w-24 h-auto dark:invert shrink-0" />
+          <img src="/NXTMUN.png" alt="NXTMUN Logo" className="w-16 sm:w-20 lg:w-24 h-auto dark:invert shrink-0" />
           <span className="font-jotia-bold text-sm sm:text-lg md:text-xl text-text-primary tracking-[0.1em] sm:tracking-[0.15em] uppercase truncate">Executive Board</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-4 lg:gap-6 shrink-0">
@@ -81,7 +70,6 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
           </div>
           <div className="hidden sm:block h-6 w-px bg-border-subtle mx-1" />
           <div className="hidden sm:flex items-center gap-3 lg:gap-4">
-            <Link href="/" className="text-[10px] md:text-xs font-black uppercase tracking-widest text-text-dimmed hover:text-text-primary transition-all">Exit</Link>
             <button 
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 lg:px-4 h-9 lg:h-10 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
@@ -127,7 +115,6 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
               ))}
             </nav>
             <div className="p-3 border-t border-border-subtle space-y-2 sm:hidden">
-              <Link href="/" className="block text-center text-[10px] font-black uppercase tracking-widest text-text-dimmed hover:text-text-primary py-2">Exit</Link>
               <button 
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 px-3 h-9 text-[10px] font-bold uppercase tracking-widest text-status-rejected-text bg-status-rejected-bg/10 border border-status-rejected-border/20 rounded-button hover:bg-status-rejected-bg/20 transition-all"
@@ -215,3 +202,4 @@ export const EBLayout = ({ children, activeTab, onTabChange }: { children: React
     </div>
   );
 };
+

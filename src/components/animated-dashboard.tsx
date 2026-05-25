@@ -23,7 +23,7 @@ export function AnimatedDashboard() {
           <div className="text-center py-12">
             <TextReveal delay={0.3}>
               <h1 className="font-jotia-bold text-4xl text-text-primary mb-4">
-                BILLMUN Conference Portal
+                NXTMUN Conference Portal
               </h1>
             </TextReveal>
             <FadeIn delay={0.5} from="bottom">
@@ -165,3 +165,4 @@ export function AnimatedDashboard() {
     </PageTransition>
   );
 }
+
